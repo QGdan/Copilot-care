@@ -19,6 +19,8 @@ interface Props {
 
 interface Emits {
   (e: 'stage-click', stage: WorkflowStage): void;
+  (e: 'stage-hover', stage: WorkflowStage): void;
+  (e: 'stage-hover-leave'): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -44,7 +46,7 @@ const STAGE_LABELS: Record<WorkflowStage, string> = {
 const STATUS_LABELS: Record<TriageStreamStageStatus, string> = {
   pending: '等待',
   running: '进行中',
-  blocked: '阻塞',
+  blocked: '阻断',
   done: '完成',
   failed: '失败',
   skipped: '跳过',
@@ -138,6 +140,14 @@ const escalationPathActive = computed(() => {
 function handleStageClick(stage: WorkflowStage): void {
   emit('stage-click', stage);
 }
+
+function handleStageHover(stage: WorkflowStage): void {
+  emit('stage-hover', stage);
+}
+
+function handleStageHoverLeave(): void {
+  emit('stage-hover-leave');
+}
 </script>
 
 <template>
@@ -147,7 +157,7 @@ function handleStageClick(stage: WorkflowStage): void {
       <div class="summary-row">
         <span class="summary-chip done">完成 {{ summary.done }}</span>
         <span class="summary-chip running">进行中 {{ summary.running }}</span>
-        <span class="summary-chip blocked">风险阻塞 {{ summary.blocked }}</span>
+        <span class="summary-chip blocked">风险阻断 {{ summary.blocked }}</span>
       </div>
     </div>
 
@@ -171,6 +181,10 @@ function handleStageClick(stage: WorkflowStage): void {
             ]"
             type="button"
             @click="handleStageClick(card.stage)"
+            @mouseenter="handleStageHover(card.stage)"
+            @mouseleave="handleStageHoverLeave"
+            @focus="handleStageHover(card.stage)"
+            @blur="handleStageHoverLeave"
           >
             <div class="stage-card-head">
               <strong>{{ card.label }}</strong>

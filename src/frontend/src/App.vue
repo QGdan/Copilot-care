@@ -1,7 +1,9 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { Icon } from '@iconify/vue';
 import { navItems } from './router';
+import type { ThemeMode, ThemeScene } from './types/theme';
 
 const THEME_STORAGE_KEY = 'copilot-care.theme';
 
@@ -23,11 +25,52 @@ const routeDescription = computed(
   () => activeNav.value?.description ?? '临床决策支持工作台，强调可解释与可追踪。',
 );
 
+const routeScene = computed<ThemeScene>(() => {
+  return activeNav.value?.scene ?? 'consultation';
+});
+
+const routePriorityLabel = computed(() => {
+  const priority = activeNav.value?.priority ?? 'support';
+  if (priority === 'core') {
+    return '核心流程';
+  }
+  if (priority === 'explore') {
+    return '探索分析';
+  }
+  return '支持模块';
+});
+
+const routeAccentClass = computed(() => {
+  return `accent-${activeNav.value?.accent ?? 'teal'}`;
+});
+
 const themeLabel = computed(() => (isDarkTheme.value ? '深色' : '浅色'));
+const themeIcon = computed(() => {
+  return isDarkTheme.value ? 'solar:moon-stars-bold' : 'solar:sun-bold';
+});
 const currentYear = new Date().getFullYear();
 
-function applyTheme(mode: 'light' | 'dark'): void {
+function resolveNavIcon(iconCode: string): string {
+  if (iconCode === 'CS') return 'solar:stethoscope-bold';
+  if (iconCode === 'GV') return 'solar:shield-warning-bold';
+  if (iconCode === 'FH') return 'solar:code-scan-bold';
+  if (iconCode === 'PT') return 'solar:heart-pulse-bold';
+  return 'solar:widget-bold';
+}
+
+function resolveSceneIcon(scene: ThemeScene): string {
+  if (scene === 'consultation') return 'solar:stethoscope-bold';
+  if (scene === 'governance') return 'solar:shield-check-bold';
+  if (scene === 'fhir') return 'solar:server-square-cloud-bold';
+  return 'solar:user-heart-bold';
+}
+
+function applyTheme(mode: ThemeMode): void {
   document.documentElement.setAttribute('data-theme', mode);
+}
+
+function applyScene(scene: ThemeScene): void {
+  document.body.setAttribute('data-scene', scene);
 }
 
 function navigate(path: string): void {
@@ -51,17 +94,24 @@ onMounted(() => {
   const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';
-  const initialMode = saved === 'light' || saved === 'dark' ? saved : preferred;
+  const initialMode: ThemeMode = saved === 'light' || saved === 'dark'
+    ? saved
+    : preferred;
 
   isDarkTheme.value = initialMode === 'dark';
   applyTheme(initialMode);
+  applyScene(routeScene.value);
 });
 
 watch(isDarkTheme, (value) => {
-  const mode = value ? 'dark' : 'light';
+  const mode: ThemeMode = value ? 'dark' : 'light';
   localStorage.setItem(THEME_STORAGE_KEY, mode);
   applyTheme(mode);
 });
+
+watch(routeScene, (scene) => {
+  applyScene(scene);
+}, { immediate: true });
 </script>
 
 <template>
@@ -69,26 +119,40 @@ watch(isDarkTheme, (value) => {
     <div class="aurora aurora-a" />
     <div class="aurora aurora-b" />
 
-    <header class="app-header">
+    <header
+      class="app-header"
+      v-motion
+      :initial="{ opacity: 0, y: -10 }"
+      :enter="{ opacity: 1, y: 0, transition: { duration: 320 } }"
+    >
       <div class="brand-block">
-        <div class="brand-mark">CC</div>
+        <div class="brand-mark">
+          <Icon class="brand-glyph" icon="solar:medical-kit-bold-duotone" width="18" />
+        </div>
         <div class="brand-copy">
           <strong>CoPilot Care</strong>
-          <span>临床 AI 分诊平台</span>
+          <span>Clinical Mission Control</span>
         </div>
       </div>
 
-      <p class="route-summary">{{ routeDescription }}</p>
+      <p class="route-summary">
+        {{ routeDescription }}
+      </p>
+
+      <div class="route-scene-chip" :class="routeAccentClass">
+        <Icon :icon="resolveSceneIcon(routeScene)" width="14" />
+        {{ routePriorityLabel }}
+      </div>
 
       <nav class="header-nav" aria-label="主导航">
         <button
           v-for="item in navItems"
           :key="item.path"
           class="nav-item"
-          :class="{ active: isActive(item.path) }"
+          :class="[{ active: isActive(item.path) }, `accent-${item.accent}`]"
           @click="navigate(item.path)"
         >
-          <span class="nav-icon">{{ item.icon }}</span>
+          <Icon class="nav-icon" :icon="resolveNavIcon(item.icon)" width="14" />
           <span class="nav-label">{{ item.label }}</span>
         </button>
       </nav>
@@ -99,6 +163,7 @@ watch(isDarkTheme, (value) => {
           :title="`切换到${isDarkTheme ? '浅色' : '深色'}模式`"
           @click="toggleTheme"
         >
+          <Icon :icon="themeIcon" width="14" />
           {{ themeLabel }}
         </button>
 
@@ -108,6 +173,7 @@ watch(isDarkTheme, (value) => {
           aria-label="切换菜单"
           @click="mobileMenuOpen = !mobileMenuOpen"
         >
+          <Icon icon="solar:hamburger-menu-bold" width="14" />
           菜单
         </button>
       </div>
@@ -122,7 +188,7 @@ watch(isDarkTheme, (value) => {
           :class="{ active: isActive(item.path) }"
           @click="navigate(item.path)"
         >
-          <span class="nav-icon">{{ item.icon }}</span>
+          <Icon class="nav-icon" :icon="resolveNavIcon(item.icon)" width="14" />
           <span class="nav-label">{{ item.label }}</span>
         </button>
       </nav>
@@ -135,7 +201,7 @@ watch(isDarkTheme, (value) => {
     <footer class="app-footer">
       <span>CoPilot Care v1.0.0</span>
       <span class="divider" />
-      <span>医疗决策支持平台</span>
+      <span>医疗指挥中枢 · 临床决策支持</span>
       <span class="divider" />
       <span>{{ currentYear }}</span>
     </footer>
@@ -155,24 +221,32 @@ watch(isDarkTheme, (value) => {
   position: fixed;
   pointer-events: none;
   z-index: -1;
-  filter: blur(70px);
+  filter: blur(72px);
   opacity: 0.65;
 }
 
 .aurora-a {
-  width: 360px;
-  height: 360px;
-  top: -100px;
-  left: -80px;
-  background: radial-gradient(circle, rgba(32, 146, 132, 0.35), transparent 70%);
+  width: 380px;
+  height: 380px;
+  top: -110px;
+  left: -90px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--cc-accent-teal-500) 35%, transparent),
+    transparent 72%
+  );
 }
 
 .aurora-b {
-  width: 460px;
-  height: 460px;
+  width: 420px;
+  height: 420px;
   top: 180px;
-  right: -140px;
-  background: radial-gradient(circle, rgba(231, 165, 72, 0.28), transparent 70%);
+  right: -120px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--cc-accent-cyan-500) 30%, transparent),
+    transparent 72%
+  );
 }
 
 .app-header {
@@ -180,14 +254,14 @@ watch(isDarkTheme, (value) => {
   top: 0;
   z-index: 90;
   display: grid;
-  grid-template-columns: auto minmax(180px, 1fr) auto auto;
-  gap: 14px;
+  grid-template-columns: auto minmax(180px, 1fr) auto auto auto;
+  gap: 12px;
   align-items: center;
-  min-height: 68px;
+  min-height: 72px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--color-border);
-  background: color-mix(in srgb, var(--color-bg-primary) 82%, transparent);
-  backdrop-filter: blur(12px);
+  background: color-mix(in srgb, var(--color-bg-primary) 80%, transparent);
+  backdrop-filter: blur(14px);
 }
 
 .brand-block {
@@ -197,8 +271,8 @@ watch(isDarkTheme, (value) => {
 }
 
 .brand-mark {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
   display: grid;
   place-items: center;
@@ -206,8 +280,18 @@ watch(isDarkTheme, (value) => {
   font-weight: 700;
   letter-spacing: 0.08em;
   color: #ffffff;
-  background: linear-gradient(135deg, #126d73 0%, #1f9c8f 52%, #d7a846 100%);
-  box-shadow: 0 10px 20px rgba(16, 68, 90, 0.28);
+  background: linear-gradient(
+    135deg,
+    var(--cc-accent-teal-600) 0%,
+    var(--cc-accent-teal-500) 58%,
+    color-mix(in srgb, var(--cc-accent-cyan-500) 45%, var(--cc-accent-teal-600))
+      100%
+  );
+  box-shadow: 0 10px 22px rgba(15, 80, 107, 0.28);
+}
+
+.brand-glyph {
+  filter: drop-shadow(0 2px 6px rgba(7, 42, 64, 0.25));
 }
 
 .brand-copy {
@@ -229,14 +313,44 @@ watch(isDarkTheme, (value) => {
 .route-summary {
   margin: 0;
   padding: 8px 12px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-light);
   border-radius: 999px;
   font-size: 12px;
   color: var(--color-text-secondary);
-  background: color-mix(in srgb, var(--color-bg-primary) 70%, transparent);
+  background: color-mix(in srgb, var(--color-bg-primary) 78%, transparent);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.route-scene-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-light);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 6px 10px;
+  background: color-mix(in srgb, var(--color-bg-primary) 88%, transparent);
+  color: var(--color-text-muted);
+}
+
+.route-scene-chip.accent-teal {
+  color: var(--cc-accent-teal-600);
+}
+
+.route-scene-chip.accent-cyan {
+  color: var(--cc-accent-cyan-500);
+}
+
+.route-scene-chip.accent-amber {
+  color: var(--cc-accent-amber-500);
+}
+
+.route-scene-chip.accent-rose {
+  color: var(--cc-accent-rose-500);
 }
 
 .header-nav {
@@ -255,7 +369,7 @@ watch(isDarkTheme, (value) => {
   align-items: center;
   gap: 7px;
   cursor: pointer;
-  transition: all 160ms ease;
+  transition: all var(--cc-motion-fast) var(--cc-ease-standard);
 }
 
 .nav-item:hover {
@@ -267,14 +381,27 @@ watch(isDarkTheme, (value) => {
 .nav-item.active {
   color: #ffffff;
   border-color: transparent;
-  background: linear-gradient(130deg, #1d8d88 0%, #186979 55%, #0f4f62 100%);
-  box-shadow: 0 8px 20px rgba(21, 94, 106, 0.25);
+  box-shadow: 0 8px 18px rgba(16, 84, 110, 0.26);
+}
+
+.nav-item.accent-teal.active {
+  background: linear-gradient(130deg, #1f8d8d 0%, #146471 100%);
+}
+
+.nav-item.accent-cyan.active {
+  background: linear-gradient(130deg, #3b87c2 0%, #265a95 100%);
+}
+
+.nav-item.accent-amber.active {
+  background: linear-gradient(130deg, #c08a32 0%, #8f6421 100%);
+}
+
+.nav-item.accent-rose.active {
+  background: linear-gradient(130deg, #c6593e 0%, #924033 100%);
 }
 
 .nav-icon {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  color: currentColor;
 }
 
 .nav-label {
@@ -292,18 +419,18 @@ watch(isDarkTheme, (value) => {
 .mobile-menu-btn {
   border: 1px solid var(--color-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--color-bg-primary) 80%, transparent);
+  background: color-mix(in srgb, var(--color-bg-primary) 82%, transparent);
   color: var(--color-text-primary);
   font-size: 12px;
   font-weight: 600;
   padding: 7px 12px;
   cursor: pointer;
-  transition: all 160ms ease;
+  transition: all var(--cc-motion-fast) var(--cc-ease-standard);
 }
 
 .theme-toggle:hover,
 .mobile-menu-btn:hover {
-  border-color: color-mix(in srgb, var(--color-primary) 50%, var(--color-border));
+  border-color: color-mix(in srgb, var(--color-primary) 45%, var(--color-border));
   transform: translateY(-1px);
 }
 
@@ -358,7 +485,7 @@ watch(isDarkTheme, (value) => {
   border-top: 1px solid var(--color-border);
   color: var(--color-text-muted);
   font-size: 12px;
-  background: color-mix(in srgb, var(--color-bg-primary) 86%, transparent);
+  background: color-mix(in srgb, var(--color-bg-primary) 84%, transparent);
 }
 
 .divider {
@@ -369,7 +496,7 @@ watch(isDarkTheme, (value) => {
 
 .menu-slide-enter-active,
 .menu-slide-leave-active {
-  transition: all 180ms ease;
+  transition: all var(--cc-motion-fast) var(--cc-ease-standard);
 }
 
 .menu-slide-enter-from,
@@ -378,9 +505,9 @@ watch(isDarkTheme, (value) => {
   transform: translateY(-4px);
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1160px) {
   .app-header {
-    grid-template-columns: auto minmax(120px, 1fr) auto;
+    grid-template-columns: auto minmax(100px, 1fr) auto auto;
   }
 
   .header-nav {
@@ -406,6 +533,10 @@ watch(isDarkTheme, (value) => {
   .route-summary {
     grid-column: 1 / -1;
     order: 10;
+  }
+
+  .route-scene-chip {
+    display: none;
   }
 
   .app-footer {

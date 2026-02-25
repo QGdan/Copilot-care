@@ -8,7 +8,11 @@ function createStageRuntime() {
     START: { status: 'done', message: '已启动', durationMs: 520 },
     INFO_GATHER: { status: 'done', message: '信息采集完成', durationMs: 1800 },
     RISK_ASSESS: { status: 'done', message: '风险评估完成', durationMs: 2300 },
-    ROUTING: { status: 'running', message: '分流决策中，重试 2', startTime: new Date(Date.now() - 1800).toISOString() },
+    ROUTING: {
+      status: 'running',
+      message: '分流决策中，重试 2',
+      startTime: new Date(Date.now() - 1800).toISOString(),
+    },
     DEBATE: { status: 'pending', message: '等待讨论' },
     CONSENSUS: { status: 'pending', message: '等待共识收敛' },
     REVIEW: { status: 'pending', message: '等待审校复核' },
@@ -52,7 +56,26 @@ describe('WorkflowStateMachine', () => {
     expect(routingCard).toBeTruthy();
 
     await routingCard?.trigger('click');
-
     expect(wrapper.emitted('stage-click')?.[0]).toEqual(['ROUTING']);
+  });
+
+  it('emits stage-hover and stage-hover-leave while previewing stages', async () => {
+    const wrapper = mount(WorkflowStateMachine, {
+      props: {
+        stageRuntime: createStageRuntime(),
+        currentStage: 'ROUTING',
+      },
+    });
+
+    const routingCard = wrapper
+      .findAll('.stage-card')
+      .find((card) => card.text().includes('复杂度分流'));
+    expect(routingCard).toBeTruthy();
+
+    await routingCard?.trigger('mouseenter');
+    await routingCard?.trigger('mouseleave');
+
+    expect(wrapper.emitted('stage-hover')?.[0]).toEqual(['ROUTING']);
+    expect(wrapper.emitted('stage-hover-leave')).toHaveLength(1);
   });
 });

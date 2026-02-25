@@ -7,6 +7,7 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   root: projectRoot,
+  cacheDir: 'C:/ViteCache/copilot-care-frontend',
   plugins: [vue()],
   server: {
     port: 5173,

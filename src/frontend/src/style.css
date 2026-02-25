@@ -19,11 +19,21 @@ body {
   min-height: 100vh;
   color: var(--color-text-primary);
   font-family: var(--font-sans);
-  background:
-    radial-gradient(circle at 8% 8%, rgba(235, 197, 121, 0.28), transparent 34%),
-    radial-gradient(circle at 90% 10%, rgba(71, 149, 168, 0.2), transparent 42%),
-    radial-gradient(circle at 25% 88%, rgba(49, 130, 122, 0.12), transparent 36%),
-    linear-gradient(150deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+  background: var(--cc-scene-consultation);
+  transition: background var(--cc-motion-slow) var(--cc-ease-standard),
+    color var(--cc-motion-fast) var(--cc-ease-standard);
+}
+
+body[data-scene='governance'] {
+  background: var(--cc-scene-governance);
+}
+
+body[data-scene='fhir'] {
+  background: var(--cc-scene-fhir);
+}
+
+body[data-scene='patient'] {
+  background: var(--cc-scene-patient);
 }
 
 body::before {
@@ -32,9 +42,9 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(20, 55, 74, 0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(20, 55, 74, 0.02) 1px, transparent 1px);
-  background-size: 22px 22px;
+    linear-gradient(rgba(18, 61, 85, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(18, 61, 85, 0.035) 1px, transparent 1px);
+  background-size: 24px 24px;
   mask-image: radial-gradient(circle at 50% 35%, black, transparent 78%);
   z-index: -1;
 }

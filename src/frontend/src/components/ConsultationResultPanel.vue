@@ -48,18 +48,29 @@ function handleExport(): void {
         {{ props.exportingReport ? '导出中...' : '导出报告' }}
       </button>
     </div>
-    <p v-if="props.routeInfo">
-      分流：{{ formatRouteMode(props.routeInfo.routeMode) }} /
-      {{ formatDepartment(props.routeInfo.department) }} /
-      {{ formatCollaboration(props.routeInfo.collaborationMode) }} /
-      复杂度 {{ props.routeInfo.complexityScore }}
-    </p>
-    <p v-if="props.triageResult">
-      分诊等级：{{ props.triageResult.triageLevel }} /
-      去向：{{ props.triageResult.destination }} /
-      随访：{{ props.triageResult.followupDays }} 天
-    </p>
-    <p v-if="props.finalConsensus">最终结论：{{ props.finalConsensus.reasoning }}</p>
+    <div class="summary-grid">
+      <article v-if="props.routeInfo" class="summary-card">
+        <h4>分流路径</h4>
+        <p>
+          {{ formatRouteMode(props.routeInfo.routeMode) }} /
+          {{ formatDepartment(props.routeInfo.department) }} /
+          {{ formatCollaboration(props.routeInfo.collaborationMode) }}
+        </p>
+        <small>复杂度 {{ props.routeInfo.complexityScore }}</small>
+      </article>
+      <article v-if="props.triageResult" class="summary-card">
+        <h4>分诊结果</h4>
+        <p>
+          {{ props.triageResult.triageLevel }} /
+          {{ props.triageResult.destination }}
+        </p>
+        <small>随访周期 {{ props.triageResult.followupDays }} 天</small>
+      </article>
+    </div>
+    <article v-if="props.finalConsensus" class="consensus-card">
+      <h4>最终结论</h4>
+      <p>{{ props.finalConsensus.reasoning }}</p>
+    </article>
     <div v-if="props.isSafetyBlocked" class="safety-block-alert">
       <strong>安全审校已阻断线上建议</strong>
       <p>{{ props.safetyBlockNote || '检测到潜在不安全输出，已切换为线下上转路径。' }}</p>
@@ -86,6 +97,18 @@ function handleExport(): void {
   padding: 14px;
   margin-bottom: 12px;
   box-shadow: 0 6px 18px rgba(17, 44, 72, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.panel-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
 }
 
 .panel-header-with-action {
@@ -97,26 +120,73 @@ function handleExport(): void {
 
 .panel-header-with-action h3 {
   margin: 0;
+  color: #1a365d;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.summary-card {
+  border: 1px solid #c9d7e7;
+  border-radius: 9px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.summary-card h4,
+.consensus-card h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  color: #4c6881;
+}
+
+.summary-card p,
+.consensus-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #21445e;
+}
+
+.summary-card small {
+  display: block;
+  margin-top: 6px;
+  color: #5d7890;
+}
+
+.consensus-card {
+  margin-top: 10px;
+  border: 1px solid #c9d7e7;
+  border-radius: 9px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.95);
 }
 
 .export-btn {
   padding: 6px 14px;
-  background: #0e8d8f;
+  background: linear-gradient(135deg, #0e8d8f 0%, #0a7072 100%);
   color: #ffffff;
   border: none;
   border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(14, 141, 143, 0.3);
 }
 
 .export-btn:hover {
-  background: #0a6e70;
+  background: linear-gradient(135deg, #0a7072 0%, #085557 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 141, 143, 0.4);
 }
 
 .export-btn:disabled {
   background: #86a9ab;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
 .safety-block-alert {
@@ -159,6 +229,12 @@ function handleExport(): void {
 
 .export-status.success {
   color: #1e7e58;
+}
+
+@media (max-width: 980px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 

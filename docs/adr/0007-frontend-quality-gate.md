@@ -1,5 +1,7 @@
 ﻿# 0007-frontend-quality-gate.md
 
+Status: Superseded by 0008-monorepo-ci-automation-workflow.md.
+
 ## Context
 
 Frontend quality checks were previously run manually in local development. This allowed type regressions, broken tests, or build failures to reach pull requests without an automated gate. The frontend is now structurally larger (views, composables, feature modules), so relying on manual checks is no longer reliable.

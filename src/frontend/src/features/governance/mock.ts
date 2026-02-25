@@ -65,7 +65,7 @@ export function buildEvidenceBundle(item: ReviewItem): EvidenceItem[] {
       id: `${item.id}-E3`,
       type: 'audit',
       title: '流程审计检查点',
-      description: '阶段流转、门禁校验和结果契约检查已关联到当前病例。',
+      description: '阶段流转、输入校验和结果契约检查已关联到当前病例。',
       timestamp: new Date().toISOString(),
       confidence: 0.95,
     },
@@ -81,7 +81,7 @@ export function createMockGovernanceSnapshot(): GovernanceSnapshot {
       actualValue: 1,
       deviation: 0,
       status: 'completed',
-      correctiveAction: '保持发版前必须执行 typecheck 的门禁规则。',
+      correctiveAction: '保持发版前必须执行 typecheck 的质量检查规则。',
     },
     {
       milestoneId: 'M11',
@@ -94,12 +94,12 @@ export function createMockGovernanceSnapshot(): GovernanceSnapshot {
     },
     {
       milestoneId: 'M12',
-      metricName: '发布综合门禁采用率',
+      metricName: '发布综合检查采用率',
       targetValue: 1,
       actualValue: 1,
       deviation: 0,
       status: 'completed',
-      correctiveAction: '每个候选版本统一执行 gate:release。',
+      correctiveAction: '每个候选版本统一执行 release:checklist。',
     },
   ];
 

@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import type { OrchestrationTask } from '@copilot-care/shared/types';
 
+type SourceKind = 'pending' | 'rule' | 'model';
+type IntegrationMode = 'waiting' | 'syncing' | 'rule' | 'model';
+
 interface Props {
   phaseText: string;
   sourceText: string;
+  sourceKind: SourceKind;
   updatedAtText: string;
   summary: string;
   activeTaskHint: string;
+  integrationText: string;
+  integrationMode: IntegrationMode;
   tasks: OrchestrationTask[];
 }
 
@@ -17,6 +23,26 @@ const TASK_STATUS_LABELS: Record<OrchestrationTask['status'], string> = {
   running: '进行中',
   done: '已完成',
   blocked: '阻断',
+};
+
+const INTEGRATION_MODE_LABELS: Record<IntegrationMode, string> = {
+  waiting: '等待中',
+  syncing: '同步中',
+  rule: '规则图谱',
+  model: '模型图谱',
+};
+
+const SOURCE_KIND_CLASS: Record<SourceKind, string> = {
+  pending: 'pending',
+  rule: 'rule',
+  model: 'model',
+};
+
+const INTEGRATION_MODE_CLASS: Record<IntegrationMode, string> = {
+  waiting: 'waiting',
+  syncing: 'syncing',
+  rule: 'rule',
+  model: 'model',
 };
 
 function formatTaskStatus(statusValue: OrchestrationTask['status']): string {
@@ -34,6 +60,18 @@ function taskProgressStyle(task: OrchestrationTask): { width: string } {
     width: `${bounded}%`,
   };
 }
+
+function resolveSourceChipClass(sourceKind: SourceKind): string {
+  return `secondary ${SOURCE_KIND_CLASS[sourceKind] ?? ''}`.trim();
+}
+
+function resolveIntegrationBadgeClass(mode: IntegrationMode): string {
+  return INTEGRATION_MODE_CLASS[mode] ?? '';
+}
+
+function resolveIntegrationModeLabel(mode: IntegrationMode): string {
+  return INTEGRATION_MODE_LABELS[mode] ?? mode;
+}
 </script>
 
 <template>
@@ -42,12 +80,23 @@ function taskProgressStyle(task: OrchestrationTask): { width: string } {
       <h3>总Agent任务看板</h3>
       <div class="panel-head-actions">
         <span class="status-chip">{{ props.phaseText }}</span>
-        <span class="status-chip secondary">{{ props.sourceText }}</span>
+        <span class="status-chip" :class="resolveSourceChipClass(props.sourceKind)">
+          {{ props.sourceText }}
+        </span>
       </div>
     </div>
     <p class="status-line">最近快照：{{ props.updatedAtText }}</p>
     <p class="status-line">{{ props.summary }}</p>
     <p class="status-line">当前执行：{{ props.activeTaskHint }}</p>
+    <p class="integration-line">
+      <span
+        class="integration-badge"
+        :class="resolveIntegrationBadgeClass(props.integrationMode)"
+      >
+        {{ resolveIntegrationModeLabel(props.integrationMode) }}
+      </span>
+      <span>{{ props.integrationText }}</span>
+    </p>
     <div class="task-list">
       <article
         v-for="task in props.tasks"
@@ -109,10 +158,71 @@ function taskProgressStyle(task: OrchestrationTask): { width: string } {
   border-color: #bdd0e4;
 }
 
+.status-chip.secondary.pending {
+  color: #6b7280;
+  background: #f3f4f6;
+  border-color: #d4d8df;
+}
+
+.status-chip.secondary.rule {
+  color: #165664;
+  background: #e6f4f7;
+  border-color: #b8d8de;
+}
+
+.status-chip.secondary.model {
+  color: #5b2ca0;
+  background: #f0e8ff;
+  border-color: #d2b8f2;
+}
+
 .status-line {
   margin: 6px 0;
   font-size: 13px;
   color: #3e5d77;
+}
+
+.integration-line {
+  margin: 8px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #3f607a;
+}
+
+.integration-badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid #cad8e5;
+  padding: 1px 8px;
+  font-size: 11px;
+  color: #4c6b84;
+  background: #f4f8fc;
+}
+
+.integration-badge.waiting {
+  color: #6b7280;
+  border-color: #d6d9df;
+  background: #f5f6f8;
+}
+
+.integration-badge.syncing {
+  color: #165664;
+  border-color: #b8d8de;
+  background: #e6f4f7;
+}
+
+.integration-badge.rule {
+  color: #165664;
+  border-color: #b8d8de;
+  background: #e6f4f7;
+}
+
+.integration-badge.model {
+  color: #5b2ca0;
+  border-color: #d2b8f2;
+  background: #f0e8ff;
 }
 
 .task-list {

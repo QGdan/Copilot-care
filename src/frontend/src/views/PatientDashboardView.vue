@@ -83,6 +83,16 @@ const escalatedCount = computed<number>(
     ).length,
 );
 
+const followupSignal = computed<'normal' | 'warning' | 'critical'>(() => {
+  if (escalatedCount.value >= 2) {
+    return 'critical';
+  }
+  if (escalatedCount.value > 0) {
+    return 'warning';
+  }
+  return 'normal';
+});
+
 function formatDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -199,6 +209,12 @@ onBeforeUnmount(() => {
         <p class="eyebrow">患者看板</p>
         <h1>{{ patientDisplayName }}</h1>
         <p>纵向画像、生命体征趋势与历史会诊时间线。</p>
+        <div class="hero-chips">
+          <span class="hero-chip">累计会诊 {{ consultationHistory.length }} 次</span>
+          <span class="hero-chip" :data-signal="followupSignal">
+            {{ followupSignal === 'critical' ? '需重点随访' : followupSignal === 'warning' ? '建议跟踪' : '趋势稳定' }}
+          </span>
+        </div>
       </div>
 
       <button class="primary-btn" @click="goToConsultation">
@@ -416,6 +432,40 @@ onBeforeUnmount(() => {
     radial-gradient(circle at 94% 86%, rgba(58, 139, 158, 0.18), transparent 40%),
     var(--color-bg-primary);
   box-shadow: var(--shadow-md);
+}
+
+.hero-chips {
+  margin-top: 10px;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hero-chip {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-bg-primary) 88%, transparent);
+}
+
+.hero-chip[data-signal='normal'] {
+  color: #1d7f68;
+  border-color: rgba(34, 149, 113, 0.3);
+  background: rgba(34, 149, 113, 0.12);
+}
+
+.hero-chip[data-signal='warning'] {
+  color: #8e6114;
+  border-color: rgba(208, 145, 41, 0.3);
+  background: rgba(208, 145, 41, 0.13);
+}
+
+.hero-chip[data-signal='critical'] {
+  color: #a94732;
+  border-color: rgba(208, 87, 56, 0.33);
+  background: rgba(208, 87, 56, 0.13);
 }
 
 .hero-copy h1 {

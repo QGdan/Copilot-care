@@ -280,7 +280,9 @@ describe('ConsultationView integration smoke', () => {
     vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(() => {
+      const gradient = { addColorStop: vi.fn() };
       return {
+        canvas: document.createElement('canvas'),
         drawImage: vi.fn(),
         getImageData: vi.fn(() => ({
           data: new Uint8ClampedArray([
@@ -290,6 +292,30 @@ describe('ConsultationView integration smoke', () => {
             255, 255, 255, 255,
           ]),
         })),
+        measureText: vi.fn((text: string) => ({ width: text.length * 7 })),
+        fillText: vi.fn(),
+        strokeText: vi.fn(),
+        beginPath: vi.fn(),
+        closePath: vi.fn(),
+        moveTo: vi.fn(),
+        lineTo: vi.fn(),
+        arc: vi.fn(),
+        rect: vi.fn(),
+        clip: vi.fn(),
+        fill: vi.fn(),
+        stroke: vi.fn(),
+        save: vi.fn(),
+        restore: vi.fn(),
+        setTransform: vi.fn(),
+        translate: vi.fn(),
+        rotate: vi.fn(),
+        scale: vi.fn(),
+        clearRect: vi.fn(),
+        fillRect: vi.fn(),
+        strokeRect: vi.fn(),
+        createLinearGradient: vi.fn(() => gradient),
+        createRadialGradient: vi.fn(() => gradient),
+        setLineDash: vi.fn(),
       } as unknown as CanvasRenderingContext2D;
     });
     vi.spyOn(HTMLCanvasElement.prototype, 'toDataURL').mockReturnValue(
@@ -376,6 +402,60 @@ describe('ConsultationView integration smoke', () => {
     await waitForAssertion(() => {
       expect(wrapper.text()).toContain('PDF导出失败，已自动导出文本报告（UTF-8）。');
     });
+  });
+
+  it('switches reasoning integration hint from rule to model snapshot source', async () => {
+    orchestrateTriageStreamMock.mockImplementationOnce(async (_payload, options) => {
+      options.onEvent({
+        type: 'stage_update',
+        timestamp: new Date().toISOString(),
+        stage: 'START',
+        status: 'running',
+        message: '已启动会诊',
+      });
+      options.onEvent({
+        type: 'orchestration_snapshot',
+        timestamp: new Date().toISOString(),
+        snapshot: {
+          coordinator: '总Agent',
+          phase: 'analysis',
+          summary: '规则编排分析中',
+          tasks: [],
+          graph: { nodes: [], edges: [] },
+          generatedAt: new Date().toISOString(),
+          source: 'rule',
+        },
+      });
+      options.onEvent({
+        type: 'orchestration_snapshot',
+        timestamp: new Date().toISOString(),
+        snapshot: {
+          coordinator: '总Agent',
+          phase: 'execution',
+          summary: '模型编排执行中',
+          tasks: [],
+          graph: { nodes: [], edges: [] },
+          generatedAt: new Date().toISOString(),
+          source: 'model',
+        },
+      });
+      options.onEvent({
+        type: 'final_result',
+        timestamp: new Date().toISOString(),
+        result: createOutputFinalResult(),
+      });
+    });
+
+    const wrapper = mountConsultationView();
+    await submitWithSymptom(wrapper);
+
+    const viewModel = wrapper.vm as unknown as {
+      reasoningIntegrationText: string;
+    };
+    expect(viewModel.reasoningIntegrationText).toBe(
+      'AI 实时编排已接入，展示动态图谱。',
+    );
+    expect(wrapper.text()).toContain('AI 实时编排已接入，展示动态图谱。');
   });
 
   it('enters red-flag escalation branch and keeps stage transitions consistent', async () => {

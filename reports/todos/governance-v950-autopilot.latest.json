@@ -1,0 +1,57 @@
+{
+  "generatedAt": "2026-02-25T05:05:59.863Z",
+  "manifestPath": "docs\\process\\todos-workflow.v9_50-governance-autopilot.json",
+  "options": {
+    "max": 3,
+    "retries": 2,
+    "continueOnError": false
+  },
+  "summary": {
+    "executed": 2,
+    "failed": false,
+    "done": 7,
+    "total": 7,
+    "blocked": 0,
+    "percent": 100
+  },
+  "executed": [
+    {
+      "id": "G56",
+      "title": "前端构建与预算门禁自动收敛",
+      "success": true,
+      "checks": [
+        {
+          "command": "npm run typecheck --workspace=@copilot-care/frontend",
+          "success": true,
+          "status": 0,
+          "durationMs": 3437,
+          "error": null,
+          "attempt": 1
+        }
+      ]
+    },
+    {
+      "id": "G57",
+      "title": "文案编码与自动化报告归档",
+      "success": true,
+      "checks": [
+        {
+          "command": "npm run check:copy --workspace=@copilot-care/frontend",
+          "success": true,
+          "status": 0,
+          "durationMs": 799,
+          "error": null,
+          "attempt": 1
+        },
+        {
+          "command": "node scripts/governance-autopilot.cjs status --manifest=docs/process/todos-workflow.v9_50-governance-autopilot.json",
+          "success": true,
+          "status": 0,
+          "durationMs": 325,
+          "error": null,
+          "attempt": 1
+        }
+      ]
+    }
+  ]
+}

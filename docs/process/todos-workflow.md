@@ -106,6 +106,41 @@ Release readiness checkpoint:
 npm run gate:release
 ```
 
+## v8 Frontend Command-Center Sprint
+
+Use this when running the two-week frontend modernization plan
+(`docs/process/todos-workflow.v8_00.json`).
+
+Switch and inspect:
+
+```bash
+npm run design:use
+npm run design:status
+npm run design:next
+```
+
+Milestone execution:
+
+```bash
+# Week 1: H01-H06
+npm run design:week1
+
+# Week 2: H07-H12
+npm run design:week2
+```
+
+Daily fixed loop for v8:
+
+1. `npm run design:status`
+2. pick next todo: `npm run design:next`
+3. implement + verify:
+   - `npm run test --workspace=@copilot-care/frontend`
+   - `npm run typecheck --workspace=@copilot-care/frontend`
+   - `npm run build --workspace=@copilot-care/frontend`
+   - `npm run perf:check --workspace=@copilot-care/frontend`
+   - `npm run check:copy --workspace=@copilot-care/frontend`
+4. record evidence in `reports/todos/workflow-state.json`.
+
 ## Reviewer Blocking Conditions
 
 Reviewer must block when any of these is true:

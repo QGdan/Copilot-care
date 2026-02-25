@@ -61,6 +61,17 @@ const groupedResources = computed(() => {
 
 const totalTypes = computed(() => Object.keys(groupedResources.value).length);
 
+const filterSummary = computed<string>(() => {
+  const typeLabel = selectedType.value === 'all'
+    ? '全部类型'
+    : selectedType.value;
+  const keyword = searchQuery.value.trim();
+  if (keyword.length === 0) {
+    return `当前筛选：${typeLabel}`;
+  }
+  return `当前筛选：${typeLabel} · 关键词「${keyword}」`;
+});
+
 function getResourceTitle(resource: FHIRResource): string {
   if (resource.resourceType === 'Patient') {
     const family = resource.name?.[0]?.family ?? '';
@@ -289,6 +300,8 @@ onMounted(() => {
       </button>
     </section>
 
+    <p class="filter-summary">{{ filterSummary }}</p>
+
     <section class="stats-grid">
       <article class="stat">
         <span class="value">{{ resources.length }}</span>
@@ -487,6 +500,16 @@ onMounted(() => {
   grid-template-columns: repeat(3, minmax(140px, 1fr));
   gap: 10px;
   margin-bottom: 14px;
+}
+
+.filter-summary {
+  margin: 0 0 12px;
+  border: 1px solid var(--color-border-light);
+  background: color-mix(in srgb, var(--color-bg-primary) 88%, transparent);
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: var(--color-text-muted);
+  font-size: 12px;
 }
 
 .stat {

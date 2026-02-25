@@ -1,0 +1,167 @@
+{
+    "version":  "v9.30",
+    "name":  "governance-deep-optimization",
+    "createdAt":  "2026-02-24",
+    "objective":  "基于计划书第4/5/6/7章与外部医疗技术标准，完成治理看板的高端化、可解释化与可治理化升级。",
+    "planChapters":  [
+                         "第4章 总体技术架构（七层架构、状态机、可观测、FHIR/SMART）",
+                         "第5章 核心功能设计（模块契约与安全优先取舍）",
+                         "第6章 接口与运行时（错误码、审计、幂等/超时/重试/一致性）",
+                         "第7章 测试与评测（A-F 场景、T-007~T-012、审校闸门）"
+                     ],
+    "externalReferences":  [
+                               {
+                                   "title":  "HL7 FHIR R4",
+                                   "url":  "https://hl7.org/fhir/R4/"
+                               },
+                               {
+                                   "title":  "SMART App Launch IG 2.2.0",
+                                   "url":  "https://build.fhir.org/ig/HL7/smart-app-launch/"
+                               },
+                               {
+                                   "title":  "AHRQ Workflow Assessment Toolkit",
+                                   "url":  "https://digital.ahrq.gov/health-it-tools-and-resources/evaluation-resources/workflow-assessment-health-it-toolkit/all-workflow-tools"
+                               },
+                               {
+                                   "title":  "WHO Minimal Information Model for Incident Reporting",
+                                   "url":  "https://www.who.int/publications/i/item/9789240083175"
+                               },
+                               {
+                                   "title":  "NIST AI Risk Management Framework",
+                                   "url":  "https://www.nist.gov/itl/ai-risk-management-framework"
+                               },
+                               {
+                                   "title":  "FDA Clinical Decision Support Guidance",
+                                   "url":  "https://www.fda.gov/regulatory-information/search-fda-guidance-documents/clinical-decision-support-software"
+                               },
+                               {
+                                   "title":  "USWDS Data Visualization Components",
+                                   "url":  "https://designsystem.digital.gov/components/data-visualization/"
+                               },
+                               {
+                                   "title":  "Apache ECharts Accessibility Best Practices",
+                                   "url":  "https://echarts.apache.org/handbook/en/best-practices/aria/"
+                               }
+                           ],
+    "workflow":  [
+                     {
+                         "id":  "G31",
+                         "title":  "删除治理战情板与焦点阶段作战卡",
+                         "state":  "done",
+                         "goal":  "移除重复模块，保留治理主链路与状态机明细单一入口。",
+                         "verify":  [
+                                        "npm run typecheck --workspace=@copilot-care/frontend",
+                                        "npm run test --workspace=@copilot-care/frontend -- src/components/GovernanceDashboard.test.ts src/views/GovernanceView.test.ts"
+                                    ],
+                         "evidence":  [
+                                          "src/frontend/src/components/GovernanceDashboard.vue"
+                                      ]
+                     },
+                     {
+                         "id":  "G32",
+                         "title":  "状态机明细接管操作闭环",
+                         "state":  "done",
+                         "goal":  "在工作流状态机明细中集中展示焦点指标、清单、动作按钮，且点击节点不自动跳复核队列。",
+                         "verify":  [
+                                        "npm run test --workspace=@copilot-care/frontend -- src/components/GovernanceDashboard.test.ts src/views/GovernanceView.test.ts src/components/WorkflowStateMachine.test.ts src/components/WorkflowLayerMatrix.test.ts"
+                                    ],
+                         "evidence":  [
+                                          "src/frontend/src/components/GovernanceDashboard.vue",
+                                          "src/frontend/src/components/GovernanceDashboard.test.ts"
+                                      ]
+                     },
+                     {
+                         "id":  "G33",
+                         "title":  "FHIR 语义映射摘要与入口",
+                         "state":  "ready",
+                         "goal":  "治理看板仅展示 Observation/RiskAssessment/CarePlan/AuditEvent/Provenance 映射摘要，并提供跳转至独立 FHIR 资源浏览页入口。",
+                         "verify":  [
+                                        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts",
+                                        "npm run check:copy --workspace=@copilot-care/frontend"
+                                    ],
+                         "evidence":  [
+                                          "src/frontend/src/components/GovernanceDashboard.vue",
+                                          "src/frontend/src/views/GovernanceView.vue"
+                                      ]
+                     },
+                     {
+                         "id":  "G34",
+                         "title":  "后端三因子总览",
+                         "state":  "ready",
+                         "goal":  "在治理页集中展示推理时延与重试热力、分歧收敛曲线、路由因果瀑布。",
+                         "verify":  [
+                                        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts src/components/GovernanceDashboard.test.ts",
+                                        "npm run typecheck --workspace=@copilot-care/frontend"
+                                    ],
+                         "evidence":  [
+                                          "src/frontend/src/views/GovernanceView.vue",
+                                          "src/frontend/src/components/GovernanceDashboard.vue"
+                                      ]
+                     },
+                     {
+                         "id":  "G35",
+                         "title":  "可观测性与故障演练面板",
+                         "state":  "ready",
+                         "goal":  "按第4.8节加入 SLO 指标、告警阈值与演练记录四段式（触发-动作-恢复-残余）。",
+                         "verify":  [
+                                        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts",
+                                        "npm run perf:check --workspace=@copilot-care/frontend"
+                                    ],
+                         "evidence":  [
+                                          "src/frontend/src/components/GovernanceDashboard.vue"
+                                      ]
+                     },
+                     {
+                         "id":  "G36",
+                         "title":  "ERR_* 异常降级路径总览",
+                         "state":  "ready",
+                         "goal":  "新增错误码路径时间线（ERR_MISSING_REQUIRED_DATA 到 ERR_ADVERSARIAL_PROMPT_DETECTED）。",
+                         "verify":  [
+                                        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts",
+                                        "npm run check:copy --workspace=@copilot-care/frontend"
+                                    ],
+                         "evidence":  [
+                                          "src/frontend/src/components/GovernanceDashboard.vue",
+                                          "src/backend/src/llm/http.ts"
+                                      ]
+                     },
+                     {
+                         "id":  "G37",
+                         "title":  "A-F 与 T-007~T-012 证据墙",
+                         "state":  "ready",
+                         "goal":  "把第7章场景与增强用例可视化为证据墙，支持点击查看输入条件、触发机制、输出动作。",
+                         "verify":  [
+                                        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts src/views/ConsultationView.integration.test.ts"
+                                    ],
+                         "evidence":  [
+                                          "src/frontend/src/views/GovernanceView.vue",
+                                          "docs/process/plan-extracts/CoPilot_Care_Plan_v4_30.extracted.txt"
+                                      ]
+                     },
+                     {
+                         "id":  "G38",
+                         "title":  "答辩模式与可访问性收敛",
+                         "state":  "ready",
+                         "goal":  "新增 3 分钟答辩模式切换，完成图表 aria、键盘可达与高对比度验证。",
+                         "verify":  [
+                                        "npm run test --workspace=@copilot-care/frontend",
+                                        "npm run build --workspace=@copilot-care/frontend",
+                                        "npm run perf:check --workspace=@copilot-care/frontend"
+                                    ],
+                         "evidence":  [
+                                          "src/frontend/src/components/GovernanceDashboard.vue",
+                                          "src/frontend/src/views/GovernanceView.vue"
+                                      ]
+                     }
+                 ],
+    "daily-loop":  [
+                       "npm run governance:deep:workflow",
+                       "执行单项任务",
+                       "npm run typecheck --workspace=@copilot-care/frontend",
+                       "npm run test --workspace=@copilot-care/frontend",
+                       "npm run build --workspace=@copilot-care/frontend",
+                       "npm run check:copy --workspace=@copilot-care/frontend",
+                       "npm run governance:deep:accept",
+                       "记录证据到 reports/todos/workflow-state.json"
+                   ]
+}

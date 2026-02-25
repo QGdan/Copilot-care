@@ -5,6 +5,7 @@ import type {
   ConsultationInputForm,
   ConsultationQuickInput,
 } from '../../composables/useConsultationInputForm';
+import type { RiskSignal } from '../../types/visualization';
 
 interface ChatMessage {
   role: 'user' | 'system';
@@ -24,6 +25,7 @@ interface ConsultationInputPanelProps {
   loadingSeconds: number;
   currentStageLabel: string;
   progressPercent: number;
+  riskSignal: RiskSignal;
   demoModeEnabled: boolean;
   isFieldRequired: (field: string) => boolean;
   formatRequiredField: (field: string) => string;
@@ -145,6 +147,18 @@ const emit = defineEmits<{
       </div>
 
       <div class="actions">
+        <div class="risk-banner" :class="`risk-${riskSignal}`">
+          <strong>风险信号</strong>
+          <span>
+            {{
+              riskSignal === 'critical'
+                ? '高风险：建议优先关注红旗症状与线下上转条件'
+                : riskSignal === 'warning'
+                  ? '中风险：建议补全关键信息后继续会诊'
+                  : '正常：可按标准路径发起会诊'
+            }}
+          </span>
+        </div>
         <button :disabled="loading" @click="emit('submit-consultation')">
           {{ loading ? '会诊进行中...' : '提交会诊' }}
         </button>
@@ -314,6 +328,41 @@ const emit = defineEmits<{
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.risk-banner {
+  display: grid;
+  gap: 4px;
+  border-radius: 8px;
+  border: 1px solid #c3d4e6;
+  background: #f4f8fd;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #3f5f78;
+}
+
+.risk-banner strong {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: #4e6d86;
+}
+
+.risk-banner.risk-normal {
+  border-color: #b6dbca;
+  background: #edf8f3;
+  color: #2a6449;
+}
+
+.risk-banner.risk-warning {
+  border-color: #e6d2aa;
+  background: #fff7e9;
+  color: #7b5b19;
+}
+
+.risk-banner.risk-critical {
+  border-color: #e8b8af;
+  background: #fff0ec;
+  color: #8b3a29;
 }
 
 .actions button {

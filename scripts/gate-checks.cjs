@@ -36,7 +36,7 @@ const REQUIRED_COMMANDS_IN_GUIDE = [
   'npm run devwf:arch',
   'npm run devwf:full',
   'npm run todos:doctor',
-  'npm run todos:milestone -- <M6|M7|M8|M9|M10|M11|M12> --run',
+  'npm run todos:milestone -- <M6|M7|M8|M9|M10|M11|M12|M13|M14|M15> --run',
 ];
 
 const REQUIRED_TODO_MILESTONES = [
@@ -47,6 +47,9 @@ const REQUIRED_TODO_MILESTONES = [
   'M10',
   'M11',
   'M12',
+  'M13',
+  'M14',
+  'M15',
 ];
 
 const REQUIRED_ARCHITECTURE_FILES = [
@@ -353,8 +356,12 @@ function validateTodoWorkflowManifest() {
     return;
   }
 
-  if (manifest.version !== 'v5.11') {
-    fail(`todo workflow manifest version must be v5.11, got: ${manifest.version}`);
+  const match = /^v5\.(\d+)$/.exec(String(manifest.version || ''));
+  const patchVersion = match ? Number(match[1]) : Number.NaN;
+  if (!match || Number.isNaN(patchVersion) || patchVersion < 11) {
+    fail(
+      `todo workflow manifest version must be v5.11+ compatible, got: ${manifest.version}`,
+    );
   }
 
   if (

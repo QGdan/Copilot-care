@@ -147,17 +147,20 @@ function buildReportHtml(data: ReportData): string {
 <div style="
   width: 750px;
   color: #1f2937;
-  font-family: 'Noto Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-family: 'Noto Sans SC', 'Source Han Sans SC', 'Microsoft YaHei', 'PingFang SC', sans-serif;
   line-height: 1.55;
   font-size: 14px;
   background: #ffffff;
+  padding: 16px;
+  border: 1px solid #d7e3ef;
+  border-radius: 12px;
 ">
-  <div style="border-bottom: 2px solid #1d8d88; padding-bottom: 12px; margin-bottom: 16px;">
+  <div style="border: 1px solid #cfe0ee; border-radius: 10px; padding: 12px; background: linear-gradient(120deg, #eef7ff 0%, #f6fafc 100%); margin-bottom: 14px;">
     <h1 style="margin: 0; font-size: 24px; color: #0f3e4b;">CoPilot Care 会诊报告</h1>
     <p style="margin: 6px 0 0; color: #64748b; font-size: 12px;">生成时间：${escapeHtml(formatDateTime())}</p>
   </div>
 
-  <section style="margin-bottom: 14px;">
+  <section style="margin-bottom: 12px; border: 1px solid #d8e4ef; border-radius: 8px; padding: 10px;">
     <h2 style="margin: 0 0 8px; font-size: 16px; color: #0f3e4b;">患者信息</h2>
     <ul style="margin: 0; padding-left: 20px;">
       ${patientInfo.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}
@@ -166,7 +169,7 @@ function buildReportHtml(data: ReportData): string {
 
   ${
     data.routing
-      ? `<section style="margin-bottom: 14px;">
+      ? `<section style="margin-bottom: 12px; border: 1px solid #d8e4ef; border-radius: 8px; padding: 10px;">
     <h2 style="margin: 0 0 8px; font-size: 16px; color: #0f3e4b;">分诊决策</h2>
     <ul style="margin: 0; padding-left: 20px;">
       <li>分诊科室：${escapeHtml(DEPARTMENT_LABELS[data.routing.department] || data.routing.department)}</li>
@@ -179,7 +182,7 @@ function buildReportHtml(data: ReportData): string {
 
   ${
     data.triageResult
-      ? `<section style="margin-bottom: 14px;">
+      ? `<section style="margin-bottom: 12px; border: 1px solid #d8e4ef; border-radius: 8px; padding: 10px;">
     <h2 style="margin: 0 0 8px; font-size: 16px; color: #0f3e4b;">分诊结果</h2>
     <ul style="margin: 0; padding-left: 20px;">
       <li>风险等级：${escapeHtml(triageLevel)}</li>
@@ -189,19 +192,19 @@ function buildReportHtml(data: ReportData): string {
       : ''
   }
 
-  <section style="margin-bottom: 14px;">
+  <section style="margin-bottom: 12px; border: 1px solid #d8e4ef; border-radius: 8px; padding: 10px;">
     <h2 style="margin: 0 0 8px; font-size: 16px; color: #0f3e4b;">会诊结论</h2>
     <p style="margin: 0;">${escapeHtml(conclusion)}</p>
   </section>
 
-  <section style="margin-bottom: 14px;">
+  <section style="margin-bottom: 12px; border: 1px solid #d8e4ef; border-radius: 8px; padding: 10px;">
     <h2 style="margin: 0 0 8px; font-size: 16px; color: #0f3e4b;">建议措施</h2>
     <ul style="margin: 0; padding-left: 20px;">
       ${renderList(actions)}
     </ul>
   </section>
 
-  <section style="margin-bottom: 14px;">
+  <section style="margin-bottom: 12px; border: 1px solid #d8e4ef; border-radius: 8px; padding: 10px;">
     <h2 style="margin: 0 0 8px; font-size: 16px; color: #0f3e4b;">证据依据</h2>
     <ul style="margin: 0; padding-left: 20px;">
       ${renderList(evidence.slice(0, 10))}
@@ -210,7 +213,7 @@ function buildReportHtml(data: ReportData): string {
 
   ${
     notes.length > 0
-      ? `<section style="margin-bottom: 14px;">
+      ? `<section style="margin-bottom: 12px; border: 1px solid #d8e4ef; border-radius: 8px; padding: 10px;">
     <h2 style="margin: 0 0 8px; font-size: 16px; color: #0f3e4b;">备注</h2>
     <ul style="margin: 0; padding-left: 20px;">${renderList(notes)}</ul>
   </section>`

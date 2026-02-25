@@ -46,7 +46,7 @@ export interface MilestoneProgress {
 export type RiskTriggerType =
   | 'threshold_breach'
   | 'repeated_failure'
-  | 'gate_blocked';
+  | 'constraint_blocked';
 
 export type RiskSeverity = 'low' | 'medium' | 'high' | 'critical';
 

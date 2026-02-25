@@ -1,0 +1,131 @@
+{
+  "version": "v9.10",
+  "name": "governance-neural-visualization",
+  "createdAt": "2026-02-24",
+  "objective": "将治理看板升级为后端执行神经网络可视化中枢，并承接七层工作流闭环治理。",
+  "scope": {
+    "in": [
+      "src/frontend/src/views/GovernanceView.vue",
+      "src/frontend/src/components/GovernanceDashboard.vue",
+      "src/frontend/src/components/ExecutionNeuralTopology.vue",
+      "src/frontend/src/components/WorkflowLayerMatrix.vue",
+      "src/frontend/src/views/ConsultationView.vue"
+    ],
+    "out": [
+      "后端 API 契约变更",
+      "领域规则与分诊业务策略变更"
+    ]
+  },
+  "workflow": [
+    {
+      "id": "G01",
+      "title": "会诊页职责收敛",
+      "state": "done",
+      "goal": "移除会诊页七层工作流模块，保留会诊主链路。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/views/ConsultationView.integration.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/views/ConsultationView.vue"
+      ]
+    },
+    {
+      "id": "G02",
+      "title": "治理看板接入七层治理闭环",
+      "state": "done",
+      "goal": "在治理看板中接入七层工作流，绑定治理信号与队列态势。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/frontend/src/components/WorkflowLayerMatrix.vue"
+      ]
+    },
+    {
+      "id": "G03",
+      "title": "后端执行神经网络拓扑可视化",
+      "state": "done",
+      "goal": "建立输入门禁、风险路由、多 Agent、安全治理、输出归档的拓扑图。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend"
+      ],
+      "evidence": [
+        "src/frontend/src/components/ExecutionNeuralTopology.vue"
+      ]
+    },
+    {
+      "id": "G04",
+      "title": "治理阶段状态映射",
+      "state": "done",
+      "goal": "将 metrics/riskTriggers/reviewQueue 映射为 START-ESCALATION 阶段状态。",
+      "verify": [
+        "npm run typecheck --workspace=@copilot-care/frontend"
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
+    },
+    {
+      "id": "G05",
+      "title": "治理视图叙事升级",
+      "state": "done",
+      "goal": "将治理页文案与布局改为项目架构执行中枢视角。",
+      "verify": [
+        "npm run build --workspace=@copilot-care/frontend"
+      ],
+      "evidence": [
+        "src/frontend/src/views/GovernanceView.vue",
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
+    },
+    {
+      "id": "G06",
+      "title": "自动化质量门禁",
+      "state": "ready",
+      "goal": "固化变更后的自动化验收命令与失败阻断策略。",
+      "verify": [
+        "npm run typecheck --workspace=@copilot-care/frontend",
+        "npm run test --workspace=@copilot-care/frontend",
+        "npm run build --workspace=@copilot-care/frontend",
+        "npm run perf:check --workspace=@copilot-care/frontend"
+      ],
+      "evidence": [
+        "reports/metrics/frontend-build-budget.latest.json"
+      ]
+    },
+    {
+      "id": "G07",
+      "title": "治理看板联调演练",
+      "state": "ready",
+      "goal": "执行 dashboard/queue 双场景走查，确认可视化与复核流程一致。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts",
+        "npm run dev --workspace=@copilot-care/frontend"
+      ],
+      "evidence": [
+        "reports/runtime/frontend-live-5173.out.log"
+      ]
+    },
+    {
+      "id": "G08",
+      "title": "发布前总门禁",
+      "state": "ready",
+      "goal": "执行全量 gate，避免前端结构回退。",
+      "verify": [
+        "npm run gate:all"
+      ],
+      "evidence": [
+        "reports/todos/workflow-state.json"
+      ]
+    }
+  ],
+  "daily-loop": [
+    "enhance:status",
+    "实现单项任务",
+    "npm run typecheck --workspace=@copilot-care/frontend",
+    "npm run test --workspace=@copilot-care/frontend",
+    "npm run build --workspace=@copilot-care/frontend",
+    "记录 evidence 到 reports/todos/workflow-state.json"
+  ]
+}

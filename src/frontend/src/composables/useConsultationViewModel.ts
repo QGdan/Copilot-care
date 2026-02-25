@@ -12,6 +12,11 @@ import {
   formatDepartment,
   formatRouteMode,
 } from '../constants/triageLabels';
+import type {
+  ChartDensity,
+  RiskSignal,
+  SceneLevel,
+} from '../types/visualization';
 
 export type ConsultationUiStatus =
   | 'IDLE'
@@ -19,6 +24,8 @@ export type ConsultationUiStatus =
   | 'ESCALATE_TO_OFFLINE'
   | 'ABSTAIN'
   | 'ERROR';
+export type CoordinatorSourceKind = 'pending' | 'rule' | 'model';
+export type ReasoningIntegrationMode = 'waiting' | 'syncing' | 'rule' | 'model';
 
 interface StageRuntimeState {
   status: TriageStreamStageStatus;
@@ -122,12 +129,22 @@ export function useConsultationViewModel(
     return options.snapshotPhaseLabels[phase] ?? phase;
   });
 
-  const coordinatorSourceText = computed<string>(() => {
+  const coordinatorSourceKind = computed<CoordinatorSourceKind>(() => {
     const source = options.orchestrationSnapshot.value?.source;
     if (!source) {
+      return 'pending';
+    }
+    return source === 'model' ? 'model' : 'rule';
+  });
+
+  const coordinatorSourceText = computed<string>(() => {
+    if (coordinatorSourceKind.value === 'model') {
+      return 'AI动态';
+    }
+    if (coordinatorSourceKind.value === 'rule') {
       return '规则';
     }
-    return source === 'model' ? 'AI动态' : '规则';
+    return '待判定';
   });
 
   const coordinatorActiveTaskHint = computed<string>(() => {
@@ -246,6 +263,108 @@ export function useConsultationViewModel(
     return '等待协同模式确定';
   });
 
+  const reasoningIntegrationMode = computed<ReasoningIntegrationMode>(() => {
+    if (coordinatorSourceKind.value === 'model') {
+      return 'model';
+    }
+    if (coordinatorSourceKind.value === 'rule') {
+      return 'rule';
+    }
+    if (
+      options.routeInfo.value
+      || options.routingPreview.value.routeMode
+      || options.stageRuntime.value.START.status !== 'pending'
+    ) {
+      return 'syncing';
+    }
+    return 'waiting';
+  });
+
+  const reasoningIntegrationText = computed<string>(() => {
+    if (reasoningIntegrationMode.value === 'model') {
+      return 'AI 实时编排已接入，展示动态图谱。';
+    }
+    if (reasoningIntegrationMode.value === 'rule') {
+      return '规则编排运行中，展示本地推理图。';
+    }
+    if (options.routeInfo.value || options.routingPreview.value.routeMode) {
+      return '分流结果已生成，正在同步推理图。';
+    }
+    if (reasoningIntegrationMode.value === 'syncing') {
+      return '会诊已启动，等待图谱事件。';
+    }
+    return '等待会诊启动。';
+  });
+
+  const riskSignal = computed<RiskSignal>(() => {
+    if (isSafetyBlocked.value) {
+      return 'critical';
+    }
+
+    if (
+      options.status.value === 'ESCALATE_TO_OFFLINE'
+      || options.stageRuntime.value.ESCALATION.status === 'done'
+    ) {
+      return 'critical';
+    }
+
+    if (
+      options.status.value === 'ERROR'
+      || options.flowStages.some((stage) => {
+        const status = options.stageRuntime.value[stage].status;
+        return status === 'blocked' || status === 'failed';
+      })
+    ) {
+      return 'warning';
+    }
+
+    const complexity = options.routeInfo.value?.complexityScore
+      ?? options.routingPreview.value.complexityScore;
+    if (typeof complexity === 'number' && complexity >= 6) {
+      return 'warning';
+    }
+
+    if (options.status.value === 'OUTPUT') {
+      return 'normal';
+    }
+
+    return options.stageRuntime.value.START.status === 'pending'
+      ? 'normal'
+      : 'warning';
+  });
+
+  const sceneLevel = computed<SceneLevel>(() => {
+    if (riskSignal.value === 'critical') {
+      return 'critical';
+    }
+
+    if (
+      options.status.value === 'OUTPUT'
+      || options.flowStages.some((stage) => {
+        return options.stageRuntime.value[stage].status === 'running';
+      })
+    ) {
+      return 'active';
+    }
+
+    return 'briefing';
+  });
+
+  const chartDensity = computed<ChartDensity>(() => {
+    const routeMode = options.routeInfo.value?.routeMode
+      ?? options.routingPreview.value.routeMode;
+    if (routeMode === 'DEEP_DEBATE') {
+      return 'compact';
+    }
+
+    const taskCount = options.orchestrationSnapshot.value?.tasks.length ?? 0;
+    if (taskCount >= 7) {
+      return 'compact';
+    }
+
+    return 'comfortable';
+  });
+
   return {
     statusText,
     safetyBlockNote,
@@ -254,6 +373,7 @@ export function useConsultationViewModel(
     coordinatorSummary,
     coordinatorUpdatedAtText,
     coordinatorPhaseText,
+    coordinatorSourceKind,
     coordinatorSourceText,
     coordinatorActiveTaskHint,
     stageLegend,
@@ -262,5 +382,10 @@ export function useConsultationViewModel(
     pathDepartmentText,
     pathRouteModeText,
     pathCollaborationText,
+    riskSignal,
+    sceneLevel,
+    chartDensity,
+    reasoningIntegrationMode,
+    reasoningIntegrationText,
   };
 }

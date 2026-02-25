@@ -1,0 +1,103 @@
+{
+  "version": "v9.20",
+  "name": "governance-console-refine",
+  "createdAt": "2026-02-24",
+  "objective": "收敛会诊页模块职责，将状态机明细集中到治理看板，并完成治理中枢的联动优化。",
+  "scope": {
+    "in": [
+      "src/frontend/src/views/ConsultationView.vue",
+      "src/frontend/src/views/GovernanceView.vue",
+      "src/frontend/src/components/GovernanceDashboard.vue",
+      "docs/process/todos-workflow.v9_20-governance-console.json"
+    ],
+    "out": [
+      "后端 API 契约变更",
+      "分诊领域规则变更",
+      "新增重型前端依赖"
+    ]
+  },
+  "workflow": [
+    {
+      "id": "G21",
+      "title": "会诊页工作流模块收敛",
+      "state": "done",
+      "goal": "删除会诊页“七层工作流”和“工作流状态机（明细）”模块，保留会诊主链路。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/views/ConsultationView.integration.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/views/ConsultationView.vue"
+      ]
+    },
+    {
+      "id": "G22",
+      "title": "治理看板接入状态机明细",
+      "state": "done",
+      "goal": "在治理看板增加状态机明细区，并与阶段回放、队列过滤联动。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
+    },
+    {
+      "id": "G23",
+      "title": "治理中枢叙事优化",
+      "state": "done",
+      "goal": "统一治理页叙事文案与信息层次，突出后端执行神经网络与门禁态势。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/views/GovernanceView.vue"
+      ]
+    },
+    {
+      "id": "G24",
+      "title": "治理看板交互可访问性收敛",
+      "state": "ready",
+      "goal": "为回放控件与状态机交互补键盘操作提示、焦点态和对比度校验。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend",
+        "npm run check:copy --workspace=@copilot-care/frontend"
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
+    },
+    {
+      "id": "G25",
+      "title": "治理与会诊联调回归",
+      "state": "ready",
+      "goal": "执行 dashboard/queue/consultation 主链路联调，确认视图切换与队列过滤一致。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts src/views/ConsultationView.integration.test.ts",
+        "npm run build --workspace=@copilot-care/frontend"
+      ],
+      "evidence": [
+        "reports/runtime/frontend-live-5173.out.log"
+      ]
+    },
+    {
+      "id": "G26",
+      "title": "发布前总门禁",
+      "state": "ready",
+      "goal": "执行全量质量门禁，阻断回退。",
+      "verify": [
+        "npm run gate:all"
+      ],
+      "evidence": [
+        "reports/todos/workflow-state.json"
+      ]
+    }
+  ],
+  "daily-loop": [
+    "npm run workflow:backfill:v920",
+    "实现单项任务",
+    "npm run typecheck --workspace=@copilot-care/frontend",
+    "npm run test --workspace=@copilot-care/frontend",
+    "npm run build --workspace=@copilot-care/frontend",
+    "记录 evidence 到 reports/todos/workflow-state.json"
+  ]
+}

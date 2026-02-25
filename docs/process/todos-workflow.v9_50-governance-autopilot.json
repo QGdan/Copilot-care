@@ -1,0 +1,128 @@
+﻿{
+  "version": "v9.50",
+  "name": "governance-autopilot-optimization",
+  "createdAt": "2026-02-25",
+  "objective": "基于后端执行因子进行持续优化，构建可自动执行、自动验收、自动留痕的治理看板工作流。",
+  "planChapters": [
+    "第4章 总体技术架构",
+    "第5章 核心功能设计",
+    "第6章 接口与运行时",
+    "第7章 测试与评测"
+  ],
+  "workflow": [
+    {
+      "id": "G51",
+      "title": "输出优化雷达图与优先级矩阵",
+      "state": "ready",
+      "goal": "沉淀治理看板下一阶段优化点，明确 P0/P1/P2 排序与量化指标。",
+      "verify": [
+        "node -e \"require('fs').accessSync('docs/process/governance-optimization-map.v9_50.md')\""
+      ],
+      "evidence": [
+        "docs/process/governance-optimization-map.v9_50.md"
+      ]
+    },
+    {
+      "id": "G52",
+      "title": "修复自动验收稳定性（测试重试）",
+      "state": "ready",
+      "dependsOn": [
+        "G51"
+      ],
+      "goal": "降低间歇性测试启动失败对 accept 流程的影响。",
+      "verify": [
+        "node -e \"const fs=require('fs');const s=fs.readFileSync('scripts/governance-workflow.cjs','utf8');if(!s.includes('retry command=')) process.exit(1);\""
+      ],
+      "evidence": [
+        "scripts/governance-workflow.cjs"
+      ]
+    },
+    {
+      "id": "G53",
+      "title": "实现 governance autopilot 执行器",
+      "state": "ready",
+      "dependsOn": [
+        "G52"
+      ],
+      "goal": "支持 sync/status/next/run 全自动状态流转与报告输出。",
+      "verify": [
+        "node scripts/governance-autopilot.cjs status --manifest=docs/process/todos-workflow.v9_50-governance-autopilot.json"
+      ],
+      "evidence": [
+        "scripts/governance-autopilot.cjs"
+      ]
+    },
+    {
+      "id": "G54",
+      "title": "接入 npm 自动化入口",
+      "state": "ready",
+      "dependsOn": [
+        "G53"
+      ],
+      "goal": "统一团队执行命令，降低手工命令分散风险。",
+      "verify": [
+        "npm run governance:auto:status"
+      ],
+      "evidence": [
+        "package.json",
+        "docs/process/governance-autopilot-guide.v9_50.md"
+      ]
+    },
+    {
+      "id": "G55",
+      "title": "治理看板关键测试自动执行",
+      "state": "ready",
+      "dependsOn": [
+        "G54"
+      ],
+      "goal": "对治理核心页面与组件执行自动回归。",
+      "verify": [
+        "npm run typecheck --workspace=@copilot-care/frontend",
+        "node -e \"require('fs').accessSync('src/frontend/src/components/GovernanceDashboard.test.ts');require('fs').accessSync('src/frontend/src/views/GovernanceView.test.ts');\""
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.test.ts",
+        "src/frontend/src/views/GovernanceView.test.ts"
+      ]
+    },
+    {
+      "id": "G56",
+      "title": "前端构建与预算门禁自动收敛",
+      "state": "ready",
+      "dependsOn": [
+        "G55"
+      ],
+      "goal": "保障构建可产出并满足前端包体预算。",
+      "verify": [
+        "npm run typecheck --workspace=@copilot-care/frontend"
+      ],
+      "evidence": [
+        "reports/metrics/frontend-build-budget.latest.json"
+      ]
+    },
+    {
+      "id": "G57",
+      "title": "文案编码与自动化报告归档",
+      "state": "ready",
+      "dependsOn": [
+        "G56"
+      ],
+      "goal": "确保中文文案质量并输出 autopilot 报告用于审效留痕。",
+      "verify": [
+        "npm run check:copy --workspace=@copilot-care/frontend",
+        "node scripts/governance-autopilot.cjs status --manifest=docs/process/todos-workflow.v9_50-governance-autopilot.json"
+      ],
+      "evidence": [
+        "reports/todos/workflow-state.json",
+        "reports/todos/governance-v950-autopilot.latest.json"
+      ]
+    }
+  ],
+  "daily-loop": [
+    "npm run governance:auto:sync",
+    "npm run governance:auto:status",
+    "npm run governance:auto:next",
+    "npm run governance:auto:run -- --retries=2",
+    "npm run governance:auto:status"
+  ]
+}

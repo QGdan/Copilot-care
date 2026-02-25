@@ -1,5 +1,12 @@
 ﻿<script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+  computed,
+  defineAsyncComponent,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from 'vue';
 import type { WorkflowStage } from '@copilot-care/shared/types';
 import {
   useDemoMode,
@@ -23,16 +30,12 @@ import {
   type ConsultationReasoningKind,
   type ConsultationStageRuntimeState,
 } from '../composables/useConsultationCharts';
-import WorkflowStateMachine from '../components/WorkflowStateMachine.vue';
+import type { VisualizationState } from '../types/visualization';
 import ComplexityRoutingTree from '../components/ComplexityRoutingTree.vue';
 import ReasoningTraceTimeline from '../components/ReasoningTraceTimeline.vue';
-import ThinkingGraph from '../components/ThinkingGraph.vue';
 import DemoModePanel from '../components/DemoModePanel.vue';
-import CoordinatorTaskBoard from '../components/CoordinatorTaskBoard.vue';
 import ConsultationResultPanel from '../components/ConsultationResultPanel.vue';
-import NeuralNetworkVisualization from '../components/NeuralNetworkVisualization.vue';
 import ConsultationInputPanel from '../components/consultation/ConsultationInputPanel.vue';
-import ConsultationDecisionPathCard from '../components/consultation/ConsultationDecisionPathCard.vue';
 import ConsultationReasoningCockpitCard from '../components/consultation/ConsultationReasoningCockpitCard.vue';
 import ConsultationExecutionMetricsCard from '../components/consultation/ConsultationExecutionMetricsCard.vue';
 import {
@@ -93,6 +96,9 @@ const REQUIRED_FIELD_LABELS: Record<string, string> =
 const REASONING_KIND_LABELS: Record<ReasoningKind, string> =
   CONSULTATION_REASONING_KIND_LABELS;
 const SNAPSHOT_PHASE_LABELS = CONSULTATION_SNAPSHOT_PHASE_LABELS;
+const ThinkingGraph = defineAsyncComponent(
+  () => import('../components/ThinkingGraph.vue'),
+);
 
 const QUICK_INPUTS: ConsultationQuickInput[] = [
   {
@@ -236,7 +242,6 @@ const messages = ref<ChatMessage[]>([
   },
 ]);
 
-const selectedStageDetail = ref<WorkflowStage | null>(null);
 const patientInsights = ref<string[]>([]);
 const patientId = ref<string>('');
 
@@ -339,14 +344,17 @@ const {
   coordinatorSummary,
   coordinatorUpdatedAtText,
   coordinatorPhaseText,
+  coordinatorSourceKind,
   coordinatorSourceText,
   coordinatorActiveTaskHint,
   stageLegend,
   currentStageInfo,
   progressPercent,
-  pathDepartmentText,
-  pathRouteModeText,
-  pathCollaborationText,
+  riskSignal,
+  sceneLevel,
+  chartDensity,
+  reasoningIntegrationMode,
+  reasoningIntegrationText,
 } = useConsultationViewModel({
   flowStages: FLOW_STAGES,
   coreStages: CORE_STAGES,
@@ -373,6 +381,54 @@ const blockedStageCount = computed<number>(() => {
   return stageLegend.value.filter((item) => {
     return item.status === 'blocked' || item.status === 'failed';
   }).length;
+});
+
+const visualizationState = computed<VisualizationState>(() => {
+  if (riskSignal.value === 'critical') {
+    return 'blocked';
+  }
+  if (loading.value) {
+    return 'running';
+  }
+  if (status.value === 'OUTPUT') {
+    return 'done';
+  }
+  return 'idle';
+});
+
+const riskSignalLabel = computed<string>(() => {
+  if (riskSignal.value === 'critical') {
+    return '高风险';
+  }
+  if (riskSignal.value === 'warning') {
+    return '中风险';
+  }
+  return '常规';
+});
+
+const chartDensityLabel = computed<string>(() => {
+  return chartDensity.value === 'compact' ? '高密度' : '标准密度';
+});
+
+const completedTaskCount = computed<number>(() => {
+  return coordinatorTasks.value.filter((task) => task.status === 'done').length;
+});
+
+const showMissionEmptyState = computed<boolean>(() => {
+  const hasGraphNodes = (orchestrationSnapshot.value?.graph?.nodes?.length ?? 0) > 0;
+  const hasGraphEdges = (orchestrationSnapshot.value?.graph?.edges?.length ?? 0) > 0;
+  const hasTasks = (orchestrationSnapshot.value?.tasks?.length ?? 0) > 0;
+  const hasStream = reasoningItems.value.length > 0 || rounds.value.length > 0;
+  const hasResult = !!routeInfo.value || !!triageResult.value || !!finalConsensus.value;
+  const hasOutput = typedOutput.value.trim().length > 0;
+
+  return !loading.value
+    && !hasGraphNodes
+    && !hasGraphEdges
+    && !hasTasks
+    && !hasStream
+    && !hasResult
+    && !hasOutput;
 });
 
 const {
@@ -455,10 +511,6 @@ function handleInsightsLoaded(insights: string[]): void {
   }
 }
 
-function handleStageClick(stage: WorkflowStage): void {
-  selectedStageDetail.value = stage;
-}
-
 function toggleDemoMode(): void {
   if (demoMode.isDemoMode.value) {
     demoMode.exitDemo();
@@ -504,7 +556,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="layoutRef" class="split-layout">
+  <div
+    ref="layoutRef"
+    class="split-layout"
+    :class="[`scene-${sceneLevel}`, `risk-${riskSignal}`]"
+  >
     <ConsultationInputPanel
       :left-pane-style="leftPaneStyle"
       :loading="loading"
@@ -518,6 +574,7 @@ onBeforeUnmount(() => {
       :loading-seconds="loadingSeconds"
       :current-stage-label="currentStageInfo.label"
       :progress-percent="progressPercent"
+      :risk-signal="riskSignal"
       :demo-mode-enabled="demoMode.isDemoMode.value"
       :is-field-required="isFieldRequired"
       :format-required-field="formatRequiredField"
@@ -534,35 +591,78 @@ onBeforeUnmount(() => {
     </div>
 
     <section class="right-pane">
-      <header class="pane-header">
-        <h2>会诊看板</h2>
-        <p>流程进度、推理轨迹与决策建议实时同步。</p>
+      <header
+        class="mission-hero"
+        :class="[`risk-${riskSignal}`, `state-${visualizationState}`]"
+      >
+        <div class="mission-copy">
+          <p class="mission-kicker">Clinical Mission Control</p>
+          <h2>会诊指挥舱</h2>
+          <p>{{ coordinatorActiveTaskHint }}</p>
+        </div>
+        <div class="mission-tags">
+          <span class="status-chip">{{ currentStageInfo.label }}</span>
+          <span class="status-chip">{{ statusText }}</span>
+          <span class="status-chip">风险：{{ riskSignalLabel }}</span>
+          <span class="status-chip">图表：{{ chartDensityLabel }}</span>
+        </div>
+        <div class="mission-kpis">
+          <article class="kpi-card">
+            <small>流程进度</small>
+            <strong>{{ progressPercent }}%</strong>
+          </article>
+          <article class="kpi-card">
+            <small>任务完成</small>
+            <strong>{{ completedTaskCount }}/{{ coordinatorTasks.length }}</strong>
+          </article>
+          <article class="kpi-card">
+            <small>审校阻断</small>
+            <strong>{{ blockedStageCount }}</strong>
+          </article>
+          <article class="kpi-card">
+            <small>推理来源</small>
+            <strong>{{ coordinatorSourceText }}</strong>
+          </article>
+        </div>
       </header>
 
-      <CoordinatorTaskBoard
-        :phase-text="coordinatorPhaseText"
-        :source-text="coordinatorSourceText"
-        :updated-at-text="coordinatorUpdatedAtText"
-        :summary="coordinatorSummary"
-        :active-task-hint="coordinatorActiveTaskHint"
-        :tasks="coordinatorTasks"
-      />
+      <section v-if="showMissionEmptyState" class="panel-card mission-empty-state">
+        <div class="mission-empty-head">
+          <h3>等待会诊启动</h3>
+          <span class="status-chip">右侧将实时联动</span>
+        </div>
+        <p class="mission-empty-desc">
+          完成左侧输入后，这里会自动生成多 Agent 推理网络、复杂度路由树与执行指标。
+        </p>
+        <div class="mission-empty-checklist">
+          <span>1. 录入核心症状</span>
+          <span>2. 选填年龄与生命体征</span>
+          <span>3. 提交会诊并观察推理轨迹</span>
+        </div>
+        <div class="mission-empty-actions">
+          <button class="ghost-btn" type="button" @click="applyQuickInput(QUICK_INPUTS[0])">
+            填入示例病例
+          </button>
+          <small>当前状态：{{ microStatus }}</small>
+        </div>
+      </section>
 
-      <!-- 秘塔式动态生长思维导图 -->
+      <!-- 多Agent任务-推理一体化导图 -->
       <ThinkingGraph
         :nodes="orchestrationSnapshot?.graph?.nodes || []"
         :edges="orchestrationSnapshot?.graph?.edges || []"
         :tasks="orchestrationSnapshot?.tasks || []"
+        :phase-text="coordinatorPhaseText"
+        :source-text="coordinatorSourceText"
+        :source-kind="coordinatorSourceKind"
+        :updated-at-text="coordinatorUpdatedAtText"
+        :summary="coordinatorSummary"
+        :active-task-hint="coordinatorActiveTaskHint"
+        :integration-text="reasoningIntegrationText"
+        :integration-mode="reasoningIntegrationMode"
         :is-running="loading"
-      />
-
-      <ConsultationDecisionPathCard
-        :status-text="statusText"
-        :routing-active="stageRuntime.ROUTING.status !== 'pending'"
-        :collaboration-active="stageRuntime.DEBATE.status !== 'pending' || stageRuntime.ESCALATION.status !== 'pending'"
-        :path-department-text="pathDepartmentText"
-        :path-route-mode-text="pathRouteModeText"
-        :path-collaboration-text="pathCollaborationText"
+        :state="visualizationState"
+        :density="chartDensity"
       />
 
       <ConsultationReasoningCockpitCard
@@ -572,19 +672,10 @@ onBeforeUnmount(() => {
         :simulation-presets="simulationPresets"
         :selected-simulation-id="selectedSimulationId"
         :simulation-insight="simulationInsight"
+        :state="visualizationState"
+        :density="chartDensity"
         @toggle-simulation="toggleSimulation"
       />
-
-      <!-- 神经网络可视化：多Agent协同 -->
-      <div class="panel-card neural-network-card">
-        <NeuralNetworkVisualization
-          :rounds="rounds"
-          :current-round="rounds.length"
-          :is-running="loading"
-          :has-red-flag="status === 'ESCALATE_TO_OFFLINE'"
-          :final-consensus="finalConsensus ? '已达成' : undefined"
-        />
-      </div>
 
       <div class="panel-card">
         <div class="panel-head-row">
@@ -597,7 +688,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
         <div ref="reasoningMapRef" class="reasoning-map-chart" />
-        <p class="map-caption">实时映射：优先渲染 AI 动态流程图，缺省回退本地推理图（支持点击节点查看详情）</p>
+        <p class="map-caption">{{ reasoningIntegrationText }}</p>
         <div v-if="selectedReasoningNode" class="map-detail-card">
           <h4>{{ selectedReasoningNode.title }}</h4>
           <p class="map-detail-summary">{{ selectedReasoningNode.summary }}</p>
@@ -608,42 +699,27 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <div class="panel-card">
-        <div class="panel-head-row">
-          <h3>工作流状态机</h3>
-          <span class="status-chip">{{ currentStageInfo.label }}</span>
+      <div class="two-col-grid metrics-grid">
+        <div class="panel-card">
+          <ComplexityRoutingTree
+            :routing="routeInfo ?? routingPreview"
+            :has-red-flag="status === 'ESCALATE_TO_OFFLINE'"
+            :current-stage="currentStageInfo.stage"
+            :state="visualizationState"
+            :density="chartDensity"
+          />
         </div>
-        <WorkflowStateMachine
-          :stage-runtime="stageRuntime"
-          :current-stage="currentStageInfo.stage"
-          :has-red-flag="status === 'ESCALATE_TO_OFFLINE'"
-          :has-escalation="stageRuntime.ESCALATION.status !== 'pending'"
-          @stage-click="handleStageClick"
-        />
-        <div v-if="selectedStageDetail" class="stage-detail-card">
-          <h4>{{ STAGE_LABELS[selectedStageDetail] }}</h4>
-          <p>状态：{{ stageRuntime[selectedStageDetail].status }}</p>
-          <p>{{ stageRuntime[selectedStageDetail].message }}</p>
-        </div>
-      </div>
 
-      <div class="panel-card">
-        <ComplexityRoutingTree
-          :routing="routeInfo ?? routingPreview"
-          :has-red-flag="status === 'ESCALATE_TO_OFFLINE'"
-          :current-stage="currentStageInfo.stage"
+        <ConsultationExecutionMetricsCard
+          :current-stage-label="currentStageInfo.label"
+          :progress-percent="progressPercent"
+          :done-stage-count="doneStageCount"
+          :running-stage-count="runningStageCount"
+          :blocked-stage-count="blockedStageCount"
+          :stage-legend="stageLegend"
+          :format-stage-duration="formatStageDuration"
         />
       </div>
-
-      <ConsultationExecutionMetricsCard
-        :current-stage-label="currentStageInfo.label"
-        :progress-percent="progressPercent"
-        :done-stage-count="doneStageCount"
-        :running-stage-count="runningStageCount"
-        :blocked-stage-count="blockedStageCount"
-        :stage-legend="stageLegend"
-        :format-stage-duration="formatStageDuration"
-      />
 
       <div class="panel-card">
         <ReasoningTraceTimeline
@@ -711,34 +787,201 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .split-layout {
-  --ink: #132436;
-  --muted: #51667c;
-  --line: #cad6e2;
-  --surface-left: #f8f4ea;
-  --surface-right: #eff4f9;
-  --card: #ffffff;
-  --accent: #1f7b80;
-  --danger: #c3472a;
+  --ink: var(--cc-text-strong);
+  --muted: var(--cc-text-muted);
+  --line: var(--cc-border-body);
+  --surface-left: color-mix(in srgb, var(--cc-surface-1) 92%, #f6ead6);
+  --surface-right: color-mix(in srgb, var(--cc-surface-1) 88%, #edf5fd);
+  --card: var(--cc-surface-1);
+  --accent: var(--cc-accent-teal-500);
+  --danger: var(--cc-danger-500);
   height: 100vh;
   display: flex;
   color: var(--ink);
+  background: var(--cc-scene-consultation);
+  font-family: var(--font-sans);
+}
+
+.split-layout.scene-briefing {
+  background: var(--cc-scene-consultation);
+}
+
+.split-layout.scene-active {
   background:
-    radial-gradient(circle at 0% 0%, #fff5d8 0%, transparent 45%),
-    radial-gradient(circle at 100% 100%, #dcecf1 0%, transparent 40%),
-    linear-gradient(140deg, #f4f6f9 0%, #edf3f7 100%);
-  font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+    radial-gradient(circle at 100% 0%, rgba(45, 122, 166, 0.22), transparent 40%),
+    var(--cc-scene-consultation);
+}
+
+.split-layout.scene-critical {
+  background:
+    radial-gradient(circle at 96% 2%, rgba(193, 74, 53, 0.22), transparent 42%),
+    var(--cc-scene-consultation);
 }
 
 .right-pane {
   height: 100%;
   overflow-y: auto;
-  padding: 18px;
+  padding: 16px;
   box-sizing: border-box;
+  flex: 1;
+  background:
+    radial-gradient(circle at 100% -4%, rgba(32, 114, 161, 0.22), transparent 42%),
+    linear-gradient(180deg, var(--surface-right) 0%, color-mix(in srgb, #f9fcff 90%, var(--surface-right)) 100%);
 }
 
-.right-pane {
-  flex: 1;
-  background: linear-gradient(180deg, var(--surface-right) 0%, #f9fcff 100%);
+.mission-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  padding: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(58, 140, 186, 0.2), transparent 42%),
+    radial-gradient(circle at 0% 100%, rgba(51, 163, 148, 0.17), transparent 46%),
+    color-mix(in srgb, var(--card) 93%, transparent);
+  box-shadow: 0 12px 26px rgba(14, 56, 93, 0.1);
+}
+
+.mission-hero::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--cc-accent-teal-500) 42%, transparent) 0%,
+    color-mix(in srgb, var(--cc-accent-cyan-500) 62%, transparent) 50%,
+    color-mix(in srgb, var(--cc-accent-amber-500) 55%, transparent) 100%
+  );
+}
+
+.mission-kicker {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--muted) 86%, transparent);
+}
+
+.mission-copy h2 {
+  margin: 4px 0 6px;
+  font-size: 25px;
+  letter-spacing: 0.01em;
+}
+
+.mission-copy p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.mission-tags {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mission-kpis {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.kpi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  border-radius: 10px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+
+.kpi-card small {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.kpi-card strong {
+  font-size: 17px;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.mission-hero.state-running {
+  border-color: color-mix(in srgb, var(--cc-accent-cyan-500) 46%, var(--line));
+}
+
+.mission-hero.state-done {
+  border-color: color-mix(in srgb, var(--cc-success-500) 52%, var(--line));
+}
+
+.mission-hero.state-blocked,
+.mission-hero.risk-critical {
+  border-color: color-mix(in srgb, var(--cc-danger-500) 56%, var(--line));
+}
+
+.mission-empty-state {
+  border-style: dashed;
+  background:
+    linear-gradient(150deg, rgba(236, 245, 254, 0.78), rgba(241, 250, 247, 0.76)),
+    var(--card);
+}
+
+.mission-empty-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.mission-empty-head h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #214a67;
+}
+
+.mission-empty-desc {
+  margin: 8px 0 0;
+  color: #446681;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mission-empty-checklist {
+  margin-top: 10px;
+  display: grid;
+  gap: 6px;
+  color: #2f5878;
+  font-size: 12px;
+}
+
+.mission-empty-actions {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mission-empty-actions small {
+  color: #557691;
+  font-size: 12px;
+}
+
+.two-col-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.metrics-grid {
+  margin-bottom: 12px;
 }
 
 .splitter {
@@ -770,11 +1013,11 @@ onBeforeUnmount(() => {
 
 .panel-card {
   background: var(--card);
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
   border-radius: 12px;
   padding: 14px;
   margin-bottom: 12px;
-  box-shadow: 0 6px 18px rgba(17, 44, 72, 0.06);
+  box-shadow: 0 8px 20px rgba(17, 44, 72, 0.08);
 }
 
 .panel-head-row {
@@ -792,9 +1035,9 @@ onBeforeUnmount(() => {
 
 .status-chip {
   font-size: 12px;
-  color: #0f5e65;
-  background: #e8f7f7;
-  border: 1px solid #a8d8dc;
+  color: color-mix(in srgb, var(--cc-accent-teal-600) 88%, #1f4157);
+  background: color-mix(in srgb, var(--cc-accent-teal-500) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--cc-accent-teal-500) 28%, var(--line));
   border-radius: 999px;
   padding: 2px 10px;
 }
@@ -866,85 +1109,6 @@ onBeforeUnmount(() => {
   color: #32506a;
 }
 
-.stage-legend {
-  margin-top: 10px;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-  gap: 8px;
-}
-
-.stage-item {
-  border: 1px solid #d2dde8;
-  border-radius: 8px;
-  padding: 8px;
-  background: #f8fbfe;
-}
-
-.stage-item.running {
-  border-color: #0e8d8f;
-  background: #eaf6f6;
-}
-
-.stage-item.done {
-  border-color: #2e9156;
-  background: #edf9f1;
-}
-
-.stage-item.failed {
-  border-color: #c3472a;
-  background: #fff1ed;
-}
-
-.stage-item.skipped {
-  border-color: #bf8c1f;
-  background: #fff7e5;
-}
-
-.stage-item p {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.stage-item small {
-  margin-top: 6px;
-  display: block;
-  color: #698198;
-  font-size: 11px;
-}
-
-.stage-item-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-
-.stage-item-head span {
-  font-size: 11px;
-  color: #62809d;
-}
-
-.stage-detail-card {
-  margin-top: 12px;
-  border: 1px solid #0e8d8f;
-  border-radius: 8px;
-  background: #eaf6f6;
-  padding: 12px;
-}
-
-.stage-detail-card h4 {
-  margin: 0 0 8px;
-  font-size: 14px;
-  color: #0e8d8f;
-}
-
-.stage-detail-card p {
-  margin: 4px 0;
-  font-size: 13px;
-  color: #385a75;
-}
-
 .status-line {
   margin: 0 0 8px;
   color: var(--muted);
@@ -1004,6 +1168,14 @@ onBeforeUnmount(() => {
     min-height: 100vh;
   }
 
+  .mission-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .two-col-grid {
+    grid-template-columns: 1fr;
+  }
+
   .panel-head-row {
     align-items: flex-start;
   }
@@ -1031,17 +1203,20 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 神经网络可视化卡片样式 */
-.neural-network-card {
-  padding: 0;
-  overflow: hidden;
-  border: none;
-  background: transparent;
+@media (max-width: 760px) {
+  .mission-copy h2 {
+    font-size: 21px;
+  }
+
+  .mission-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .right-pane {
+    padding: 12px;
+  }
 }
 
-.neural-network-card :deep(.neural-network-container) {
-  border-radius: 12px;
-}
 </style>
 
 

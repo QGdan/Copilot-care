@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 const fs = require('fs');
 const path = require('path');
 
@@ -83,7 +81,7 @@ function main() {
   for (const finding of findings) {
     for (const match of finding.matches) {
       console.error(
-        `- ${finding.file}:${match.line} token="${match.token}" ${match.preview}`,
+        `- ${finding.file}:${match.line} token=\"${match.token}\" ${match.preview}`,
       );
     }
   }

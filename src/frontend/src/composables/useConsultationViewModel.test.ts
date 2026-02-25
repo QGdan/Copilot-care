@@ -136,12 +136,16 @@ describe('useConsultationViewModel', () => {
 
     expect(state.model.statusText.value).toBe('待会诊');
     expect(state.model.isSafetyBlocked.value).toBe(false);
+    expect(state.model.riskSignal.value).toBe('normal');
+    expect(state.model.sceneLevel.value).toBe('briefing');
 
     state.status.value = 'ESCALATE_TO_OFFLINE';
     state.resultNotes.value = ['安全审校触发：阻断线上建议'];
 
     expect(state.model.safetyBlockNote.value).toContain('阻断');
     expect(state.model.isSafetyBlocked.value).toBe(true);
+    expect(state.model.riskSignal.value).toBe('critical');
+    expect(state.model.sceneLevel.value).toBe('critical');
   });
 
   it('sorts coordinator tasks and resolves active task hint', () => {
@@ -185,6 +189,7 @@ describe('useConsultationViewModel', () => {
 
     expect(state.model.coordinatorTasks.value[0]?.taskId).toBe('run-1');
     expect(state.model.coordinatorPhaseText.value).toBe('协同执行');
+    expect(state.model.coordinatorSourceKind.value).toBe('model');
     expect(state.model.coordinatorSourceText.value).toBe('AI动态');
     expect(state.model.coordinatorActiveTaskHint.value).toContain('计划Agent');
     expect(state.model.coordinatorActiveTaskHint.value).toContain('复核风险边界');
@@ -208,9 +213,48 @@ describe('useConsultationViewModel', () => {
     expect(state.model.pathRouteModeText.value).toContain('深度辩论');
     expect(state.model.pathRouteModeText.value).toContain('6.2');
     expect(state.model.pathCollaborationText.value).toContain('多学科');
+    expect(state.model.chartDensity.value).toBe('compact');
+    expect(state.model.riskSignal.value).toBe('warning');
 
     expect(state.model.currentStageInfo.value.stage).toBe('INFO_GATHER');
     expect(state.model.currentStageInfo.value.status).toBe('running');
     expect(state.model.progressPercent.value).toBe(25);
+  });
+
+  it('computes reasoning integration text from runtime source', () => {
+    const state = createViewModelState();
+
+    expect(state.model.coordinatorSourceText.value).toBe('待判定');
+    expect(state.model.reasoningIntegrationMode.value).toBe('waiting');
+    expect(state.model.reasoningIntegrationText.value).toBe('等待会诊启动。');
+    expect(state.model.sceneLevel.value).toBe('briefing');
+
+    state.stageRuntime.value.START.status = 'running';
+    expect(state.model.reasoningIntegrationMode.value).toBe('syncing');
+    expect(state.model.reasoningIntegrationText.value).toBe('会诊已启动，等待图谱事件。');
+    expect(state.model.sceneLevel.value).toBe('active');
+
+    state.routingPreview.value.routeMode = 'LIGHT_DEBATE';
+    expect(state.model.reasoningIntegrationMode.value).toBe('syncing');
+    expect(state.model.reasoningIntegrationText.value).toBe('分流结果已生成，正在同步推理图。');
+    expect(state.model.chartDensity.value).toBe('comfortable');
+
+    state.orchestrationSnapshot.value = {
+      coordinator: '总Agent',
+      phase: 'analysis',
+      summary: '分析中',
+      tasks: [],
+      graph: { nodes: [], edges: [] },
+      generatedAt: '2026-02-23T08:00:00.000Z',
+      source: 'rule',
+    };
+    expect(state.model.coordinatorSourceKind.value).toBe('rule');
+    expect(state.model.reasoningIntegrationMode.value).toBe('rule');
+    expect(state.model.reasoningIntegrationText.value).toBe('规则编排运行中，展示本地推理图。');
+
+    state.orchestrationSnapshot.value.source = 'model';
+    expect(state.model.coordinatorSourceKind.value).toBe('model');
+    expect(state.model.reasoningIntegrationMode.value).toBe('model');
+    expect(state.model.reasoningIntegrationText.value).toBe('AI 实时编排已接入，展示动态图谱。');
   });
 });

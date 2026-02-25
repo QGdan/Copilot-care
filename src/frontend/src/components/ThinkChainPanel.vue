@@ -41,10 +41,11 @@ const PROVIDER_COLORS: Record<string, string> = {
 };
 
 const thinkSteps = computed<ThinkStep[]>(() => {
-  if (!props.snapshot?.tasks) return [];
+  const snapshot = props.snapshot;
+  if (!snapshot?.tasks) return [];
 
   const steps: ThinkStep[] = [];
-  const tasks = props.snapshot.tasks;
+  const tasks = snapshot.tasks;
 
   const coordinatorTask = tasks.find(t => t.roleId === 'chief_coordinator');
   if (coordinatorTask) {
@@ -55,7 +56,7 @@ const thinkSteps = computed<ThinkStep[]>(() => {
       description: coordinatorTask.latestUpdate || '总Agent正在分析患者需求',
       status: coordinatorTask.status,
       progress: coordinatorTask.progress,
-      timestamp: props.snapshot.generatedAt,
+      timestamp: snapshot.generatedAt,
     });
   }
 
@@ -69,7 +70,7 @@ const thinkSteps = computed<ThinkStep[]>(() => {
         description: `拆解为 ${parentTask.subTasks?.length || 0} 个子任务`,
         status: parentTask.status,
         progress: parentTask.progress,
-        timestamp: props.snapshot.generatedAt,
+        timestamp: snapshot.generatedAt,
         subSteps: parentTask.subTasks?.map((sub, idx) => ({
           stepId: `sub_${idx}`,
           kind: 'agent_dispatch' as const,
@@ -79,7 +80,7 @@ const thinkSteps = computed<ThinkStep[]>(() => {
           provider: sub.provider,
           status: sub.status,
           progress: sub.progress,
-          timestamp: props.snapshot.generatedAt,
+          timestamp: snapshot.generatedAt,
         })),
       });
     }
@@ -103,7 +104,7 @@ const thinkSteps = computed<ThinkStep[]>(() => {
         description: `执行中: ${runningTasks.length}, 已完成: ${doneTasks.length}`,
         status: runningTasks.length > 0 ? 'running' : 'done',
         progress: Math.round(doneTasks.length / executionTasks.length * 100),
-        timestamp: props.snapshot.generatedAt,
+        timestamp: snapshot.generatedAt,
         subSteps: executionTasks.map(task => ({
           stepId: task.taskId,
           kind: 'agent_dispatch' as const,
@@ -113,7 +114,7 @@ const thinkSteps = computed<ThinkStep[]>(() => {
           provider: task.provider,
           status: task.status,
           progress: task.progress,
-          timestamp: props.snapshot.generatedAt,
+          timestamp: snapshot.generatedAt,
         })),
       });
     }
@@ -128,19 +129,19 @@ const thinkSteps = computed<ThinkStep[]>(() => {
       description: outputTask.latestUpdate || '汇总各Agent意见',
       status: outputTask.status,
       progress: outputTask.progress,
-      timestamp: props.snapshot.generatedAt,
+      timestamp: snapshot.generatedAt,
     });
   }
 
-  if (props.snapshot.summary) {
+  if (snapshot.summary) {
     steps.push({
       stepId: 'step_synthesize',
       kind: 'decision_synthesis',
       title: '决策合成',
-      description: props.snapshot.summary,
+      description: snapshot.summary,
       status: 'done',
       progress: 100,
-      timestamp: props.snapshot.generatedAt,
+      timestamp: snapshot.generatedAt,
     });
   }
 

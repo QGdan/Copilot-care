@@ -51,6 +51,7 @@ npm run gate:metrics
 npm run gate:release
 npm run security:baseline
 npm run security:secrets
+npm run security:gate
 ```
 
 Use `npm run gate:all` to run them in sequence.
@@ -58,11 +59,20 @@ Use `npm run gate:release` for release readiness
 (`typecheck -> test -> workspace build -> gate:all`).
 Run `npm run security:baseline` before milestone closeout or release review.
 Run `npm run security:secrets` before push/release to catch accidental key leakage.
+Run `npm run security:gate` to enforce vulnerability thresholds on production dependencies (`--omit-dev`; default strict: high/critical must be zero).
 `gate:workflow` now also checks four-expert runtime wiring and provider env-key mapping.
 `gate:metrics` generates and enforces M3 threshold report.
 `gate:scenarios` now also generates the M5 batch replay report (`>=120` samples).
 `gate:metrics` also generates target-vs-actual metric ledger records.
 Metrics failure output prints a `breached indicators` list for direct reviewer blocking.
+
+CI-equivalent local commands:
+
+```bash
+npm run ci:preflight
+npm run ci:verify
+npm run ci:nightly
+```
 
 ## 5. Architecture-First Workflow
 
@@ -190,6 +200,40 @@ npm run competition:gate
 | Week 4 | 最终打磨 | `npm run competition:week4` |
 
 Manifest source: `docs/process/todos-workflow.v6_00.json`
+
+## 5.3 医疗指挥舱前端冲刺工作流 (v8.00)
+
+> 适用于会诊主战场高端化与答辩演示收敛（2 周首版）
+
+### 快速开始
+
+```bash
+# 切换到 v8 工作流
+npm run design:use
+
+# 查看状态与下一任务
+npm run design:status
+npm run design:next
+```
+
+### 里程碑命令
+
+```bash
+# Week 1: H01-H06（设计系统 + 会诊主战场）
+npm run design:week1
+
+# Week 2: H07-H12（全站统一 + 答辩就绪）
+npm run design:week2
+```
+
+### 冲刺门禁
+
+```bash
+# 前端高端化门禁（test + typecheck + build + perf + copy）
+npm run design:gate
+```
+
+Manifest source: `docs/process/todos-workflow.v8_00.json`
 
 ## 6. Test Command
 

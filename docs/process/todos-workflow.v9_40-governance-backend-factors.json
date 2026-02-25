@@ -1,0 +1,117 @@
+﻿{
+  "version": "v9.40",
+  "name": "governance-backend-factors-optimization",
+  "createdAt": "2026-02-24",
+  "objective": "移除治理看板中无关模块，升级为后端执行因子驱动的高级可视化，包括分歧收敛、复杂度路由、审计溯源与编排依赖图。",
+  "planChapters": [
+    "第4章 总体技术架构（状态机、神经网络执行链路、前后端协同）",
+    "第5章 核心功能设计（多Agent协同与复核门禁）",
+    "第6章 接口与运行时（审计、降级、可追溯链路）",
+    "第7章 测试与评测（演示链路与异常场景验证）"
+  ],
+  "workflow": [
+    {
+      "id": "G41",
+      "title": "治理看板模块重构：移除无关板块并替换为后端因子面板",
+      "state": "ready",
+      "goal": "删除可观测性与ERR总览，新增后端因子主线并保持原有主流程可用。",
+      "verify": [
+        "npm run typecheck --workspace=@copilot-care/frontend",
+        "npm run test --workspace=@copilot-care/frontend -- src/components/GovernanceDashboard.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/frontend/src/components/GovernanceDashboard.test.ts"
+      ]
+    },
+    {
+      "id": "G42",
+      "title": "多Agent分歧收敛矩阵与编排依赖图",
+      "state": "ready",
+      "dependsOn": [
+        "G41"
+      ],
+      "goal": "展示Agent立场、置信度、证据引用、延迟与编排任务依赖状态。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/components/GovernanceDashboard.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
+    },
+    {
+      "id": "G43",
+      "title": "复杂度路由因果树与策略输出",
+      "state": "ready",
+      "dependsOn": [
+        "G41"
+      ],
+      "goal": "将路由复杂度拆解为可解释因子并输出策略决策。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/components/GovernanceDashboard.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
+    },
+    {
+      "id": "G44",
+      "title": "后端执行审计溯源流",
+      "state": "ready",
+      "dependsOn": [
+        "G41"
+      ],
+      "goal": "按阶段展示执行事件、来源、时间戳、校验摘要与完整度。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/components/GovernanceDashboard.test.ts src/views/GovernanceView.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/frontend/src/views/GovernanceView.vue"
+      ]
+    },
+    {
+      "id": "G45",
+      "title": "治理页文案与入口统一",
+      "state": "ready",
+      "dependsOn": [
+        "G42",
+        "G43",
+        "G44"
+      ],
+      "goal": "同步治理页英雄区文案与升级提示，突出后端因子化能力。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts"
+      ],
+      "evidence": [
+        "src/frontend/src/views/GovernanceView.vue"
+      ]
+    },
+    {
+      "id": "G46",
+      "title": "v9.40 验收与工作流状态固化",
+      "state": "ready",
+      "dependsOn": [
+        "G45"
+      ],
+      "goal": "完成 typecheck/test/build/check:copy 与自动化验收报告输出。",
+      "verify": [
+        "node scripts/governance-workflow.cjs accept --manifest=docs/process/todos-workflow.v9_40-governance-backend-factors.json --report=reports/todos/governance-v940-acceptance.latest.json"
+      ],
+      "evidence": [
+        "reports/todos/workflow-state.json",
+        "reports/todos/governance-v940-acceptance.latest.json"
+      ]
+    }
+  ],
+  "daily-loop": [
+    "node scripts/governance-workflow.cjs sync --manifest=docs/process/todos-workflow.v9_40-governance-backend-factors.json",
+    "node scripts/governance-workflow.cjs status --manifest=docs/process/todos-workflow.v9_40-governance-backend-factors.json",
+    "执行单项任务并提交证据",
+    "npm run typecheck --workspace=@copilot-care/frontend",
+    "npm run test --workspace=@copilot-care/frontend -- src/components/GovernanceDashboard.test.ts src/views/GovernanceView.test.ts",
+    "npm run build --workspace=@copilot-care/frontend",
+    "npm run check:copy --workspace=@copilot-care/frontend",
+    "node scripts/governance-workflow.cjs accept --manifest=docs/process/todos-workflow.v9_40-governance-backend-factors.json --report=reports/todos/governance-v940-acceptance.latest.json"
+  ]
+}

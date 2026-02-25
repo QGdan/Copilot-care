@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-02-24T18:14:52.453Z",
+  "manifestPath": "docs\\process\\todos-workflow.v9_40-governance-backend-factors.json",
+  "progress": {
+    "done": 5,
+    "total": 6,
+    "percent": 83
+  },
+  "acceptance": {
+    "passed": false,
+    "checks": [
+      {
+        "command": "npm run typecheck --workspace=@copilot-care/frontend",
+        "status": 0,
+        "durationMs": 3559,
+        "success": true,
+        "error": null
+      },
+      {
+        "command": "npm run test --workspace=@copilot-care/frontend -- src/components/GovernanceDashboard.test.ts src/views/GovernanceView.test.ts src/components/WorkflowStateMachine.test.ts src/components/WorkflowLayerMatrix.test.ts",
+        "status": 1,
+        "durationMs": 724,
+        "success": false,
+        "error": null
+      }
+    ]
+  }
+}

@@ -5,6 +5,10 @@ import type {
   CockpitEvidenceDigest,
   CockpitSimulationPreset,
 } from '../../composables/useDecisionReasoningCockpit';
+import type {
+  ChartDensity,
+  VisualizationState,
+} from '../../types/visualization';
 
 interface ConsultationReasoningCockpitCardProps {
   confidenceBadge: CockpitConfidenceBadge;
@@ -13,9 +17,14 @@ interface ConsultationReasoningCockpitCardProps {
   simulationPresets: CockpitSimulationPreset[];
   selectedSimulationId: string | null;
   simulationInsight: string;
+  state?: VisualizationState;
+  density?: ChartDensity;
 }
 
-defineProps<ConsultationReasoningCockpitCardProps>();
+const props = withDefaults(defineProps<ConsultationReasoningCockpitCardProps>(), {
+  state: 'idle',
+  density: 'comfortable',
+});
 
 const emit = defineEmits<{
   (e: 'toggle-simulation', presetId: string): void;
@@ -23,24 +32,27 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="panel-card cockpit-card">
+  <div
+    class="panel-card cockpit-card"
+    :class="[`state-${props.state}`, `density-${props.density}`]"
+  >
     <div class="panel-head-row">
       <h3>决策推理驾驶舱</h3>
       <span
         :class="[
           'status-chip',
           'secondary',
-          `confidence-${confidenceBadge.level}`,
+          `confidence-${props.confidenceBadge.level}`,
         ]"
       >
-        {{ confidenceBadge.label }} · {{ confidenceBadge.percentText }}
+        {{ props.confidenceBadge.label }} · {{ props.confidenceBadge.percentText }}
       </span>
     </div>
-    <p class="cockpit-summary">{{ confidenceBadge.description }}</p>
+    <p class="cockpit-summary">{{ props.confidenceBadge.description }}</p>
 
     <div class="cockpit-grid">
       <article
-        v-for="card in contributionCards"
+        v-for="card in props.contributionCards"
         :key="card.id"
         class="cockpit-metric-card"
       >
@@ -58,11 +70,11 @@ const emit = defineEmits<{
     <section class="cockpit-evidence-card">
       <div class="cockpit-subheader">
         <h4>关键证据摘要</h4>
-        <span>{{ evidenceDigest.total }} 条</span>
+        <span>{{ props.evidenceDigest.total }} 条</span>
       </div>
-      <p class="cockpit-summary">{{ evidenceDigest.summary }}</p>
-      <ul v-if="evidenceDigest.items.length > 0" class="cockpit-evidence-list">
-        <li v-for="item in evidenceDigest.items" :key="item">{{ item }}</li>
+      <p class="cockpit-summary">{{ props.evidenceDigest.summary }}</p>
+      <ul v-if="props.evidenceDigest.items.length > 0" class="cockpit-evidence-list">
+        <li v-for="item in props.evidenceDigest.items" :key="item">{{ item }}</li>
       </ul>
       <p v-else class="empty-text">暂无证据摘要。</p>
     </section>
@@ -74,16 +86,16 @@ const emit = defineEmits<{
       </div>
       <div class="simulation-actions">
         <button
-          v-for="preset in simulationPresets"
+          v-for="preset in props.simulationPresets"
           :key="preset.id"
           class="simulation-btn"
-          :class="{ active: selectedSimulationId === preset.id }"
+          :class="{ active: props.selectedSimulationId === preset.id }"
           @click="emit('toggle-simulation', preset.id)"
         >
           {{ preset.label }}
         </button>
       </div>
-      <p class="cockpit-summary">{{ simulationInsight }}</p>
+      <p class="cockpit-summary">{{ props.simulationInsight }}</p>
     </section>
   </div>
 </template>
@@ -142,6 +154,30 @@ const emit = defineEmits<{
   background:
     linear-gradient(150deg, rgba(221, 242, 255, 0.55) 0%, rgba(255, 249, 234, 0.72) 100%),
     #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+.cockpit-card.state-running {
+  border-color: rgba(36, 132, 163, 0.46);
+}
+
+.cockpit-card.state-done {
+  border-color: rgba(31, 139, 97, 0.44);
+}
+
+.cockpit-card.state-blocked {
+  border-color: rgba(184, 74, 56, 0.5);
+}
+
+.cockpit-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1f7b80, #2e9156, #3b82f6);
 }
 
 .cockpit-summary {
@@ -156,6 +192,10 @@ const emit = defineEmits<{
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.cockpit-card.density-compact .cockpit-grid {
+  grid-template-columns: 1fr;
 }
 
 .cockpit-metric-card {
@@ -187,6 +227,24 @@ const emit = defineEmits<{
   height: 100%;
   background: linear-gradient(90deg, #1f7b80 0%, #2e9156 100%);
   transition: width 220ms ease;
+  border-radius: 999px;
+  position: relative;
+}
+
+.cockpit-metric-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 .cockpit-metric-card p {

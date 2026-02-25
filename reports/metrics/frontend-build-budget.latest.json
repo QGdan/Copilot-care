@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-23T15:03:41.880Z",
+  "generatedAt": "2026-02-25T05:49:21.612Z",
   "budget": {
     "totalJsMaxBytes": 2600000,
     "totalCssMaxBytes": 150000,
@@ -8,118 +8,123 @@
   },
   "source": {
     "distDir": "src/frontend/dist",
-    "manifestPath": "src/frontend/dist/manifest.json",
+    "manifestPath": "src/frontend/dist/.vite/manifest.json",
     "measuredBy": "vite-manifest-entry-graph"
   },
   "summary": {
-    "totalAssets": 20,
-    "totalJsBytes": 2108669,
-    "totalCssBytes": 92002,
-    "largestAssetPath": "dist/assets/reportExport-f8856ab2.js",
-    "largestAssetBytes": 425335,
-    "consultationChunkPath": "dist/assets/ConsultationView-7989a029.js",
-    "consultationChunkBytes": 102467
+    "totalAssets": 21,
+    "totalJsBytes": 1710307,
+    "totalCssBytes": 116417,
+    "largestAssetPath": "dist/assets/echarts-charts-Dl6whd7t.js",
+    "largestAssetBytes": 476837,
+    "consultationChunkPath": "dist/assets/ConsultationView-3Vj-xOxB.js",
+    "consultationChunkBytes": 89935
   },
   "assets": [
     {
-      "path": "dist/assets/api-12c34ddd.js",
+      "path": "dist/assets/api-DWinV2hI.js",
       "ext": ".js",
-      "bytes": 37880
+      "bytes": 37984
     },
     {
-      "path": "dist/assets/ConsultationView-7989a029.js",
+      "path": "dist/assets/ConsultationView-3Vj-xOxB.js",
       "ext": ".js",
-      "bytes": 102467
+      "bytes": 89935
     },
     {
-      "path": "dist/assets/ConsultationView-e350fa03.css",
+      "path": "dist/assets/ConsultationView-BktbFfpF.css",
       "ext": ".css",
-      "bytes": 44546
+      "bytes": 35184
     },
     {
-      "path": "dist/assets/echarts-charts-cd80b9f0.js",
+      "path": "dist/assets/echarts-charts-Dl6whd7t.js",
       "ext": ".js",
-      "bytes": 371363
+      "bytes": 476837
     },
     {
-      "path": "dist/assets/echarts-components-06fd13f1.js",
+      "path": "dist/assets/echarts-components-CSu9WeP4.js",
       "ext": ".js",
-      "bytes": 232916
+      "bytes": 56370
     },
     {
-      "path": "dist/assets/echarts-core-04291051.js",
+      "path": "dist/assets/echarts-renderers-BHDzyj-Y.js",
       "ext": ".js",
-      "bytes": 389741
+      "bytes": 12896
     },
     {
-      "path": "dist/assets/echarts-renderers-7aaffba4.js",
+      "path": "dist/assets/FhirExplorerView-B6WMGQ0w.js",
       "ext": ".js",
-      "bytes": 33098
+      "bytes": 6758
     },
     {
-      "path": "dist/assets/FhirExplorerView-8b8a7739.js",
-      "ext": ".js",
-      "bytes": 6886
-    },
-    {
-      "path": "dist/assets/FhirExplorerView-e5163e51.css",
+      "path": "dist/assets/FhirExplorerView-DX4Rd6C6.css",
       "ext": ".css",
-      "bytes": 5610
+      "bytes": 5811
     },
     {
-      "path": "dist/assets/GovernanceView-dcbd2717.css",
+      "path": "dist/assets/GovernanceView-BD19W7u3.js",
+      "ext": ".js",
+      "bytes": 63026
+    },
+    {
+      "path": "dist/assets/GovernanceView-Kr53nw2X.css",
       "ext": ".css",
-      "bytes": 15562
+      "bytes": 39915
     },
     {
-      "path": "dist/assets/GovernanceView-dd4b1b4a.js",
+      "path": "dist/assets/html2canvas.esm-DXEQVQnt.js",
       "ext": ".js",
-      "bytes": 16239
+      "bytes": 201041
     },
     {
-      "path": "dist/assets/html2canvas.esm-e0a7d97b.js",
+      "path": "dist/assets/index-Bx3bZF1q.js",
       "ext": ".js",
-      "bytes": 202309
+      "bytes": 61473
     },
     {
-      "path": "dist/assets/index-8a2a2d70.js",
-      "ext": ".js",
-      "bytes": 6600
-    },
-    {
-      "path": "dist/assets/index-da291014.css",
+      "path": "dist/assets/index-DbkBF2Kz.css",
       "ext": ".css",
-      "bytes": 18696
+      "bytes": 18691
     },
     {
-      "path": "dist/assets/index.es-3b5e66eb.js",
+      "path": "dist/assets/index.es-BPV4QX7Z.js",
       "ext": ".js",
-      "bytes": 151157
+      "bytes": 159027
     },
     {
-      "path": "dist/assets/PatientDashboardView-0980ac84.css",
+      "path": "dist/assets/PatientDashboardView-DINcMVuH.js",
+      "ext": ".js",
+      "bytes": 12223
+    },
+    {
+      "path": "dist/assets/PatientDashboardView-i0THHSvB.css",
       "ext": ".css",
-      "bytes": 7588
+      "bytes": 8194
     },
     {
-      "path": "dist/assets/PatientDashboardView-843e728a.js",
+      "path": "dist/assets/purify.es-Bzr520pe.js",
       "ext": ".js",
-      "bytes": 12348
+      "bytes": 22449
     },
     {
-      "path": "dist/assets/purify.es-ce17b1ad.js",
+      "path": "dist/assets/reportExport-12LXUsgp.js",
       "ext": ".js",
-      "bytes": 22742
+      "bytes": 395645
     },
     {
-      "path": "dist/assets/reportExport-f8856ab2.js",
-      "ext": ".js",
-      "bytes": 425335
+      "path": "dist/assets/ThinkingGraph-DOtjzUbJ.css",
+      "ext": ".css",
+      "bytes": 8622
     },
     {
-      "path": "dist/assets/vue-vendor-a40ef1e9.js",
+      "path": "dist/assets/ThinkingGraph-SecD4CMs.js",
       "ext": ".js",
-      "bytes": 97588
+      "bytes": 15983
+    },
+    {
+      "path": "dist/assets/vue-vendor-D0NjLzHG.js",
+      "ext": ".js",
+      "bytes": 98660
     }
   ]
 }

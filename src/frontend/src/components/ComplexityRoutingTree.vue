@@ -10,6 +10,10 @@ import {
   ROUTE_MODE_LABELS,
 } from '../constants/triageLabels';
 import { useComplexityRoutingBreakdown } from '../composables/useComplexityRoutingBreakdown';
+import type {
+  ChartDensity,
+  VisualizationState,
+} from '../types/visualization';
 
 use([TreeChart, TooltipComponent, TitleComponent, CanvasRenderer]);
 
@@ -25,6 +29,8 @@ interface Props {
   routing?: RoutingInfo;
   hasRedFlag?: boolean;
   currentStage?: string;
+  state?: VisualizationState;
+  density?: ChartDensity;
 }
 
 interface TreeNode {
@@ -46,6 +52,8 @@ const props = withDefaults(defineProps<Props>(), {
   routing: () => ({}),
   hasRedFlag: false,
   currentStage: '',
+  state: 'idle',
+  density: 'comfortable',
 });
 
 const chartRef = ref<HTMLElement | null>(null);
@@ -250,7 +258,9 @@ const {
   routeModeLabels: ROUTE_MODE_LABELS,
 });
 
-const chartOption = computed(() => ({
+const chartOption = computed(() => {
+  const dense = props.density === 'compact';
+  return {
   tooltip: {
     trigger: 'item',
     triggerOn: 'mousemove',
@@ -267,7 +277,7 @@ const chartOption = computed(() => ({
       top: '7%',
       bottom: '7%',
       symbol: 'rect',
-      symbolSize: [96, 38],
+      symbolSize: dense ? [86, 34] : [96, 38],
       orient: 'LR',
       expandAndCollapse: false,
       initialTreeDepth: -1,
@@ -299,7 +309,8 @@ const chartOption = computed(() => ({
       },
     },
   ],
-}));
+};
+});
 
 function initChart(): void {
   if (!chartRef.value) return;
@@ -317,7 +328,11 @@ function resizeChart(): void {
   chart?.resize();
 }
 
-watch([() => props.routing, () => props.hasRedFlag], updateChart, { deep: true });
+watch(
+  [() => props.routing, () => props.hasRedFlag, () => props.density],
+  updateChart,
+  { deep: true },
+);
 
 onMounted(() => {
   initChart();
@@ -332,7 +347,10 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="routing-tree-container">
+  <div
+    class="routing-tree-container"
+    :class="[`state-${state}`, `density-${density}`]"
+  >
     <div class="header">
       <h3>复杂度路由决策树</h3>
       <div class="routing-summary">
@@ -418,6 +436,30 @@ onBeforeUnmount(() => {
   border-radius: 10px;
   padding: 16px;
   border: 1px solid #d3deea;
+  position: relative;
+  overflow: hidden;
+}
+
+.routing-tree-container.state-running {
+  border-color: rgba(39, 137, 169, 0.5);
+}
+
+.routing-tree-container.state-done {
+  border-color: rgba(31, 139, 97, 0.45);
+}
+
+.routing-tree-container.state-blocked {
+  border-color: rgba(184, 74, 56, 0.45);
+}
+
+.routing-tree-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981);
 }
 
 .header {
@@ -493,6 +535,14 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.routing-tree-container.density-compact .tree-chart {
+  height: 260px;
+}
+
+.routing-tree-container.density-compact .factor-grid {
+  grid-template-columns: 1fr;
 }
 
 .factor-card {

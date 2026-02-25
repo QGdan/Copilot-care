@@ -1,133 +1,392 @@
 {
-  "version": "v7.00",
-  "source": {
-    "planDocument": "CoPilot_Care_Plan_Submission_V4_30_With_Figures.pdf",
-    "extractedText": "计划书第4-7章系统增强",
-    "lockedAt": "2026-02-24",
-    "focusChapters": [
-      "第4章: 系统架构设计",
-      "第5章: 核心模块设计",
-      "第6章: 接口与运行时",
-      "第7章: A-F六维评估体系"
-    ]
-  },
+  "version": "v9.20",
   "createdAt": "2026-02-21T16:37:39.786Z",
-  "updatedAt": "2026-02-23T17:18:39.854Z",
+  "updatedAt": "2026-02-25T05:05:59.861Z",
   "todos": {
-    "E01": {
+    "H01": {
       "state": "done",
-      "updatedAt": "2026-02-23T16:58:53.417Z",
-      "notes": "完成动态任务拆解，包含患者情况分析、Provider选择、子任务生成",
+      "updatedAt": "2026-02-24T10:28:23.356Z",
+      "notes": "完成视觉资产审计与令牌冻结",
       "evidence": [
-        "src/backend/src/infrastructure/orchestration/CoordinatorSnapshotService.ts",
-        "src/shared/types.ts"
+        "src/frontend/src/styles/theme.css",
+        "src/frontend/src/styles/medical-bay-theme.css",
+        "src/frontend/src/style.css"
       ]
     },
-    "E02": {
+    "H02": {
       "state": "done",
-      "updatedAt": "2026-02-23T17:02:13.613Z",
-      "notes": "完成多Provider并行调用引擎，包含并行调用、超时控制、失败切换",
+      "updatedAt": "2026-02-24T10:28:24.564Z",
+      "notes": "完成双主题语义令牌与动效令牌重构",
       "evidence": [
-        "src/backend/src/infrastructure/orchestration/ParallelAgentInvoker.ts",
-        "src/backend/src/agents/AgentBase.ts"
+        "src/frontend/src/styles/theme.css",
+        "src/frontend/src/styles/motion.css"
       ]
     },
-    "E03": {
+    "H03": {
       "state": "done",
-      "updatedAt": "2026-02-23T17:05:26.181Z",
-      "notes": "完成辩论引擎任务分配，包含动态Agent选择、Provider映射、任务优先级",
+      "updatedAt": "2026-02-24T10:28:25.769Z",
+      "notes": "完成App Shell统一改造与路由语义扩展",
       "evidence": [
-        "src/backend/src/infrastructure/orchestration/DebateTaskDispatcher.ts"
+        "src/frontend/src/App.vue",
+        "src/frontend/src/router.ts",
+        "src/frontend/src/types/theme.ts"
       ]
     },
-    "E04": {
+    "H04": {
       "state": "done",
-      "updatedAt": "2026-02-23T17:08:43.887Z",
-      "notes": "完成后端单元测试覆盖，新增11个测试，覆盖ParallelAgentInvoker和DebateTaskDispatcher",
+      "updatedAt": "2026-02-24T10:28:26.871Z",
+      "notes": "完成会诊页输入执行结果层级重排",
       "evidence": [
-        "src/backend/src/infrastructure/orchestration/__tests__/ParallelAgentInvoker.test.ts",
-        "src/backend/src/infrastructure/orchestration/__tests__/DebateTaskDispatcher.test.ts"
+        "src/frontend/src/views/ConsultationView.vue"
       ]
     },
-    "E05": {
+    "H05": {
       "state": "done",
-      "updatedAt": "2026-02-23T17:13:40.998Z",
-      "notes": "完成ThinkChainPanel组件，创建秘塔AI风格的深度思考面板",
+      "updatedAt": "2026-02-24T10:28:28.073Z",
+      "notes": "完成推理可视化组件统一state和density语义",
       "evidence": [
-        "src/frontend/src/components/ThinkChainPanel.vue"
+        "src/frontend/src/components/DynamicFlowChart.vue",
+        "src/frontend/src/components/ThinkingGraph.vue",
+        "src/frontend/src/components/ComplexityRoutingTree.vue",
+        "src/frontend/src/components/consultation/ConsultationReasoningCockpitCard.vue",
+        "src/frontend/src/types/visualization.ts"
       ]
     },
-    "E06": {
+    "H06": {
       "state": "done",
-      "updatedAt": "2026-02-23T17:13:54.992Z",
-      "notes": "已完成思考步骤时间线渲染，ThinkChainPanel组件包含完整的时间线展示",
+      "updatedAt": "2026-02-24T10:28:29.205Z",
+      "notes": "完成风险信号与来源状态交互强化",
       "evidence": [
-        "src/frontend/src/components/ThinkChainPanel.vue"
+        "src/frontend/src/components/CoordinatorTaskBoard.vue",
+        "src/frontend/src/components/consultation/ConsultationInputPanel.vue",
+        "src/frontend/src/composables/useConsultationViewModel.ts"
       ]
     },
-    "E07": {
+    "H07": {
       "state": "done",
-      "updatedAt": "2026-02-23T17:15:45.414Z",
-      "notes": "完成实时思考过程流集成，创建useThinkChainState composable",
+      "updatedAt": "2026-02-24T10:28:30.405Z",
+      "notes": "完成治理页风格接轨与风险态势强化",
       "evidence": [
-        "src/frontend/src/composables/useThinkChainState.ts"
+        "src/frontend/src/views/GovernanceView.vue"
       ]
     },
-    "E08": {
+    "H08": {
       "state": "done",
-      "updatedAt": "2026-02-23T17:18:39.853Z",
-      "notes": "完成思考面板测试覆盖，新增6个测试，覆盖useThinkChainState",
+      "updatedAt": "2026-02-24T10:28:31.585Z",
+      "notes": "完成患者看板统一高端视觉语言",
       "evidence": [
-        "src/frontend/src/composables/useThinkChainState.test.ts"
+        "src/frontend/src/views/PatientDashboardView.vue"
       ]
     },
-    "E09": {
-      "state": "backlog",
-      "updatedAt": "2026-02-23T16:49:38.498Z",
+    "H09": {
+      "state": "done",
+      "updatedAt": "2026-02-24T10:28:32.759Z",
+      "notes": "完成FHIR页信息密度与过滤摘要优化",
+      "evidence": [
+        "src/frontend/src/views/FhirExplorerView.vue"
+      ]
+    },
+    "H10": {
+      "state": "done",
+      "updatedAt": "2026-02-24T10:28:33.872Z",
+      "notes": "完成报告导出观感优化与回退提示强化",
+      "evidence": [
+        "src/frontend/src/services/reportExport.ts",
+        "src/frontend/src/components/ConsultationResultPanel.vue"
+      ]
+    },
+    "H11": {
+      "state": "done",
+      "updatedAt": "2026-02-24T10:28:35.020Z",
+      "notes": "完成可访问性和性能收敛（动效降级与预算通过）",
+      "evidence": [
+        "src/frontend/src/styles/motion.css",
+        "src/frontend/src/style.css",
+        "reports/metrics/frontend-build-budget.latest.json"
+      ]
+    },
+    "H12": {
+      "state": "done",
+      "updatedAt": "2026-02-24T10:28:36.137Z",
+      "notes": "完成答辩脚本与自动化流程集成（含全量门禁）",
+      "evidence": [
+        "README.md",
+        "docs/process/todos-workflow.v8_00.json",
+        "docs/adr/0009-frontend-command-center-design-system.md",
+        "reports/todos/workflow-state.json"
+      ]
+    },
+    "G01": {
+      "state": "done",
+      "updatedAt": "2026-02-24T14:42:06.226Z",
       "notes": "",
       "evidence": []
     },
-    "E10": {
-      "state": "backlog",
-      "updatedAt": "2026-02-23T16:49:38.498Z",
+    "G02": {
+      "state": "done",
+      "updatedAt": "2026-02-24T14:42:06.227Z",
       "notes": "",
       "evidence": []
     },
-    "E11": {
-      "state": "backlog",
-      "updatedAt": "2026-02-23T16:49:38.498Z",
+    "G03": {
+      "state": "done",
+      "updatedAt": "2026-02-24T14:42:06.227Z",
       "notes": "",
       "evidence": []
     },
-    "E12": {
-      "state": "backlog",
-      "updatedAt": "2026-02-23T16:49:38.498Z",
+    "G04": {
+      "state": "done",
+      "updatedAt": "2026-02-24T14:42:06.227Z",
       "notes": "",
       "evidence": []
     },
-    "E13": {
-      "state": "backlog",
-      "updatedAt": "2026-02-23T16:49:38.498Z",
+    "G05": {
+      "state": "done",
+      "updatedAt": "2026-02-24T14:42:06.227Z",
       "notes": "",
       "evidence": []
     },
-    "E14": {
-      "state": "backlog",
-      "updatedAt": "2026-02-23T16:49:38.498Z",
+    "G06": {
+      "state": "ready",
+      "updatedAt": "2026-02-24T14:42:06.227Z",
       "notes": "",
       "evidence": []
     },
-    "E15": {
-      "state": "backlog",
-      "updatedAt": "2026-02-23T16:49:38.498Z",
+    "G07": {
+      "state": "ready",
+      "updatedAt": "2026-02-24T14:42:06.227Z",
       "notes": "",
       "evidence": []
     },
-    "E16": {
-      "state": "backlog",
-      "updatedAt": "2026-02-23T16:49:38.498Z",
+    "G08": {
+      "state": "ready",
+      "updatedAt": "2026-02-24T14:42:06.227Z",
       "notes": "",
       "evidence": []
+    },
+    "G21": {
+      "state": "done",
+      "updatedAt": "2026-02-24T15:15:01.695Z",
+      "notes": "",
+      "evidence": []
+    },
+    "G22": {
+      "state": "done",
+      "updatedAt": "2026-02-24T15:15:01.696Z",
+      "notes": "",
+      "evidence": []
+    },
+    "G23": {
+      "state": "done",
+      "updatedAt": "2026-02-24T15:15:01.696Z",
+      "notes": "",
+      "evidence": []
+    },
+    "G24": {
+      "state": "ready",
+      "updatedAt": "2026-02-24T15:15:01.696Z",
+      "notes": "",
+      "evidence": []
+    },
+    "G25": {
+      "state": "ready",
+      "updatedAt": "2026-02-24T15:15:01.696Z",
+      "notes": "",
+      "evidence": []
+    },
+    "G26": {
+      "state": "ready",
+      "updatedAt": "2026-02-24T15:15:01.696Z",
+      "notes": "",
+      "evidence": []
+    },
+    "G31": {
+      "state": "done",
+      "updatedAt": "2026-02-24T16:45:30.423Z",
+      "notes": "",
+      "evidence": []
+    },
+    "G32": {
+      "state": "done",
+      "updatedAt": "2026-02-24T16:45:30.424Z",
+      "notes": "",
+      "evidence": []
+    },
+    "G33": {
+      "state": "done",
+      "updatedAt": "2026-02-24T16:49:16.413Z",
+      "notes": "FHIR语义映射仅保留摘要并提供独立资源浏览入口",
+      "evidence": [
+        "src/frontend/src/views/GovernanceView.vue",
+        "src/frontend/src/views/GovernanceView.test.ts",
+        "docs/process/todos-workflow.v9_30-governance-deep-opt.json"
+      ]
+    },
+    "G34": {
+      "state": "done",
+      "updatedAt": "2026-02-24T17:20:41.107Z",
+      "notes": "SMART授权态势条已集成，含scope+launch context与写入门禁/只读降级状态",
+      "evidence": [
+        "src/frontend/src/views/GovernanceView.vue",
+        "src/frontend/src/views/GovernanceView.test.ts"
+      ]
+    },
+    "G35": {
+      "state": "done",
+      "updatedAt": "2026-02-24T17:49:52.240Z",
+      "notes": "已集成SLO、阈值矩阵与四阶段故障演练面板",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/frontend/src/components/GovernanceDashboard.test.ts"
+      ]
+    },
+    "G36": {
+      "state": "done",
+      "updatedAt": "2026-02-24T17:49:52.636Z",
+      "notes": "已集成ERR降级路径总览并映射llm/http错误码",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/backend/src/llm/http.ts"
+      ]
+    },
+    "G37": {
+      "state": "done",
+      "updatedAt": "2026-02-24T17:49:53.006Z",
+      "notes": "已集成A-F与T-007~T-012证据墙并支持详情切换",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/views/ConsultationView.integration.test.ts",
+        "docs/process/plan-extracts/CoPilot_Care_Plan_v4_30.extracted.txt"
+      ]
+    },
+    "G38": {
+      "state": "done",
+      "updatedAt": "2026-02-24T17:49:53.372Z",
+      "notes": "已集成3分钟答辩模式、高对比度开关与可访问性提示",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/frontend/src/views/GovernanceView.vue"
+      ]
+    },
+    "G41": {
+      "state": "done",
+      "updatedAt": "2026-02-24T18:13:58.074Z",
+      "notes": "implemented_backend_factor_panels",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/frontend/src/components/GovernanceDashboard.test.ts"
+      ]
+    },
+    "G42": {
+      "state": "done",
+      "updatedAt": "2026-02-24T18:13:58.130Z",
+      "notes": "added_agent_matrix_and_task_dependency",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
+    },
+    "G43": {
+      "state": "done",
+      "updatedAt": "2026-02-24T18:13:58.185Z",
+      "notes": "added_routing_causal_tree",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
+    },
+    "G44": {
+      "state": "done",
+      "updatedAt": "2026-02-24T18:13:58.243Z",
+      "notes": "added_backend_trace_stream",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue",
+        "src/frontend/src/views/GovernanceView.vue"
+      ]
+    },
+    "G45": {
+      "state": "done",
+      "updatedAt": "2026-02-24T18:13:58.300Z",
+      "notes": "updated_governance_page_copy",
+      "evidence": [
+        "src/frontend/src/views/GovernanceView.vue"
+      ]
+    },
+    "G46": {
+      "state": "done",
+      "updatedAt": "2026-02-24T18:15:17.631Z",
+      "notes": "manual_acceptance_passed_with_eprem_fallback",
+      "evidence": [
+        "reports/todos/workflow-state.json",
+        "reports/todos/governance-v940-acceptance.manual.json",
+        "reports/todos/governance-v940-acceptance.latest.json"
+      ]
+    },
+    "G51": {
+      "state": "done",
+      "updatedAt": "2026-02-25T05:02:03.281Z",
+      "notes": "autopilot passed all verify commands",
+      "evidence": [
+        "docs/process/governance-optimization-map.v9_50.md"
+      ]
+    },
+    "G52": {
+      "state": "done",
+      "updatedAt": "2026-02-25T05:02:03.341Z",
+      "notes": "autopilot passed all verify commands",
+      "evidence": [
+        "scripts/governance-workflow.cjs"
+      ]
+    },
+    "G53": {
+      "state": "done",
+      "updatedAt": "2026-02-25T05:02:03.405Z",
+      "notes": "autopilot passed all verify commands",
+      "evidence": [
+        "scripts/governance-autopilot.cjs"
+      ]
+    },
+    "G54": {
+      "state": "done",
+      "updatedAt": "2026-02-25T05:02:03.758Z",
+      "notes": "autopilot passed all verify commands",
+      "evidence": [
+        "package.json",
+        "docs/process/governance-autopilot-guide.v9_50.md"
+      ]
+    },
+    "G55": {
+      "state": "done",
+      "updatedAt": "2026-02-25T05:03:41.404Z",
+      "notes": "autopilot passed all verify commands",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.test.ts",
+        "src/frontend/src/views/GovernanceView.test.ts"
+      ]
+    },
+    "G56": {
+      "state": "done",
+      "updatedAt": "2026-02-25T05:05:58.735Z",
+      "notes": "autopilot passed all verify commands",
+      "evidence": [
+        "reports/metrics/frontend-build-budget.latest.json"
+      ]
+    },
+    "G57": {
+      "state": "done",
+      "updatedAt": "2026-02-25T05:05:59.861Z",
+      "notes": "autopilot passed all verify commands",
+      "evidence": [
+        "reports/todos/workflow-state.json",
+        "reports/todos/governance-v950-autopilot.latest.json"
+      ]
     }
-  }
+  },
+  "syncedManifests": [
+    "docs\\process\\todos-workflow.v9_10-governance-neural.json",
+    "docs\\process\\todos-workflow.v9_20-governance-console.json",
+    "docs\\process\\todos-workflow.v9_30-governance-deep-opt.json",
+    "docs\\process\\todos-workflow.v9_40-governance-backend-factors.json",
+    "docs\\process\\todos-workflow.v9_50-governance-autopilot.json"
+  ],
+  "lastBackfillAt": "2026-02-24T15:16:05.112Z",
+  "lastGovernanceManifest": "docs\\process\\todos-workflow.v9_50-governance-autopilot.json"
 }

@@ -1,0 +1,362 @@
+{
+  "version": "v8.00",
+  "source": {
+    "planDocument": "CoPilot_Care_Plan_Submission_V4_30_With_Figures.pdf",
+    "extractedText": "前端高端化医疗指挥舱冲刺",
+    "lockedAt": "2026-02-24",
+    "focusChapters": [
+      "第4章: 系统架构设计",
+      "第5章: 核心模块设计",
+      "第6章: 接口与运行时",
+      "第7章: A-F六维评估体系"
+    ]
+  },
+  "principles": [
+    "全站统一视觉语言，保持医疗可信感",
+    "推理可视化主线优先，动画服务于状态变化",
+    "双主题一致性，保证答辩与日常展示场景",
+    "不改变后端契约，仅强化前端表现与交互",
+    "每个任务附带可执行验证命令与证据路径"
+  ],
+  "milestones": [
+    {
+      "id": "H1",
+      "title": "Week 1: 设计系统 + 会诊主战场",
+      "description": "完成设计令牌、App Shell、会诊主链路和可视化组件统一皮肤",
+      "requiredTodoIds": [
+        "H01",
+        "H02",
+        "H03",
+        "H04",
+        "H05",
+        "H06"
+      ],
+      "gateChecks": [
+        "npm run typecheck --workspace=@copilot-care/frontend",
+        "npm run test --workspace=@copilot-care/frontend",
+        "npm run build --workspace=@copilot-care/frontend",
+        "npm run check:copy --workspace=@copilot-care/frontend"
+      ]
+    },
+    {
+      "id": "H2",
+      "title": "Week 2: 全站统一 + 答辩就绪",
+      "description": "治理/患者/FHIR 视图统一与导出优化，收敛性能与答辩脚本",
+      "requiredTodoIds": [
+        "H07",
+        "H08",
+        "H09",
+        "H10",
+        "H11",
+        "H12"
+      ],
+      "gateChecks": [
+        "npm run test --workspace=@copilot-care/frontend",
+        "npm run typecheck --workspace=@copilot-care/frontend",
+        "npm run build --workspace=@copilot-care/frontend",
+        "npm run perf:check --workspace=@copilot-care/frontend",
+        "npm run gate:all"
+      ]
+    }
+  ],
+  "todos": [
+    {
+      "id": "H01",
+      "title": "视觉资产审计与冻结",
+      "milestone": "H1",
+      "priority": "P0",
+      "defaultState": "ready",
+      "dependsOn": [],
+      "owner": "build",
+      "goal": "梳理并冻结前端视觉令牌命名，输出冲突清单和统一规则",
+      "nonGoals": [
+        "改动后端接口"
+      ],
+      "acceptance": [
+        "主题令牌冲突清单可追溯",
+        "全局命名约定统一"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run typecheck --workspace=@copilot-care/frontend"
+        ]
+      }
+    },
+    {
+      "id": "H02",
+      "title": "设计令牌V2（双主题）",
+      "milestone": "H1",
+      "priority": "P0",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H01"
+      ],
+      "owner": "build",
+      "goal": "重构 light/dark 双主题令牌并补充动效令牌",
+      "nonGoals": [
+        "新增重型UI框架"
+      ],
+      "acceptance": [
+        "颜色/字体/阴影/间距语义化",
+        "双主题视觉一致"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run build --workspace=@copilot-care/frontend"
+        ]
+      }
+    },
+    {
+      "id": "H03",
+      "title": "App Shell 高端化统一",
+      "milestone": "H1",
+      "priority": "P0",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H02"
+      ],
+      "owner": "build",
+      "goal": "统一导航、页头、路由描述区到医疗指挥舱风格",
+      "nonGoals": [
+        "变更路由业务逻辑"
+      ],
+      "acceptance": [
+        "导航语义清晰",
+        "页面场景标识可见"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run test --workspace=@copilot-care/frontend"
+        ]
+      }
+    },
+    {
+      "id": "H04",
+      "title": "会诊页信息架构重排",
+      "milestone": "H1",
+      "priority": "P0",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H03"
+      ],
+      "owner": "build",
+      "goal": "优化会诊页输入-执行-结果层级，提升演示叙事完整度",
+      "nonGoals": [
+        "调整会诊后端协议"
+      ],
+      "acceptance": [
+        "主链路可一眼读懂",
+        "集成状态可视化稳定"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run test --workspace=@copilot-care/frontend -- src/views/ConsultationView.integration.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "H05",
+      "title": "推理可视化组件统一皮肤",
+      "milestone": "H1",
+      "priority": "P0",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H04"
+      ],
+      "owner": "build",
+      "goal": "流程图/思维图/路由树/驾驶舱统一状态色与动效节奏",
+      "nonGoals": [
+        "替换ECharts"
+      ],
+      "acceptance": [
+        "组件共享state和density语义",
+        "视觉风格统一"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run test --workspace=@copilot-care/frontend -- src/components/ComplexityRoutingTree.test.ts src/components/CoordinatorTaskBoard.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "H06",
+      "title": "关键交互强化",
+      "milestone": "H1",
+      "priority": "P0",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H05"
+      ],
+      "owner": "build",
+      "goal": "强化风险信号、来源状态、加载反馈的可读性",
+      "nonGoals": [
+        "改动后端流式事件类型"
+      ],
+      "acceptance": [
+        "风险态可一眼识别",
+        "加载反馈连续"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run check:copy --workspace=@copilot-care/frontend"
+        ]
+      }
+    },
+    {
+      "id": "H07",
+      "title": "治理页风格接轨",
+      "milestone": "H2",
+      "priority": "P1",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H06"
+      ],
+      "owner": "build",
+      "goal": "治理页对齐医疗指挥舱视觉体系，保留审校专业感",
+      "nonGoals": [
+        "新增治理API"
+      ],
+      "acceptance": [
+        "治理页视觉一致",
+        "复核态势可读"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run test --workspace=@copilot-care/frontend -- src/views/GovernanceView.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "H08",
+      "title": "患者看板高端化",
+      "milestone": "H2",
+      "priority": "P1",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H07"
+      ],
+      "owner": "build",
+      "goal": "统一患者看板趋势图、指标卡、历史列表视觉语言",
+      "nonGoals": [
+        "患者数据模型迁移"
+      ],
+      "acceptance": [
+        "患者纵向趋势更直观",
+        "演示导航顺畅"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run test --workspace=@copilot-care/frontend -- src/views/PatientDashboardView.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "H09",
+      "title": "FHIR页信息密度优化",
+      "milestone": "H2",
+      "priority": "P1",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H08"
+      ],
+      "owner": "build",
+      "goal": "优化FHIR浏览页筛选与分组信息密度，提高扫读效率",
+      "nonGoals": [
+        "FHIR协议适配改造"
+      ],
+      "acceptance": [
+        "筛选状态可见",
+        "资源分组易读"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run test --workspace=@copilot-care/frontend"
+        ]
+      }
+    },
+    {
+      "id": "H10",
+      "title": "报告导出观感强化",
+      "milestone": "H2",
+      "priority": "P1",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H09"
+      ],
+      "owner": "build",
+      "goal": "提升导出报告布局、中文字体与回退提示体验",
+      "nonGoals": [
+        "变更导出文件格式"
+      ],
+      "acceptance": [
+        "导出视觉更专业",
+        "PDF/TXT回退稳定"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run test --workspace=@copilot-care/frontend -- src/views/ConsultationView.integration.test.ts"
+        ]
+      }
+    },
+    {
+      "id": "H11",
+      "title": "可访问性与性能收敛",
+      "milestone": "H2",
+      "priority": "P0",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H10"
+      ],
+      "owner": "build",
+      "goal": "收敛键盘可达、对比度与动画降级策略，确保性能预算达标",
+      "nonGoals": [
+        "移动端全量重构"
+      ],
+      "acceptance": [
+        "prefers-reduced-motion生效",
+        "构建预算通过"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run perf:check --workspace=@copilot-care/frontend"
+        ]
+      }
+    },
+    {
+      "id": "H12",
+      "title": "答辩演示脚本集成",
+      "milestone": "H2",
+      "priority": "P0",
+      "defaultState": "backlog",
+      "dependsOn": [
+        "H11"
+      ],
+      "owner": "build",
+      "goal": "固化3分钟演示路径与异常预案，确保答辩稳定呈现",
+      "nonGoals": [
+        "新增业务功能"
+      ],
+      "acceptance": [
+        "README包含演示脚本",
+        "异常预案可执行"
+      ],
+      "adrTrigger": false,
+      "commands": {
+        "verify": [
+          "npm run gate:all"
+        ]
+      }
+    }
+  ]
+}

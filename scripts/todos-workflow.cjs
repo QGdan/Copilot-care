@@ -38,7 +38,10 @@ function ensureDir(filePath) {
 }
 
 function readJson(filePath) {
-  return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  const raw = fs.readFileSync(filePath, 'utf8');
+  // Guard against UTF-8 BOM so manifest/state files stay portable.
+  const normalized = raw.charCodeAt(0) === 0xFEFF ? raw.slice(1) : raw;
+  return JSON.parse(normalized);
 }
 
 function writeJson(filePath, data) {
@@ -230,16 +233,29 @@ function loadState(manifest) {
     }
   }
 
+  if (state.version !== manifest.version) {
+    changed = true;
+  }
   state.version = manifest.version;
+
+  const sourceText = JSON.stringify(state.source ?? {});
+  const manifestSourceText = JSON.stringify(manifest.source ?? {});
+  if (sourceText !== manifestSourceText) {
+    changed = true;
+  }
   state.source = manifest.source;
   if (changed) {
     state.updatedAt = nowIso();
   }
+  state.__syncChanged = changed;
 
   return state;
 }
 
 function saveState(state) {
+  if (Object.prototype.hasOwnProperty.call(state, '__syncChanged')) {
+    delete state.__syncChanged;
+  }
   state.updatedAt = nowIso();
   writeJson(STATE_PATH, state);
 }
@@ -641,7 +657,7 @@ function main() {
   }
 
   const state = loadState(manifest);
-  if (!fs.existsSync(STATE_PATH)) {
+  if (!fs.existsSync(STATE_PATH) || state.__syncChanged) {
     saveState(state);
   }
 
