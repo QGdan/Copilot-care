@@ -35,6 +35,8 @@
 - [ ] LLM Provider API 密钥已安全配置
 - [ ] 日志级别已设置为生产模式
 - [ ] 健康检查端点 (`/health`) 可访问
+- [ ] 规则治理端点 (`/governance/rules/catalog`、`/governance/rules/version`) 可访问
+- [ ] 互操作端点 (`/interop/fhir/triage-bundle`) 已通过 SMART scope 校验
 
 ### 2.2 前端服务
 - [ ] 前端构建已通过验证 (`npm run build --workspace=@copilot-care/frontend`)
@@ -74,6 +76,7 @@
 - [ ] 流式响应正常工作
 - [ ] 错误处理返回正确的错误码
 - [ ] 幂等性验证通过
+- [ ] `ruleGovernance` 字段在成功/失败响应中均可追踪
 
 ### 4.2 专家系统
 - [ ] 四专家运行时配置正确
@@ -148,6 +151,7 @@
 - [ ] 审计事件完整记录
 - [ ] 审计日志不可篡改
 - [ ] 审计日志保留期限满足要求
+- [ ] 审计日志可关联 `ruleGovernance.evidenceTraceId`
 
 ### 8.2 合规检查
 - [ ] 数据处理符合隐私法规

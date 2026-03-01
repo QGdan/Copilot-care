@@ -1,4 +1,4 @@
-import { AgentBase } from '../agents/AgentBase';
+﻿import { AgentBase } from '../agents/AgentBase';
 import {
   AgentOpinion,
   AuditEvent,
@@ -8,6 +8,7 @@ import {
   ErrorCode,
   PatientProfile,
 } from '@copilot-care/shared/types';
+import { evaluateEmergencySignalSnapshot } from '../domain/rules/AuthoritativeMedicalRuleCatalog';
 
 export interface DebateRuntimeHooks {
   onRoundStarted?: (roundNumber: number) => void;
@@ -59,7 +60,6 @@ export class DebateEngine {
     return Math.min(max, Math.max(min, value));
   }
 
-  // Disagreement term from risk-level dispersion, normalized to [0, 1].
   private calculateDisagreement(opinions: AgentOpinion[]): number {
     if (opinions.length === 0) {
       return 0;
@@ -71,11 +71,9 @@ export class DebateEngine {
       values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
     const stdDev = Math.sqrt(variance);
 
-    // For a 0..3 bounded variable, 1.5 is the practical maximum std-dev.
     return this.normalize(stdDev / 1.5, 0, 1);
   }
 
-  // Clinical significance term from action-direction conflict and boundary spread.
   private calculateClinicalSignificance(opinions: AgentOpinion[]): number {
     if (opinions.length === 0) {
       return 0;
@@ -85,8 +83,10 @@ export class DebateEngine {
     const spread = Math.max(...values) - Math.min(...values);
     const hasL3 = values.some((value) => value >= 3);
 
-    const escalationPattern = /(urgent|escalat|offline|referr|emergency|线下|上转|升级|急诊|尽快就医)/i;
-    const conservativePattern = /(monitor|follow-up|lifestyle|observe|随访|观察|生活方式|复查)/i;
+    const escalationPattern =
+      /(urgent|escalat|offline|referr|emergency|线下|上转|升级|急诊|尽快就医)/i;
+    const conservativePattern =
+      /(monitor|follow-up|lifestyle|observe|随访|观察|生活方式|复查)/i;
 
     const escalationVotes = opinions.some((opinion) =>
       opinion.actions.some((action) => escalationPattern.test(action)),
@@ -110,7 +110,6 @@ export class DebateEngine {
     return this.normalize(significance, 0, 1);
   }
 
-  // Dissent Index = alpha * disagreement + beta * clinical significance.
   private calculateDissent(opinions: AgentOpinion[]): {
     index: number;
     disagreement: number;
@@ -166,7 +165,11 @@ export class DebateEngine {
     const scored = opinions.map((opinion) => {
       const guidelineFit = opinion.citations.length > 0 ? 1 : 0.5;
       const confidenceScore = this.normalize(opinion.confidence, 0, 1);
-      const safetyPriority = this.normalize(this.getRiskNumeric(opinion.riskLevel) / 3, 0, 1);
+      const safetyPriority = this.normalize(
+        this.getRiskNumeric(opinion.riskLevel) / 3,
+        0,
+        1,
+      );
       const consensusScore =
         0.5 * guidelineFit + 0.3 * confidenceScore + 0.2 * safetyPriority;
       return { opinion, consensusScore };
@@ -180,7 +183,10 @@ export class DebateEngine {
     if (!profile.patientId || !profile.sex || !Number.isFinite(profile.age)) {
       return 'ERR_MISSING_REQUIRED_DATA';
     }
-    if (!Array.isArray(profile.chronicDiseases) || !Array.isArray(profile.medicationHistory)) {
+    if (
+      !Array.isArray(profile.chronicDiseases) ||
+      !Array.isArray(profile.medicationHistory)
+    ) {
       return 'ERR_MISSING_REQUIRED_DATA';
     }
     if (
@@ -194,25 +200,7 @@ export class DebateEngine {
   }
 
   private hasRedFlag(profile: PatientProfile): boolean {
-    const symptoms = profile.symptoms ?? [];
-    const redFlagTerms = [
-      'chest pain',
-      'severe headache',
-      'syncope',
-      'shortness of breath',
-      'neurological deficit',
-      '胸痛',
-      '剧烈头痛',
-      '晕厥',
-      '呼吸困难',
-      '神经功能缺损',
-    ];
-    const symptomFlag = symptoms.some((symptom) =>
-      redFlagTerms.some((term) => symptom.toLowerCase().includes(term)),
-    );
-    const bpFlag =
-      (profile.vitals?.systolicBP ?? 0) >= 180 || (profile.vitals?.diastolicBP ?? 0) >= 110;
-    return symptomFlag || bpFlag;
+    return evaluateEmergencySignalSnapshot(profile).immediateEmergency;
   }
 
   private buildInitialResult(
@@ -249,13 +237,14 @@ export class DebateEngine {
     const history: DebateRound[] = [];
     const auditTrail: AuditEvent[] = [];
     const notes: string[] = [];
+
     const validationError = this.validateInput(profile);
     if (validationError) {
       return this.buildInitialResult(
         sessionId,
         'ERROR',
         validationError,
-        '输入校验失败。',
+        'Input validation failed.',
       );
     }
 
@@ -264,11 +253,11 @@ export class DebateEngine {
         sessionId,
         'ESCALATE_TO_OFFLINE',
         'ERR_ESCALATE_TO_OFFLINE',
-        '检测到红旗信号，建议立即转线下就医。',
+        'Emergency red-flag detected; immediate offline escalation required.',
       );
     }
 
-    let context = '初始评估';
+    let context = 'initial assessment';
     const dissentIndexHistory: number[] = [];
 
     for (let round = 1; round <= this.maxRounds; round++) {
@@ -278,16 +267,14 @@ export class DebateEngine {
           sessionId,
           'RISK_EVALUATION',
           'ROUND_STARTED',
-          `第${round}轮会诊开始。`,
+          `Round ${round} started.`,
         ),
       );
 
-      // 1. Parallel Thinking
       const opinions = await Promise.all(
         this.agents.map((agent) => agent.think(profile, context)),
       );
 
-      // 2. Calculate Dissent
       const dissent = this.calculateDissent(opinions);
       const band = this.getBand(dissent.index);
       dissentIndexHistory.push(dissent.index);
@@ -297,7 +284,7 @@ export class DebateEngine {
           sessionId,
           'DI_CALCULATION',
           'ROUND_COMPLETED',
-          `第${round}轮：分歧指数=${dissent.index.toFixed(3)}，风险分散=${dissent.disagreement.toFixed(3)}，临床冲突=${dissent.clinicalSignificance.toFixed(3)}。`,
+          `Round ${round}: DI=${dissent.index.toFixed(3)}, disagreement=${dissent.disagreement.toFixed(3)}, clinical=${dissent.clinicalSignificance.toFixed(3)}.`,
           [
             {
               referenceType: 'rule',
@@ -313,7 +300,7 @@ export class DebateEngine {
         opinions,
         dissentIndex: dissent.index,
         dissentBand: band,
-        moderatorSummary: `分歧等级=${band}，分歧指数=${dissent.index.toFixed(3)}`,
+        moderatorSummary: `Band=${band}, DI=${dissent.index.toFixed(3)}`,
       };
       history.push(roundResult);
       hooks?.onRoundCompleted?.(roundResult);
@@ -323,12 +310,13 @@ export class DebateEngine {
           sessionId,
           'ARBITRATION',
           'BAND_SELECTED',
-          `第${round}轮判定分歧等级为 ${band}。`,
+          `Round ${round} arbitration selected band ${band}.`,
           [
             {
               referenceType: 'guideline',
               referenceId: 'DI_THRESHOLDS',
-              description: '<0.2 consensus, 0.2-0.4 light, 0.4-0.7 deep, >=0.7 escalate',
+              description:
+                '<0.2 consensus, 0.2-0.4 light, 0.4-0.7 deep, >=0.7 escalate',
             },
           ],
         ),
@@ -336,7 +324,7 @@ export class DebateEngine {
 
       const lowConfidence = opinions.every((opinion) => opinion.confidence < 0.7);
       if (lowConfidence) {
-        notes.push('全部意见置信度低于0.7阈值。');
+        notes.push('All opinions are below confidence threshold 0.7.');
         return {
           sessionId,
           status: 'ABSTAIN',
@@ -356,7 +344,7 @@ export class DebateEngine {
             sessionId,
             'OUTPUT',
             'FINALIZED',
-            `第${round}轮达成共识。`,
+            `Consensus reached at round ${round}.`,
           ),
         );
         return {
@@ -372,13 +360,13 @@ export class DebateEngine {
 
       if (band === 'LIGHT_DEBATE' && round >= 2) {
         const finalConsensus = this.selectConsensus(opinions);
-        notes.push('轻度分歧已在一轮辩论后收敛。');
+        notes.push('Light disagreement converged after one extra round.');
         auditTrail.push(
           this.createAuditEvent(
             sessionId,
             'OUTPUT',
             'FINALIZED',
-            `第${round}轮完成轻度分歧收敛。`,
+            `Light-debate convergence completed at round ${round}.`,
           ),
         );
         return {
@@ -393,7 +381,7 @@ export class DebateEngine {
       }
 
       if (band === 'ESCALATE') {
-        notes.push('检测到高分歧，触发保守线下升级。');
+        notes.push('High disagreement detected; conservative offline escalation.');
         return {
           sessionId,
           status: 'ESCALATE_TO_OFFLINE',
@@ -406,19 +394,19 @@ export class DebateEngine {
         };
       }
 
-      // 3. Update context for next round.
-      context = `上一轮存在冲突意见：${JSON.stringify(opinions)}`;
+      context = `previous conflicting opinions: ${JSON.stringify(opinions)}`;
     }
 
-    notes.push('达到最大轮次后冲突仍未收敛。');
+    notes.push('Maximum rounds reached without convergence.');
     auditTrail.push(
       this.createAuditEvent(
         sessionId,
         'ESCALATION',
         'ERROR_RAISED',
-        '达到最大轮次仍未达成共识。',
+        'Maximum rounds reached without consensus.',
       ),
     );
+
     return {
       sessionId,
       status: 'ABSTAIN',

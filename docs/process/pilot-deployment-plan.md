@@ -128,6 +128,16 @@ curl http://localhost:3001/health
 # 检查专家配置
 curl http://localhost:3001/architecture/experts
 # 预期输出: 专家配置 JSON
+
+# 检查规则治理目录与版本
+curl http://localhost:3001/governance/rules/catalog
+curl http://localhost:3001/governance/rules/version
+
+# 检查 FHIR 最小互操作闭环（SMART scope 头）
+curl -X POST http://localhost:3001/interop/fhir/triage-bundle \
+  -H "content-type: application/json" \
+  -H "x-smart-scope: user/Patient.read user/Observation.read user/Provenance.read" \
+  -d "{\"requestId\":\"pilot-interop-smoke-001\",\"consentToken\":\"consent_local_demo\",\"profile\":{\"patientId\":\"pilot-interop-smoke-001\",\"age\":54,\"sex\":\"female\",\"symptoms\":[\"dizziness\"],\"chronicDiseases\":[\"Hypertension\"],\"medicationHistory\":[\"amlodipine\"],\"vitals\":{\"systolicBP\":146,\"diastolicBP\":92}}}"
 ```
 
 ---

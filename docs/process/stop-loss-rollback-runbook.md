@@ -21,6 +21,7 @@ Default trigger policy:
 
 - consecutive critical failures >= `2`
 - release-block failures in `30` minutes >= `3`
+- governance catalog mismatch (`ruleGovernance.catalogVersion` drift) >= `1`
 
 If any policy condition is met:
 
@@ -38,6 +39,8 @@ If any policy condition is met:
    - `npm run gate:workflow`
    - `npm run gate:scenarios`
    - `npm run gate:metrics`
+   - validate `GET /governance/rules/version` and
+     `POST /interop/fhir/triage-bundle` smoke checks
 5. Run full workflow:
    - `npm run devwf:full`
 6. Record rollback and re-test evidence in reviewer findings.

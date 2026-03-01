@@ -8,6 +8,10 @@ import {
   TriageStreamStageStatus,
   WorkflowStage,
 } from '@copilot-care/shared/types';
+import {
+  AUTHORITATIVE_GUIDELINE_REFERENCES,
+  AUTHORITATIVE_RULE_CATALOG_VERSION,
+} from '../../domain/rules/AuthoritativeMedicalRuleCatalog';
 
 const ORDERED_STAGES: WorkflowStage[] = [
   'START',
@@ -73,6 +77,11 @@ export interface GovernanceRuntimeStageState {
 export interface GovernanceRuntimeSnapshot {
   generatedAt: string;
   source: 'runtime';
+  governanceContext: {
+    catalogVersion: string;
+    guidelineReferenceCount: number;
+    evidenceGateCommands: string[];
+  };
   queueOverview: {
     pending: number;
     reviewing: number;
@@ -258,6 +267,11 @@ function createEmptySnapshot(): GovernanceRuntimeSnapshot {
   return {
     generatedAt,
     source: 'runtime',
+    governanceContext: {
+      catalogVersion: AUTHORITATIVE_RULE_CATALOG_VERSION,
+      guidelineReferenceCount: AUTHORITATIVE_GUIDELINE_REFERENCES.length,
+      evidenceGateCommands: ['npm run gate:metrics', 'npm run gate:all'],
+    },
     queueOverview: {
       pending: 0,
       reviewing: 0,
@@ -663,6 +677,11 @@ export class GovernanceRuntimeTelemetry {
     return {
       generatedAt,
       source: 'runtime',
+      governanceContext: {
+        catalogVersion: AUTHORITATIVE_RULE_CATALOG_VERSION,
+        guidelineReferenceCount: AUTHORITATIVE_GUIDELINE_REFERENCES.length,
+        evidenceGateCommands: ['npm run gate:metrics', 'npm run gate:all'],
+      },
       queueOverview,
       performance: {
         latencyHeat: Math.round(latencyHeat),

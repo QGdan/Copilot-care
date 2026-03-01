@@ -8,6 +8,7 @@ const TARGETS = [
   'src/frontend/src',
   'src/backend/src',
   'src/shared',
+  'docs',
   'README.md',
 ];
 
@@ -33,6 +34,8 @@ const IGNORE_DIRS = new Set([
   'coverage',
   '.opencode',
 ]);
+
+const SUSPECT_TOKENS = ['�', '鍚', '寰', '绛', '锛', '銆', '馃', '鈻', '鈴', '脳'];
 
 function isFileTarget(filePath) {
   return FILE_EXTENSIONS.has(path.extname(filePath).toLowerCase());
@@ -82,6 +85,25 @@ function findReplacementCharIssues(filePath) {
   return issues;
 }
 
+function findSuspectTokenIssues(filePath) {
+  const text = fs.readFileSync(filePath, 'utf8');
+  const lines = text.split(/\r?\n/);
+  const issues = [];
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const hit = SUSPECT_TOKENS.find((token) => lines[index].includes(token));
+    if (!hit) {
+      continue;
+    }
+    issues.push({
+      line: index + 1,
+      snippet: lines[index].trim().slice(0, 120),
+    });
+  }
+
+  return issues;
+}
+
 function main() {
   const files = [];
 
@@ -95,7 +117,10 @@ function main() {
 
   const violations = [];
   for (const filePath of files) {
-    const issues = findReplacementCharIssues(filePath);
+    const issues = [
+      ...findReplacementCharIssues(filePath),
+      ...findSuspectTokenIssues(filePath),
+    ];
     if (issues.length === 0) {
       continue;
     }

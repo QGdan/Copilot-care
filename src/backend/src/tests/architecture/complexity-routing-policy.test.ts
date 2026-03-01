@@ -1,4 +1,4 @@
-import {
+﻿import {
   decideRouting,
   evaluateComplexityScore,
 } from '../../application/services/ComplexityRoutingPolicy';
@@ -60,9 +60,12 @@ describe('Architecture Smoke - complexity routing policy', () => {
     const decision = decideRouting(profile);
 
     expect(complexity.score).toBeGreaterThanOrEqual(6);
+    expect(complexity.factorContributions.length).toBeGreaterThan(0);
     expect(decision.routeMode).toBe('DEEP_DEBATE');
     expect(decision.department).toBe('multiDisciplinary');
     expect(decision.collaborationMode).toBe('MULTI_DISCIPLINARY_CONSULT');
+    expect(decision.factorContributions?.length).toBeGreaterThan(0);
+    expect(decision.matchedRuleIds.length).toBeGreaterThan(0);
   });
 
   it('forces at least light debate when minimum information set is incomplete', () => {
@@ -78,9 +81,16 @@ describe('Architecture Smoke - complexity routing policy', () => {
 
     const decision = decideRouting(profile);
     expect(decision.routeMode).toBe('LIGHT_DEBATE');
-    expect(decision.reasons.some((item) => item.includes('最小信息集未补齐'))).toBe(
-      true,
-    );
+    expect(
+      decision.reasons.some((item) =>
+        item.includes('Minimum information set is incomplete'),
+      ),
+    ).toBe(true);
+    expect(
+      decision.factorContributions?.some(
+        (item) => item.factor === 'minimum_information_set',
+      ),
+    ).toBe(true);
   });
 
   it('uses general-practice panel when cardiology and metabolic signals are close', () => {

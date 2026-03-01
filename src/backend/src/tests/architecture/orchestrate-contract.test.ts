@@ -58,6 +58,7 @@ describe('Contract - orchestrate_triage v6.13', () => {
     expect(payload).toHaveProperty('explainableReport');
     expect(payload).toHaveProperty('workflowTrace');
     expect(payload).toHaveProperty('auditRef');
+    expect(payload).toHaveProperty('ruleGovernance');
 
     const workflowTrace = Array.isArray(payload.workflowTrace)
       ? (payload.workflowTrace as Array<{ stage?: string }>)
@@ -68,6 +69,17 @@ describe('Contract - orchestrate_triage v6.13', () => {
     expect(stages).toContain('REVIEW');
     expect(stages.indexOf('ROUTING')).toBeGreaterThan(-1);
     expect(stages.indexOf('OUTPUT')).toBeGreaterThan(stages.indexOf('ROUTING'));
+
+    const governance = payload.ruleGovernance as
+      | {
+          catalogVersion?: string;
+          matchedRuleIds?: string[];
+          layerDecisions?: Array<{ layer?: string }>;
+        }
+      | undefined;
+    expect(governance?.catalogVersion).toBeTruthy();
+    expect(Array.isArray(governance?.matchedRuleIds)).toBe(true);
+    expect(governance?.layerDecisions?.some((item) => item.layer === 'FLOW_CONTROL')).toBe(true);
   });
 
   it('returns requiredFields for missing MIS fields', async () => {
@@ -90,11 +102,20 @@ describe('Contract - orchestrate_triage v6.13', () => {
     const payload = await response.json() as {
       errorCode: string;
       requiredFields?: string[];
+      ruleGovernance?: {
+        layerDecisions: Array<{ layer: string; status: string }>;
+      };
     };
 
     expect(response.status).toBe(400);
     expect(payload.errorCode).toBe('ERR_MISSING_REQUIRED_DATA');
     expect(Array.isArray(payload.requiredFields)).toBe(true);
     expect((payload.requiredFields ?? []).length).toBeGreaterThan(0);
+    expect(payload.ruleGovernance).toBeDefined();
+    expect(
+      payload.ruleGovernance?.layerDecisions.some(
+        (item) => item.layer === 'FLOW_CONTROL' && item.status === 'fail',
+      ),
+    ).toBe(true);
   });
 });

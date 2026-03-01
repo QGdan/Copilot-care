@@ -109,6 +109,42 @@ export interface TriageRoutingInfo {
   department: TriageDepartment;
   collaborationMode: TriageCollaborationMode;
   reasons: string[];
+  factorContributions?: RoutingFactorContribution[];
+}
+
+export interface RoutingFactorContribution {
+  factor: string;
+  score: number;
+  rationale: string;
+}
+
+export type GovernanceRuleLayer =
+  | 'BASIC_SAFETY'
+  | 'FLOW_CONTROL'
+  | 'INTELLIGENT_COLLABORATION'
+  | 'OPERATIONS';
+
+export type GovernanceLayerDecisionStatus =
+  | 'pass'
+  | 'warn'
+  | 'fail'
+  | 'escalated'
+  | 'blocked';
+
+export interface GovernanceLayerDecision {
+  layer: GovernanceRuleLayer;
+  status: GovernanceLayerDecisionStatus;
+  summary: string;
+  matchedRuleIds?: string[];
+}
+
+export interface RuleGovernanceSnapshot {
+  catalogVersion: string;
+  synonymSetVersion?: string;
+  matchedRuleIds: string[];
+  guidelineRefs: string[];
+  layerDecisions: GovernanceLayerDecision[];
+  evidenceTraceId: string;
 }
 
 export interface StructuredTriageResult {
@@ -228,6 +264,7 @@ export interface DebateResult {
   dissentIndexHistory: number[];
   errorCode?: ErrorCode;
   requiredFields?: string[];
+  ruleGovernance?: RuleGovernanceSnapshot;
   notes: string[];
   auditTrail: AuditEvent[];
 }
@@ -238,6 +275,7 @@ export interface TriageErrorResponse {
   notes: string[];
   requiredFields?: string[];
   auditRef?: string;
+  ruleGovernance?: RuleGovernanceSnapshot;
 }
 
 export type TriageApiResponse = DebateResult | TriageErrorResponse;

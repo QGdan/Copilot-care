@@ -1,17 +1,31 @@
-import {
+﻿import {
   PatientProfile,
+  RoutingFactorContribution,
   TriageCollaborationMode,
   TriageDepartment,
   TriageRouteMode,
   TriageRoutingInfo,
 } from '@copilot-care/shared/types';
+import {
+  evaluateEmergencySignalSnapshot,
+  hasHighRiskComorbidity,
+  isRandomGlucoseDiagnostic,
+  isStage1HypertensionAccAha,
+  isStage2Hypertension,
+  RULE_IDS,
+  resolveLatestBloodPressure,
+} from '../../domain/rules/AuthoritativeMedicalRuleCatalog';
 
 export interface ComplexityScoreResult {
   score: number;
   reasons: string[];
+  factorContributions: RoutingFactorContribution[];
+  matchedRuleIds: string[];
 }
 
-export interface RoutingDecision extends TriageRoutingInfo {}
+export interface RoutingDecision extends TriageRoutingInfo {
+  matchedRuleIds: string[];
+}
 
 interface DepartmentTriageDecision {
   department: TriageDepartment;
@@ -21,22 +35,11 @@ interface DepartmentTriageDecision {
 }
 
 const DEPARTMENT_LABELS: Record<TriageDepartment, string> = {
-  cardiology: '心血管',
-  generalPractice: '全科',
-  metabolic: '代谢',
-  multiDisciplinary: '多学科',
+  cardiology: 'Cardiology',
+  generalPractice: 'General Practice',
+  metabolic: 'Metabolic',
+  multiDisciplinary: 'Multi-disciplinary',
 };
-
-const RED_FLAG_TERMS = [
-  'chest pain',
-  'shortness of breath',
-  'syncope',
-  'severe headache',
-  '胸痛',
-  '呼吸困难',
-  '晕厥',
-  '剧烈头痛',
-];
 
 const CARDIO_DISEASE_TERMS = [
   'hypertension',
@@ -102,22 +105,28 @@ function hasAnyKeyword(text: string, keywords: string[]): boolean {
 }
 
 function hasRedFlag(profile: PatientProfile): boolean {
-  const symptoms = profile.symptoms ?? [];
-  const symptomFlag = symptoms.some((item) => hasAnyKeyword(item, RED_FLAG_TERMS));
-  const bpFlag =
-    (profile.vitals?.systolicBP ?? 0) >= 180 ||
-    (profile.vitals?.diastolicBP ?? 0) >= 110;
-  return symptomFlag || bpFlag;
+  return evaluateEmergencySignalSnapshot(profile).immediateEmergency;
 }
 
 function hasRiskBoundarySignal(profile: PatientProfile): boolean {
   if (hasRedFlag(profile)) {
     return true;
   }
-  const moderateHighBp =
-    (profile.vitals?.systolicBP ?? 0) >= 160 ||
-    (profile.vitals?.diastolicBP ?? 0) >= 100;
-  return moderateHighBp;
+
+  const emergencySignals = evaluateEmergencySignalSnapshot(profile);
+  if (emergencySignals.urgentSameDaySpecialistReview) {
+    return true;
+  }
+
+  const { systolic, diastolic } = resolveLatestBloodPressure(profile);
+  if (isStage2Hypertension(systolic, diastolic)) {
+    return true;
+  }
+
+  return (
+    isStage1HypertensionAccAha(systolic, diastolic) &&
+    hasHighRiskComorbidity(profile)
+  );
 }
 
 function isCoreInformationMissing(profile: PatientProfile): boolean {
@@ -130,7 +139,8 @@ function isCoreInformationMissing(profile: PatientProfile): boolean {
     Number.isFinite(profile.vitals?.diastolicBP);
   const hasHistory =
     (Array.isArray(profile.chronicDiseases) && profile.chronicDiseases.length > 0) ||
-    (Array.isArray(profile.medicationHistory) && profile.medicationHistory.length > 0);
+    (Array.isArray(profile.medicationHistory) &&
+      profile.medicationHistory.length > 0);
 
   return !(hasBloodPressure && hasHistory && (hasComplaint || hasSymptom));
 }
@@ -185,14 +195,23 @@ function detectDepartment(profile: PatientProfile): DepartmentTriageDecision {
     }
   }
 
-  if ((profile.vitals?.systolicBP ?? 0) >= 140 || (profile.vitals?.diastolicBP ?? 0) >= 90) {
+  if (
+    (profile.vitals?.systolicBP ?? 0) >= 140 ||
+    (profile.vitals?.diastolicBP ?? 0) >= 90
+  ) {
     cardioSignalScore += 1;
+  }
+
+  if (isRandomGlucoseDiagnostic(profile.vitals?.bloodGlucose)) {
+    metabolicSignalScore += 2;
   }
 
   if (cardioSignalScore === 0 && metabolicSignalScore === 0) {
     return {
       department: 'generalPractice',
-      reasons: ['缺少清晰专科信号，先由全科进行首轮分诊。'],
+      reasons: [
+        'No clear specialty signal detected; start with general-practice panel.',
+      ],
       cardioSignalScore,
       metabolicSignalScore,
     };
@@ -201,7 +220,9 @@ function detectDepartment(profile: PatientProfile): DepartmentTriageDecision {
   if (Math.abs(cardioSignalScore - metabolicSignalScore) <= 1) {
     return {
       department: 'generalPractice',
-      reasons: ['心血管与代谢信号接近，先由全科进行同专业面板评估。'],
+      reasons: [
+        'Cardio and metabolic signals are close; use general-practice panel first.',
+      ],
       cardioSignalScore,
       metabolicSignalScore,
     };
@@ -210,7 +231,7 @@ function detectDepartment(profile: PatientProfile): DepartmentTriageDecision {
   if (metabolicSignalScore > cardioSignalScore) {
     return {
       department: 'metabolic',
-      reasons: ['代谢相关信号占优，进入代谢专科协同评估。'],
+      reasons: ['Metabolic signal dominates; route to metabolic panel.'],
       cardioSignalScore,
       metabolicSignalScore,
     };
@@ -218,7 +239,7 @@ function detectDepartment(profile: PatientProfile): DepartmentTriageDecision {
 
   return {
     department: 'cardiology',
-    reasons: ['心血管相关信号占优，进入心血管专科协同评估。'],
+    reasons: ['Cardiovascular signal dominates; route to cardiology panel.'],
     cardioSignalScore,
     metabolicSignalScore,
   };
@@ -253,36 +274,78 @@ export function evaluateComplexityScore(
   profile: PatientProfile,
 ): ComplexityScoreResult {
   const reasons: string[] = [];
+  const factorContributions: RoutingFactorContribution[] = [];
+  const matchedRuleIds: string[] = [];
   let score = 0;
 
   if (isCoreInformationMissing(profile)) {
     score += 2;
-    reasons.push('核心信息存在缺口（主诉/血压/病史不完整）(+2)');
+    matchedRuleIds.push(RULE_IDS.FLOW_CONTROL_MINIMUM_INFOSET_GATE);
+    factorContributions.push({
+      factor: 'minimum_information_set',
+      score: 2,
+      rationale:
+        'Core intake information is incomplete; minimum information gate forces deeper routing.',
+    });
+    reasons.push('Core information is incomplete (+2).');
   }
 
   const symptomCount = (profile.symptoms ?? []).length;
   const crossSystems = detectSymptomSystems(profile.symptoms ?? []);
   if (symptomCount >= 3 && crossSystems >= 2) {
     score += 2;
-    reasons.push('症状数量>=3 且跨系统 (+2)');
+    matchedRuleIds.push(RULE_IDS.INTELLIGENT_COLLAB_COMPLEXITY_MULTI_SYSTEM);
+    factorContributions.push({
+      factor: 'multi_system_symptoms',
+      score: 2,
+      rationale: 'Symptoms cross systems with >=3 entries, increasing orchestration complexity.',
+    });
+    reasons.push('Symptoms >=3 across multiple systems (+2).');
   }
 
   if ((profile.chronicDiseases ?? []).length >= 2) {
     score += 2;
-    reasons.push('慢病共病负担>=2 (+2)');
+    matchedRuleIds.push(
+      RULE_IDS.INTELLIGENT_COLLAB_COMPLEXITY_MULTI_COMORBIDITY,
+    );
+    factorContributions.push({
+      factor: 'multi_comorbidity',
+      score: 2,
+      rationale: 'Two or more chronic comorbidities require broader consensus checks.',
+    });
+    reasons.push('Multi-comorbidity burden >=2 (+2).');
   }
 
   if (hasRiskBoundarySignal(profile)) {
     score += 3;
-    reasons.push('触发风险边界信号（红旗或中高危阈值）(+3)');
+    matchedRuleIds.push(RULE_IDS.INTELLIGENT_COLLAB_COMPLEXITY_RISK_BOUNDARY);
+    factorContributions.push({
+      factor: 'risk_boundary_signal',
+      score: 3,
+      rationale: 'Risk-boundary signal detected; conservative routing weight increased.',
+    });
+    reasons.push('Risk-boundary signal detected (+3).');
   }
 
   if (hasHistoryWorseningSignal(profile)) {
     score += 1;
-    reasons.push('存在趋势恶化信号 (+1)');
+    matchedRuleIds.push(
+      RULE_IDS.INTELLIGENT_COLLAB_COMPLEXITY_WORSENING_HISTORY,
+    );
+    factorContributions.push({
+      factor: 'worsening_history',
+      score: 1,
+      rationale: 'History trend indicates worsening trajectory.',
+    });
+    reasons.push('Worsening history signal detected (+1).');
   }
 
-  return { score, reasons };
+  return {
+    score,
+    reasons,
+    factorContributions,
+    matchedRuleIds: [...new Set(matchedRuleIds)],
+  };
 }
 
 export function decideRouting(profile: PatientProfile): RoutingDecision {
@@ -295,7 +358,15 @@ export function decideRouting(profile: PatientProfile): RoutingDecision {
       routeMode: 'ESCALATE_TO_OFFLINE',
       department: 'multiDisciplinary',
       collaborationMode: 'OFFLINE_ESCALATION',
-      reasons: ['红旗边界优先触发，直接线下上转。', ...complexity.reasons],
+      factorContributions: complexity.factorContributions,
+      matchedRuleIds: [
+        ...complexity.matchedRuleIds,
+        RULE_IDS.INTELLIGENT_COLLAB_ROUTE_ESCALATE,
+      ],
+      reasons: [
+        'Emergency red-flag boundary triggered; escalate to offline immediately.',
+        ...complexity.reasons,
+      ],
     };
   }
 
@@ -305,16 +376,21 @@ export function decideRouting(profile: PatientProfile): RoutingDecision {
     routeMode === 'DEEP_DEBATE' ? 'multiDisciplinary' : triageDepartment.department;
 
   const reasons = [
-    `首轮分诊：${DEPARTMENT_LABELS[triageDepartment.department]}（心血管信号=${triageDepartment.cardioSignalScore}，代谢信号=${triageDepartment.metabolicSignalScore}）`,
+    `Initial routing: ${DEPARTMENT_LABELS[triageDepartment.department]} (cardio=${triageDepartment.cardioSignalScore}, metabolic=${triageDepartment.metabolicSignalScore})`,
     ...triageDepartment.reasons,
     ...complexity.reasons,
   ];
 
   if (missingCoreInfo) {
-    reasons.push('最小信息集未补齐，禁止快速共识，至少进入轻度辩论。');
+    reasons.push(
+      'Minimum information set is incomplete; disallow fast consensus and use at least light debate.',
+    );
   }
+
   if (routeMode === 'DEEP_DEBATE') {
-    reasons.push('复杂度达到深度会诊阈值，切换多学科协同。');
+    reasons.push(
+      'Complexity reached deep-debate threshold; switch to multi-disciplinary collaboration.',
+    );
   }
 
   return {
@@ -322,6 +398,15 @@ export function decideRouting(profile: PatientProfile): RoutingDecision {
     routeMode,
     department,
     collaborationMode: resolveCollaborationMode(routeMode),
+    factorContributions: complexity.factorContributions,
+    matchedRuleIds: [
+      ...complexity.matchedRuleIds,
+      routeMode === 'FAST_CONSENSUS'
+        ? RULE_IDS.INTELLIGENT_COLLAB_ROUTE_FAST
+        : routeMode === 'LIGHT_DEBATE'
+          ? RULE_IDS.INTELLIGENT_COLLAB_ROUTE_LIGHT
+          : RULE_IDS.INTELLIGENT_COLLAB_ROUTE_DEEP,
+    ],
     reasons,
   };
 }

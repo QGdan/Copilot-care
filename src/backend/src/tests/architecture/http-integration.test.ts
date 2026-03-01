@@ -75,6 +75,34 @@ describe('Architecture Smoke - HTTP integration', () => {
     expect(payload.currentStage).toBeTruthy();
   });
 
+  it('returns rule catalog snapshot for GET /governance/rules/catalog', async () => {
+    const response = await fetch(`${baseUrl}/governance/rules/catalog`);
+    const payload = await response.json() as {
+      catalogVersion: string;
+      synonymSetVersion: string;
+      layers: Array<{ id: string; layer: string }>;
+      guidelineReferences: Array<{ id: string; url: string }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.catalogVersion).toBeTruthy();
+    expect(payload.synonymSetVersion).toBeTruthy();
+    expect(payload.layers.length).toBeGreaterThan(0);
+    expect(payload.guidelineReferences.length).toBeGreaterThan(0);
+  });
+
+  it('returns rule catalog version for GET /governance/rules/version', async () => {
+    const response = await fetch(`${baseUrl}/governance/rules/version`);
+    const payload = await response.json() as {
+      catalogVersion: string;
+      guidelineCount: number;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.catalogVersion).toBeTruthy();
+    expect(payload.guidelineCount).toBeGreaterThan(0);
+  });
+
   it('returns 400 for POST /orchestrate_triage when profile is missing', async () => {
     const response = await fetch(`${baseUrl}/orchestrate_triage`, {
       method: 'POST',
@@ -115,6 +143,94 @@ describe('Architecture Smoke - HTTP integration', () => {
     expect(['OUTPUT', 'ESCALATE_TO_OFFLINE', 'ABSTAIN', 'ERROR']).toContain(
       payload.status,
     );
+    expect((payload as { ruleGovernance?: unknown }).ruleGovernance).toBeDefined();
+  });
+
+  it('returns 403 for interop bundle when SMART scope is missing', async () => {
+    const response = await fetch(`${baseUrl}/interop/fhir/triage-bundle`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        requestId: 'interop-denied-001',
+        consentToken: 'consent_local_demo',
+        symptomText: 'dizziness',
+        profile: {
+          patientId: 'interop-denied-001',
+          age: 55,
+          sex: 'female',
+          symptoms: ['dizziness'],
+          chronicDiseases: ['Hypertension'],
+          medicationHistory: ['amlodipine'],
+          vitals: {
+            systolicBP: 146,
+            diastolicBP: 92,
+          },
+        },
+      }),
+    });
+    const payload = await response.json() as {
+      resourceType: string;
+      issue: Array<{ code: string }>;
+    };
+
+    expect(response.status).toBe(403);
+    expect(payload.resourceType).toBe('OperationOutcome');
+    expect(payload.issue[0]?.code).toBe('forbidden');
+  });
+
+  it('returns FHIR bundle draft for interop endpoint when SMART scope is valid', async () => {
+    const response = await fetch(`${baseUrl}/interop/fhir/triage-bundle`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-smart-scope': 'user/Patient.read user/Observation.read user/Provenance.read',
+      },
+      body: JSON.stringify({
+        requestId: 'interop-allowed-001',
+        consentToken: 'consent_local_demo',
+        symptomText: 'dizziness',
+        profile: {
+          patientId: 'interop-allowed-001',
+          age: 55,
+          sex: 'female',
+          symptoms: ['dizziness'],
+          chronicDiseases: ['Hypertension'],
+          medicationHistory: ['amlodipine'],
+          vitals: {
+            systolicBP: 146,
+            diastolicBP: 92,
+          },
+        },
+        signals: [
+          {
+            timestamp: '2026-03-01T10:00:00Z',
+            source: 'manual',
+            systolicBP: 146,
+            diastolicBP: 92,
+          },
+        ],
+      }),
+    });
+    const payload = await response.json() as {
+      draft: boolean;
+      triage: {
+        status: string;
+        ruleGovernance?: {
+          catalogVersion?: string;
+        };
+      };
+      bundle: {
+        resourceType: string;
+        entry: unknown[];
+      };
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.draft).toBe(true);
+    expect(payload.bundle.resourceType).toBe('Bundle');
+    expect(payload.bundle.entry.length).toBeGreaterThan(0);
+    expect(payload.triage.status).toBeTruthy();
+    expect(payload.triage.ruleGovernance?.catalogVersion).toBeTruthy();
   });
 
   it('updates governance runtime totals after POST /orchestrate_triage', async () => {

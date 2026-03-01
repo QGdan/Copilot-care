@@ -2,6 +2,7 @@ import {
   ErrorCode,
   TriageStatus,
 } from '@copilot-care/shared/types';
+import { GovernanceRuleLayer } from '../../domain/rules/AuthoritativeMedicalRuleCatalog';
 
 export type GovernanceSeverity = 'high' | 'critical';
 
@@ -17,6 +18,7 @@ export type GovernanceAction =
 export interface RiskTriggerRule {
   id: string;
   title: string;
+  layer: GovernanceRuleLayer;
   scope: 'runtime' | 'release';
   status?: TriageStatus;
   errorCode?: ErrorCode;
@@ -31,6 +33,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-001',
     title: 'Required intake fields missing',
+    layer: 'FLOW_CONTROL',
     scope: 'runtime',
     status: 'ERROR',
     errorCode: 'ERR_MISSING_REQUIRED_DATA',
@@ -42,6 +45,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-002',
     title: 'Invalid vital sign pair detected',
+    layer: 'BASIC_SAFETY',
     scope: 'runtime',
     status: 'ERROR',
     errorCode: 'ERR_INVALID_VITAL_SIGN',
@@ -53,6 +57,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-003',
     title: 'Low confidence consensus candidate',
+    layer: 'INTELLIGENT_COLLABORATION',
     scope: 'runtime',
     status: 'ABSTAIN',
     errorCode: 'ERR_LOW_CONFIDENCE_ABSTAIN',
@@ -64,6 +69,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-004',
     title: 'Conflict remains unresolved',
+    layer: 'INTELLIGENT_COLLABORATION',
     scope: 'runtime',
     status: 'ABSTAIN',
     errorCode: 'ERR_CONFLICT_UNRESOLVED',
@@ -75,6 +81,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-005',
     title: 'Safety red-flag or severe disagreement',
+    layer: 'BASIC_SAFETY',
     scope: 'runtime',
     status: 'ESCALATE_TO_OFFLINE',
     errorCode: 'ERR_ESCALATE_TO_OFFLINE',
@@ -86,6 +93,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-006',
     title: 'Guideline evidence is missing',
+    layer: 'FLOW_CONTROL',
     scope: 'runtime',
     status: 'ERROR',
     errorCode: 'ERR_GUIDELINE_EVIDENCE_MISSING',
@@ -98,6 +106,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-007',
     title: 'Adversarial prompt or prompt-injection signal',
+    layer: 'BASIC_SAFETY',
     scope: 'runtime',
     status: 'ERROR',
     errorCode: 'ERR_ADVERSARIAL_PROMPT_DETECTED',
@@ -110,6 +119,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-008',
     title: 'M3 metric threshold breach',
+    layer: 'OPERATIONS',
     scope: 'release',
     action: 'BLOCK_RELEASE',
     severity: 'critical',
@@ -120,6 +130,7 @@ export const RISK_TRIGGER_MATRIX: readonly RiskTriggerRule[] = [
   {
     id: 'RTM-009',
     title: 'Gate evidence missing in review package',
+    layer: 'OPERATIONS',
     scope: 'release',
     action: 'BLOCK_RELEASE',
     severity: 'critical',
@@ -173,4 +184,10 @@ export function listErrPathMappings(): ErrPathMapping[] {
       action: rule.action,
       releaseBlock: rule.releaseBlock,
     }));
+}
+
+export function listRiskTriggersByLayer(
+  layer: GovernanceRuleLayer,
+): RiskTriggerRule[] {
+  return RISK_TRIGGER_MATRIX.filter((rule) => rule.layer === layer);
 }

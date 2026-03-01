@@ -24,6 +24,10 @@ import { FollowupPlanningService } from '../../application/services/FollowupPlan
 import { ExplainableReportService } from '../../application/services/ExplainableReportService';
 import { ConsentValidationService } from '../../application/services/ConsentValidationService';
 import { SafetyOutputGuardService } from '../../application/services/SafetyOutputGuardService';
+import {
+  buildRuleGovernanceSnapshot,
+  buildValidationErrorGovernanceSnapshot,
+} from '../../application/services/RuleGovernanceService';
 import { PatientContextEnricher } from '../mcp/PatientContextEnricher';
 
 interface DepartmentEngines {
@@ -275,6 +279,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
   ): Promise<DebateResult> {
     const requestId = input.requestId?.trim() || input.sessionId?.trim() || undefined;
     const sessionId = requestId || `sess_${Date.now()}`;
+    const auditRef = `audit_${sessionId}`;
     const workflowTrace: WorkflowStageTrace[] = [];
     const pushWorkflowStage = (stage: WorkflowStageTrace): void => {
       workflowTrace.push(stage);
@@ -297,12 +302,18 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       return {
         sessionId,
         requestId,
-        auditRef: `audit_${sessionId}`,
+        auditRef,
         status: 'ERROR',
         rounds: [],
         dissentIndexHistory: [],
         errorCode,
         requiredFields: consent.requiredFields ?? ['consentToken'],
+        ruleGovernance: buildValidationErrorGovernanceSnapshot({
+          sessionId,
+          auditRef,
+          errorCode,
+          requiredFields: consent.requiredFields ?? ['consentToken'],
+        }),
         notes,
         workflowTrace: [...workflowTrace],
         auditTrail: [
@@ -349,12 +360,18 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       return {
         sessionId,
         requestId,
-        auditRef: `audit_${sessionId}`,
+        auditRef,
         status: 'ERROR',
         rounds: [],
         dissentIndexHistory: [],
         errorCode,
         requiredFields: intake.requiredFields,
+        ruleGovernance: buildValidationErrorGovernanceSnapshot({
+          sessionId,
+          auditRef,
+          errorCode,
+          requiredFields: intake.requiredFields,
+        }),
         notes: [...intake.notes, ...mcpInsights],
         workflowTrace: [...workflowTrace],
         auditTrail: [
@@ -415,7 +432,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       return {
         sessionId,
         requestId,
-        auditRef: `audit_${sessionId}`,
+        auditRef,
         status: 'ESCALATE_TO_OFFLINE',
         rounds: [],
         routing: decision,
@@ -424,6 +441,14 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         workflowTrace: [...workflowTrace],
         dissentIndexHistory: [],
         errorCode: 'ERR_ESCALATE_TO_OFFLINE',
+        ruleGovernance: buildRuleGovernanceSnapshot({
+          sessionId,
+          auditRef,
+          risk,
+          routing: decision,
+          status: 'ESCALATE_TO_OFFLINE',
+          errorCode: 'ERR_ESCALATE_TO_OFFLINE',
+        }),
         notes: ['红旗边界触发，执行线下上转。', ...mcpInsights, ...decision.reasons],
         auditTrail: [createRoutingAuditEvent(sessionId, decision)],
       };
@@ -559,13 +584,21 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       ...finalResult,
       sessionId,
       requestId,
-      auditRef: `audit_${sessionId}`,
+      auditRef,
       status: safetyOutcome.status,
       errorCode: safetyOutcome.errorCode,
       finalConsensus: safetyOutcome.finalConsensus,
       routing: decision,
       triageResult: safetyOutcome.triageResult,
       explainableReport: safetyOutcome.explainableReport,
+      ruleGovernance: buildRuleGovernanceSnapshot({
+        sessionId,
+        auditRef,
+        risk,
+        routing: decision,
+        status: safetyOutcome.status,
+        errorCode: safetyOutcome.errorCode,
+      }),
       workflowTrace,
       notes: [
         '状态机路径：开始 -> 信息采集 -> 风险评估 -> 分流处理 -> 审校 -> 输出',

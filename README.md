@@ -209,6 +209,29 @@ GET /architecture/experts
 
 返回包含每个专家的 provider、来源（`env|default|invalid_fallback`）以及 `llmEnabled` 状态，前端可据此展示专家绑定情况。
 
+新增治理规则只读接口：
+
+```bash
+GET /governance/rules/catalog
+GET /governance/rules/version
+```
+
+`/orchestrate_triage` 与 `/orchestrate_triage/stream` 的响应中新增可选字段
+`ruleGovernance`，用于返回规则版本、命中规则ID、分层决策与证据链追踪ID。
+
+新增 FHIR 最小互操作端点：
+
+```bash
+POST /interop/fhir/triage-bundle
+```
+
+说明：
+
+- 该端点要求请求头 `x-smart-scope`，需同时包含 `Patient`、`Observation`、
+  `Provenance` 的 `read` scope；
+- 返回 draft FHIR Bundle（Patient/Observation/Provenance）以及 triage 摘要；
+- 当前为“最小闭环”，不执行外部 FHIR 服务器写回。
+
 ## 比赛演示建议
 
 演示前建议执行：

@@ -3,6 +3,7 @@ import {
   DebateResult,
   ErrorCode,
   OrchestrationSnapshot,
+  RuleGovernanceSnapshot,
   TriageApiResponse,
   TriageErrorResponse,
   TriageRequest,
@@ -11,7 +12,14 @@ import {
   WorkflowStage,
 } from '@copilot-care/shared/types';
 import { RequestValidationError } from '../../application/errors/RequestValidationError';
+import { buildValidationErrorGovernanceSnapshot } from '../../application/services/RuleGovernanceService';
 import { RunTriageSessionUseCase } from '../../application/usecases/RunTriageSessionUseCase';
+import {
+  AUTHORITATIVE_GUIDELINE_REFERENCES,
+  AUTHORITATIVE_RULE_CATALOG_VERSION,
+  LAYERED_RULE_DESCRIPTORS,
+  RED_FLAG_SYNONYM_SET_VERSION,
+} from '../../domain/rules/AuthoritativeMedicalRuleCatalog';
 import {
   CoordinatorSnapshotContext,
   CoordinatorSnapshotService,
@@ -61,6 +69,7 @@ function buildErrorResponse(
   options?: {
     requiredFields?: string[];
     auditRef?: string;
+    ruleGovernance?: RuleGovernanceSnapshot;
   },
 ): TriageErrorResponse {
   return {
@@ -69,6 +78,7 @@ function buildErrorResponse(
     notes: [message],
     requiredFields: options?.requiredFields,
     auditRef: options?.auditRef,
+    ruleGovernance: options?.ruleGovernance,
   };
 }
 
@@ -80,6 +90,7 @@ function toApiResponse(result: DebateResult): TriageApiResponse {
       {
         requiredFields: result.requiredFields,
         auditRef: result.auditRef,
+        ruleGovernance: result.ruleGovernance,
       },
     );
   }
@@ -243,6 +254,11 @@ export function createTriageRouter(
       governanceRuntimeTelemetry?.getSnapshot() ?? {
         generatedAt: nowIso(),
         source: 'runtime',
+        governanceContext: {
+          catalogVersion: AUTHORITATIVE_RULE_CATALOG_VERSION,
+          guidelineReferenceCount: AUTHORITATIVE_GUIDELINE_REFERENCES.length,
+          evidenceGateCommands: ['npm run gate:metrics', 'npm run gate:all'],
+        },
         queueOverview: {
           pending: 0,
           reviewing: 0,
@@ -334,6 +350,25 @@ export function createTriageRouter(
     );
   });
 
+  router.get('/governance/rules/catalog', (_request: Request, response: Response) => {
+    response.status(200).json({
+      catalogVersion: AUTHORITATIVE_RULE_CATALOG_VERSION,
+      synonymSetVersion: RED_FLAG_SYNONYM_SET_VERSION,
+      layers: LAYERED_RULE_DESCRIPTORS,
+      guidelineReferences: AUTHORITATIVE_GUIDELINE_REFERENCES,
+      generatedAt: nowIso(),
+    });
+  });
+
+  router.get('/governance/rules/version', (_request: Request, response: Response) => {
+    response.status(200).json({
+      catalogVersion: AUTHORITATIVE_RULE_CATALOG_VERSION,
+      synonymSetVersion: RED_FLAG_SYNONYM_SET_VERSION,
+      guidelineCount: AUTHORITATIVE_GUIDELINE_REFERENCES.length,
+      generatedAt: nowIso(),
+    });
+  });
+
   router.post(
     '/orchestrate_triage',
     async (request: Request, response: Response<TriageApiResponse>) => {
@@ -383,16 +418,37 @@ export function createTriageRouter(
         }
 
         if (error instanceof RequestValidationError) {
+          const fallbackSessionId = `validation-${Date.now()}`;
+          const auditRef = `audit_${fallbackSessionId}`;
           response
             .status(400)
-            .json(buildErrorResponse(error.errorCode, error.message));
+            .json(
+              buildErrorResponse(error.errorCode, error.message, {
+                auditRef,
+                ruleGovernance: buildValidationErrorGovernanceSnapshot({
+                  sessionId: fallbackSessionId,
+                  auditRef,
+                  errorCode: error.errorCode,
+                }),
+              }),
+            );
           return;
         }
 
+        const fallbackSessionId = `runtime-${Date.now()}`;
+        const auditRef = `audit_${fallbackSessionId}`;
         response.status(500).json(
           buildErrorResponse(
             'ERR_CONFLICT_UNRESOLVED',
             'Unexpected runtime error. See backend logs.',
+            {
+              auditRef,
+              ruleGovernance: buildValidationErrorGovernanceSnapshot({
+                sessionId: fallbackSessionId,
+                auditRef,
+                errorCode: 'ERR_CONFLICT_UNRESOLVED',
+              }),
+            },
           ),
         );
       }
@@ -758,9 +814,23 @@ export function createTriageRouter(
       } catch (error) {
         const validationError =
           error instanceof RequestValidationError ? error : undefined;
+        const fallbackSessionId =
+          inputForSnapshot?.requestId
+          || inputForSnapshot?.sessionId
+          || `stream-runtime-${Date.now()}`;
+        const auditRef = `audit_${fallbackSessionId}`;
         const errorPayload = buildErrorResponse(
           validationError?.errorCode ?? 'ERR_CONFLICT_UNRESOLVED',
           validationError?.message ?? 'Unexpected runtime error. See backend logs.',
+          {
+            auditRef,
+            ruleGovernance: buildValidationErrorGovernanceSnapshot({
+              sessionId: fallbackSessionId,
+              auditRef,
+              errorCode:
+                validationError?.errorCode ?? 'ERR_CONFLICT_UNRESOLVED',
+            }),
+          },
         );
         latestFinalStatus = 'ERROR';
         if (stageRuntime.REVIEW.status === 'pending') {

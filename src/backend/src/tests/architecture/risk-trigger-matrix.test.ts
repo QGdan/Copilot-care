@@ -1,6 +1,7 @@
 import { ErrorCode } from '@copilot-care/shared/types';
 import {
   listErrPathMappings,
+  listRiskTriggersByLayer,
   resolveRiskTriggerByErrorCode,
   RISK_TRIGGER_MATRIX,
 } from '../../infrastructure/governance/riskTriggerMatrix';
@@ -42,6 +43,24 @@ describe('Architecture Smoke - risk trigger matrix automation', () => {
     expect(ids.has('RTM-008')).toBe(true);
     expect(ids.has('RTM-009')).toBe(true);
     expect(releaseBlockRules.every((rule) => typeof rule.gateCommand === 'string')).toBe(
+      true,
+    );
+  });
+
+  it('covers all four governance rule layers', () => {
+    expect(listRiskTriggersByLayer('BASIC_SAFETY').length).toBeGreaterThan(0);
+    expect(listRiskTriggersByLayer('FLOW_CONTROL').length).toBeGreaterThan(0);
+    expect(
+      listRiskTriggersByLayer('INTELLIGENT_COLLABORATION').length,
+    ).toBeGreaterThan(0);
+    expect(listRiskTriggersByLayer('OPERATIONS').length).toBeGreaterThan(0);
+  });
+
+  it('keeps release blocking rules in operations layer', () => {
+    const releaseBlockRules = RISK_TRIGGER_MATRIX.filter(
+      (rule) => rule.scope === 'release' && rule.releaseBlock,
+    );
+    expect(releaseBlockRules.every((rule) => rule.layer === 'OPERATIONS')).toBe(
       true,
     );
   });

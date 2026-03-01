@@ -5,6 +5,19 @@ import {
   RiskLevel,
   TriageLevel,
 } from '@copilot-care/shared/types';
+import {
+  buildGuidelineBasis,
+  evaluateEmergencySignalSnapshot,
+  hasClassicHyperglycemiaSymptoms,
+  hasHighRiskComorbidity,
+  isRandomGlucoseDiagnostic,
+  isStage1HypertensionAccAha,
+  isStage1HypertensionNice,
+  isStage2Hypertension,
+  RULE_IDS,
+  resolveLatestBloodGlucose,
+  resolveLatestBloodPressure,
+} from '../../domain/rules/AuthoritativeMedicalRuleCatalog';
 
 export interface RiskAssessmentSnapshot {
   riskLevel: RiskLevel;
@@ -12,37 +25,7 @@ export interface RiskAssessmentSnapshot {
   redFlagTriggered: boolean;
   evidence: string[];
   guidelineBasis: string[];
-}
-
-const RED_FLAG_TERMS = [
-  'chest pain',
-  'shortness of breath',
-  'syncope',
-  'severe headache',
-  'neurological deficit',
-  'hurt myself',
-  'suicide',
-  'kill myself',
-  'die',
-  '胸痛',
-  '呼吸困难',
-  '晕厥',
-  '剧烈头痛',
-  '神经功能缺损',
-];
-
-function hasRedFlagBySymptoms(profile: PatientProfile): boolean {
-  const symptoms = profile.symptoms ?? [];
-  return symptoms.some((symptom) => {
-    const normalized = symptom.toLowerCase();
-    return RED_FLAG_TERMS.some((term) => normalized.includes(term.toLowerCase()));
-  });
-}
-
-function hasRedFlagBySignals(signals: HealthSignal[]): boolean {
-  return signals.some((signal) => {
-    return (signal.systolicBP ?? 0) >= 180 || (signal.diastolicBP ?? 0) >= 110;
-  });
+  matchedRuleIds: string[];
 }
 
 function mapRiskToTriageLevel(riskLevel: RiskLevel): TriageLevel {
@@ -64,23 +47,11 @@ export class RuleFirstRiskAssessmentService {
     signals: HealthSignal[] = [],
   ): RiskAssessmentSnapshot {
     const evidence: string[] = [];
-    const guidelineBasis: string[] = [
-      '高血压分级与风险分层规则（第5章模块B）',
-      '红旗短路优先原则（第3章与第4章）',
-    ];
-
-    const systolic =
-      profile.vitals?.systolicBP ??
-      [...signals]
-        .reverse()
-        .find((signal) => Number.isFinite(signal.systolicBP))
-        ?.systolicBP;
-    const diastolic =
-      profile.vitals?.diastolicBP ??
-      [...signals]
-        .reverse()
-        .find((signal) => Number.isFinite(signal.diastolicBP))
-        ?.diastolicBP;
+    const matchedRuleIds: string[] = [];
+    const guidelineBasis = buildGuidelineBasis();
+    const { systolic, diastolic } = resolveLatestBloodPressure(profile, signals);
+    const glucose = resolveLatestBloodGlucose(profile, signals);
+    const emergencySignals = evaluateEmergencySignalSnapshot(profile, signals);
 
     if (
       Number.isFinite(systolic) &&
@@ -89,59 +60,112 @@ export class RuleFirstRiskAssessmentService {
     ) {
       throw new RequestValidationError(
         'ERR_INVALID_VITAL_SIGN',
-        '收缩压不能低于舒张压。',
+        'Systolic pressure must not be lower than diastolic pressure.',
       );
     }
 
-    const redFlagTriggered =
-      hasRedFlagBySymptoms(profile) ||
-      hasRedFlagBySignals(signals) ||
-      (systolic ?? 0) >= 180 ||
-      (diastolic ?? 0) >= 110;
+    const redFlagTriggered = emergencySignals.immediateEmergency;
 
     if (redFlagTriggered) {
-      evidence.push('触发红旗症状或危急血压阈值。');
+      matchedRuleIds.push(...emergencySignals.matchedRuleIds);
+      evidence.push(...emergencySignals.evidence);
       return {
         riskLevel: 'L3',
         triageLevel: 'emergency',
         redFlagTriggered: true,
         evidence,
         guidelineBasis,
+        matchedRuleIds: [...new Set(matchedRuleIds)],
       };
     }
 
+    const stage2Hypertension = isStage2Hypertension(systolic, diastolic);
+    const stage1Nice = isStage1HypertensionNice(systolic, diastolic);
+    const stage1AccAha = isStage1HypertensionAccAha(systolic, diastolic);
     const hasMultiComorbidity = (profile.chronicDiseases ?? []).length >= 2;
     const hasPersistentSymptoms = (profile.symptoms ?? []).length >= 3;
+    const highRiskComorbidity = hasHighRiskComorbidity(profile);
+    const glucoseDiagnosticSignal =
+      isRandomGlucoseDiagnostic(glucose) &&
+      hasClassicHyperglycemiaSymptoms(profile);
 
-    if ((systolic ?? 0) >= 160 || (diastolic ?? 0) >= 100 || hasMultiComorbidity) {
-      evidence.push('血压达到中高风险区间或存在多病共存。');
+    if (
+      stage2Hypertension ||
+      hasMultiComorbidity ||
+      glucoseDiagnosticSignal ||
+      emergencySignals.urgentSameDaySpecialistReview ||
+      (stage1AccAha && highRiskComorbidity)
+    ) {
+      if (stage2Hypertension) {
+        matchedRuleIds.push(RULE_IDS.FLOW_CONTROL_STAGE2_HTN);
+        evidence.push(
+          `Stage-2 hypertension range detected (SBP=${systolic ?? 'NA'}, DBP=${diastolic ?? 'NA'}).`,
+        );
+      }
+      if (hasMultiComorbidity) {
+        evidence.push('Multiple chronic comorbidities detected (>=2).');
+      }
+      if (stage1AccAha && highRiskComorbidity) {
+        matchedRuleIds.push(RULE_IDS.FLOW_CONTROL_STAGE1_HTN_HIGH_RISK);
+        evidence.push(
+          'ACC/AHA stage-1 blood pressure plus high-risk comorbidity requires tighter control.',
+        );
+      }
+      if (glucoseDiagnosticSignal) {
+        matchedRuleIds.push(RULE_IDS.FLOW_CONTROL_RANDOM_GLUCOSE_CLASSIC);
+        evidence.push(
+          `Random glucose diagnostic signal detected (${glucose ?? 'NA'} mg/dL with classic hyperglycemia symptoms).`,
+        );
+      }
+      if (
+        emergencySignals.urgentSameDaySpecialistReview &&
+        !emergencySignals.immediateEmergency
+      ) {
+        matchedRuleIds.push(RULE_IDS.FLOW_CONTROL_SEVERE_HTN_SAME_DAY);
+        evidence.push(
+          'Severe hypertension without immediate life-threatening symptom still requires same-day specialist review.',
+        );
+      }
       return {
         riskLevel: 'L2',
         triageLevel: mapRiskToTriageLevel('L2'),
         redFlagTriggered: false,
         evidence,
         guidelineBasis,
+        matchedRuleIds: [...new Set(matchedRuleIds)],
       };
     }
 
-    if ((systolic ?? 0) >= 140 || (diastolic ?? 0) >= 90 || hasPersistentSymptoms) {
-      evidence.push('血压轻中度升高或症状持续。');
+    if (stage1Nice || stage1AccAha || hasPersistentSymptoms) {
+      if (stage1AccAha) {
+        matchedRuleIds.push(RULE_IDS.FLOW_CONTROL_STAGE1_HTN_HIGH_RISK);
+      }
+      if (stage1Nice || stage1AccAha) {
+        evidence.push(
+          `Stage-1 hypertension range detected (SBP=${systolic ?? 'NA'}, DBP=${diastolic ?? 'NA'}).`,
+        );
+      }
+      if (hasPersistentSymptoms) {
+        evidence.push('Persistent symptom burden detected (>=3 symptoms).');
+      }
       return {
         riskLevel: 'L1',
         triageLevel: mapRiskToTriageLevel('L1'),
         redFlagTriggered: false,
         evidence,
         guidelineBasis,
+        matchedRuleIds: [...new Set(matchedRuleIds)],
       };
     }
 
-    evidence.push('未见明确高风险边界信号，进入常规管理路径。');
+    evidence.push('No high-risk boundary signal detected by current rule set.');
     return {
       riskLevel: 'L0',
       triageLevel: mapRiskToTriageLevel('L0'),
       redFlagTriggered: false,
       evidence,
       guidelineBasis,
+      matchedRuleIds: [...new Set(matchedRuleIds)],
     };
   }
 }
