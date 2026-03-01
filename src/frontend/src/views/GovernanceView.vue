@@ -5,7 +5,11 @@ import GovernanceDashboard from '../components/GovernanceDashboard.vue';
 import ReviewQueue from '../components/ReviewQueue.vue';
 import EvidenceDrawer from '../components/EvidenceDrawer.vue';
 import {
+  fetchGovernanceRuleCatalog,
+  fetchGovernanceRuleVersion,
   fetchGovernanceRuntime,
+  type GovernanceRuleCatalogResponse,
+  type GovernanceRuleVersionResponse,
   type GovernanceRuntimeResponse,
   type GovernanceRuntimeSession,
 } from '../services/triageApi';
@@ -89,6 +93,8 @@ const reviewItems = ref<ReviewItem[]>(
 const queueFilter = ref<QueueFilter>('all');
 const dashboardFocusStage = ref<WorkflowStage | null>(null);
 const runtimeSnapshot = ref<GovernanceRuntimeResponse | null>(null);
+const ruleCatalog = ref<GovernanceRuleCatalogResponse | null>(null);
+const ruleVersion = ref<GovernanceRuleVersionResponse | null>(null);
 const runtimeLoading = ref<boolean>(false);
 const runtimeLoadError = ref<string>('');
 let runtimePollTimer: ReturnType<typeof setInterval> | null = null;
@@ -674,6 +680,39 @@ const runtimeUpdatedAtText = computed<string>(() => {
   return formatRuntimeUpdatedAt(runtimeSnapshot.value.generatedAt);
 });
 
+const ruleCatalogVersionText = computed<string>(() => {
+  return (
+    ruleVersion.value?.catalogVersion
+    || ruleCatalog.value?.catalogVersion
+    || '--'
+  );
+});
+
+const ruleSynonymVersionText = computed<string>(() => {
+  return (
+    ruleVersion.value?.synonymSetVersion
+    || ruleCatalog.value?.synonymSetVersion
+    || '--'
+  );
+});
+
+const ruleGuidelineCountText = computed<string>(() => {
+  if (typeof ruleVersion.value?.guidelineCount === 'number') {
+    return String(ruleVersion.value.guidelineCount);
+  }
+  if (ruleCatalog.value) {
+    return String(ruleCatalog.value.guidelineReferences.length);
+  }
+  return '--';
+});
+
+const ruleLayerCountText = computed<string>(() => {
+  if (!ruleCatalog.value) {
+    return '--';
+  }
+  return String(ruleCatalog.value.layers.length);
+});
+
 const isRuntimeLinked = computed<boolean>(() => {
   return runtimeSnapshot.value !== null;
 });
@@ -691,11 +730,26 @@ async function refreshRuntimeSnapshot(): Promise<void> {
   }
 }
 
+async function refreshRuleGovernanceMetadata(): Promise<void> {
+  try {
+    const [catalog, version] = await Promise.all([
+      fetchGovernanceRuleCatalog(),
+      fetchGovernanceRuleVersion(),
+    ]);
+    ruleCatalog.value = catalog;
+    ruleVersion.value = version;
+  } catch {
+    ruleCatalog.value = null;
+    ruleVersion.value = null;
+  }
+}
+
 onMounted(() => {
   if (import.meta.env.MODE === 'test') {
     return;
   }
 
+  void refreshRuleGovernanceMetadata();
   void refreshRuntimeSnapshot();
   runtimePollTimer = setInterval(() => {
     void refreshRuntimeSnapshot();
@@ -726,6 +780,12 @@ onBeforeUnmount(() => {
           </span>
           <span class="mission-chip" :data-source="isRuntimeLinked ? 'runtime' : 'offline'">
             {{ isRuntimeLinked ? `实时数据 ${runtimeUpdatedAtText}` : '后端未连接' }}
+          </span>
+          <span class="mission-chip" data-testid="governance-catalog-version">
+            规则库 {{ ruleCatalogVersionText }}
+          </span>
+          <span class="mission-chip" data-testid="governance-guideline-count">
+            指南 {{ ruleGuidelineCountText }}
           </span>
         </div>
         <ul class="mission-narratives" data-testid="governance-mission-narratives">
@@ -758,6 +818,12 @@ onBeforeUnmount(() => {
           <a class="fhir-link" href="/fhir">前往 FHIR 资源浏览</a>
           <span class="governance-upgrade-tip">
             {{ governanceUpgradeTip }}
+          </span>
+          <span
+            class="governance-upgrade-tip"
+            data-testid="governance-rule-version-hint"
+          >
+            Synonym {{ ruleSynonymVersionText }} · Layers {{ ruleLayerCountText }}
           </span>
           <span v-if="runtimeLoadError" class="runtime-error-tip">{{ runtimeLoadError }}</span>
         </div>

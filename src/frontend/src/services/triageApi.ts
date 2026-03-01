@@ -1,6 +1,8 @@
 ﻿import axios from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import type {
   OrchestrationSnapshot,
+  RuleGovernanceSnapshot,
   TriageApiResponse,
   TriageErrorResponse,
   TriageRequest,
@@ -66,9 +68,11 @@ async function postToBase<T>(
   baseUrl: string,
   path: string,
   payload: unknown,
+  config?: AxiosRequestConfig,
 ): Promise<T> {
   const response = await axios.post<T>(`${baseUrl}${path}`, payload, {
     timeout: requestTimeoutMs,
+    ...config,
   });
   return response.data;
 }
@@ -83,12 +87,13 @@ async function getFromBase<T>(baseUrl: string, path: string): Promise<T> {
 async function postWithBaseFallback<T>(
   path: string,
   payload: unknown,
+  config?: AxiosRequestConfig,
 ): Promise<T> {
   let lastError: unknown;
 
   for (const baseUrl of getBaseCandidates()) {
     try {
-      const data = await postToBase<T>(baseUrl, path, payload);
+      const data = await postToBase<T>(baseUrl, path, payload, config);
       markPreferredBase(baseUrl);
       return data;
     } catch (error) {
@@ -205,6 +210,69 @@ export interface GovernanceRuntimeStageState {
   updatedAt: string;
 }
 
+export type GovernanceRuleLayer =
+  | 'BASIC_SAFETY'
+  | 'FLOW_CONTROL'
+  | 'INTELLIGENT_COLLABORATION'
+  | 'OPERATIONS';
+
+export interface GovernanceRuleLayerDescriptor {
+  id: string;
+  layer: GovernanceRuleLayer;
+  title: string;
+  summary: string;
+  implementationRefs: string[];
+}
+
+export interface GovernanceGuidelineReference {
+  id: string;
+  title: string;
+  publisher: string;
+  publishedOn: string;
+  lastUpdatedOn?: string;
+  url: string;
+}
+
+export interface GovernanceRuleCatalogResponse {
+  catalogVersion: string;
+  synonymSetVersion?: string;
+  layers: GovernanceRuleLayerDescriptor[];
+  guidelineReferences: GovernanceGuidelineReference[];
+  generatedAt: string;
+}
+
+export interface GovernanceRuleVersionResponse {
+  catalogVersion: string;
+  synonymSetVersion?: string;
+  guidelineCount: number;
+  generatedAt: string;
+}
+
+export interface InteropFhirBundleDraftResponse {
+  draft: true;
+  generatedAt: string;
+  triage: {
+    sessionId: string;
+    status: string;
+    triageLevel?: string;
+    destination?: string;
+    ruleGovernance?: RuleGovernanceSnapshot;
+  };
+  bundle: {
+    resourceType: 'Bundle';
+    type: 'collection';
+    timestamp: string;
+    identifier: {
+      system: string;
+      value: string;
+    };
+    entry: Array<{
+      fullUrl?: string;
+      resource: Record<string, unknown>;
+    }>;
+  };
+}
+
 export async function orchestrateTriage(
   payload: TriageRequest,
 ): Promise<TriageApiResponse> {
@@ -217,6 +285,41 @@ export async function fetchExpertArchitecture(): Promise<ExpertArchitectureRespo
 
 export async function fetchGovernanceRuntime(): Promise<GovernanceRuntimeResponse> {
   return getWithBaseFallback<GovernanceRuntimeResponse>('/governance/runtime');
+}
+
+export async function fetchGovernanceRuleCatalog(): Promise<GovernanceRuleCatalogResponse> {
+  return getWithBaseFallback<GovernanceRuleCatalogResponse>(
+    '/governance/rules/catalog',
+  );
+}
+
+export async function fetchGovernanceRuleVersion(): Promise<GovernanceRuleVersionResponse> {
+  return getWithBaseFallback<GovernanceRuleVersionResponse>(
+    '/governance/rules/version',
+  );
+}
+
+export interface InteropFhirBundleOptions {
+  smartScope?: string;
+}
+
+const DEFAULT_SMART_SCOPE =
+  'patient/Patient.read patient/Observation.read patient/Provenance.read';
+
+export async function createInteropFhirTriageBundle(
+  payload: TriageRequest,
+  options?: InteropFhirBundleOptions,
+): Promise<InteropFhirBundleDraftResponse> {
+  const smartScope = options?.smartScope?.trim() || DEFAULT_SMART_SCOPE;
+  return postWithBaseFallback<InteropFhirBundleDraftResponse>(
+    '/interop/fhir/triage-bundle',
+    payload,
+    {
+      headers: {
+        'x-smart-scope': smartScope,
+      },
+    },
+  );
 }
 
 export interface StreamOptions {

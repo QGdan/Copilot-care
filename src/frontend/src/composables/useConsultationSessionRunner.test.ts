@@ -180,6 +180,21 @@ function createSuccessResponse(): Exclude<TriageApiResponse, { status: 'ERROR' }
       },
     ],
     dissentIndexHistory: [],
+    ruleGovernance: {
+      catalogVersion: '2026.03-r1',
+      synonymSetVersion: '2026.03-r1',
+      matchedRuleIds: ['RULE-FC-MIS-GATE', 'RULE-OPS-GOVERNANCE-RELEASE-LINK'],
+      guidelineRefs: ['NICE_NG136_2026'],
+      layerDecisions: [
+        {
+          layer: 'FLOW_CONTROL',
+          status: 'pass',
+          summary: 'Input gate passed.',
+          matchedRuleIds: ['RULE-FC-MIS-GATE'],
+        },
+      ],
+      evidenceTraceId: 'audit_session-1',
+    },
     notes: ['自动化完成'],
     auditTrail: [],
   };
@@ -271,6 +286,9 @@ describe('useConsultationSessionRunner', () => {
     expect(streamRequest).toHaveBeenCalledTimes(1);
     expect(state.status.value).toBe('OUTPUT');
     expect(state.streamState.routeInfo.value?.department).toBe('cardiology');
+    expect(state.streamState.ruleGovernance.value?.catalogVersion).toBe(
+      '2026.03-r1',
+    );
     expect(state.streamState.stageRuntime.value.ROUTING.status).toBe('done');
     expect(state.runner.typedOutput.value).toContain('AB');
     expect(state.microStatus.value).toContain('会诊完成');
@@ -323,6 +341,19 @@ describe('useConsultationSessionRunner', () => {
           errorCode: 'ERR_MISSING_REQUIRED_DATA',
           notes: ['缺少收缩压'],
           requiredFields: ['systolicBP'],
+          ruleGovernance: {
+            catalogVersion: '2026.03-r1',
+            matchedRuleIds: ['RULE-FC-MIS-GATE'],
+            guidelineRefs: [],
+            layerDecisions: [
+              {
+                layer: 'FLOW_CONTROL',
+                status: 'fail',
+                summary: 'Validation blocked.',
+              },
+            ],
+            evidenceTraceId: 'audit_validation',
+          },
         },
       });
     });
@@ -335,6 +366,9 @@ describe('useConsultationSessionRunner', () => {
     expect(state.status.value).toBe('ERROR');
     expect(state.showAdvancedInputs.value).toBe(true);
     expect(state.streamState.requiredFields.value).toContain('systolicBP');
+    expect(state.streamState.ruleGovernance.value?.catalogVersion).toBe(
+      '2026.03-r1',
+    );
     expect(state.streamState.clarificationQuestion.value).toContain('请补充');
     expect(state.streamState.systemError.value).toBe('ERR_MISSING_REQUIRED_DATA');
     expect(state.messages.value[state.messages.value.length - 1]?.content).toContain(

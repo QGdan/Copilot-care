@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { orchestrateTriageStream } from './triageApi';
+import {
+  createInteropFhirTriageBundle,
+  fetchGovernanceRuleCatalog,
+  fetchGovernanceRuleVersion,
+  orchestrateTriageStream,
+} from './triageApi';
 
 const { postMock, getMock, isAxiosErrorMock } = vi.hoisted(() => ({
   postMock: vi.fn(),
@@ -138,5 +143,74 @@ describe('orchestrateTriageStream', () => {
     expect(
       onEvent.mock.calls.some(([event]) => event.type === 'final_result'),
     ).toBe(true);
+  });
+
+  it('fetches governance rule catalog from dedicated endpoint', async () => {
+    getMock.mockResolvedValueOnce({
+      data: {
+        catalogVersion: '2026.03-r1',
+        synonymSetVersion: '2026.03-r1',
+        layers: [],
+        guidelineReferences: [],
+        generatedAt: new Date().toISOString(),
+      },
+    } as never);
+
+    const response = await fetchGovernanceRuleCatalog();
+
+    expect(response.catalogVersion).toBe('2026.03-r1');
+    expect(getMock).toHaveBeenCalledTimes(1);
+    expect(getMock.mock.calls[0]?.[0]).toContain('/governance/rules/catalog');
+  });
+
+  it('fetches governance rule version from dedicated endpoint', async () => {
+    getMock.mockResolvedValueOnce({
+      data: {
+        catalogVersion: '2026.03-r1',
+        synonymSetVersion: '2026.03-r1',
+        guidelineCount: 5,
+        generatedAt: new Date().toISOString(),
+      },
+    } as never);
+
+    const response = await fetchGovernanceRuleVersion();
+
+    expect(response.guidelineCount).toBe(5);
+    expect(getMock).toHaveBeenCalledTimes(1);
+    expect(getMock.mock.calls[0]?.[0]).toContain('/governance/rules/version');
+  });
+
+  it('posts interop FHIR triage bundle with default SMART scope header', async () => {
+    postMock.mockResolvedValueOnce({
+      data: {
+        draft: true,
+        generatedAt: new Date().toISOString(),
+        triage: {
+          sessionId: 'session-1',
+          status: 'OUTPUT',
+        },
+        bundle: {
+          resourceType: 'Bundle',
+          type: 'collection',
+          timestamp: new Date().toISOString(),
+          identifier: {
+            system: 'urn:copilot-care:interop:triage-bundle',
+            value: 'triage-session-1',
+          },
+          entry: [],
+        },
+      },
+    } as never);
+
+    await createInteropFhirTriageBundle(createPayload());
+
+    expect(postMock).toHaveBeenCalledTimes(1);
+    expect(postMock.mock.calls[0]?.[0]).toContain('/interop/fhir/triage-bundle');
+    expect(postMock.mock.calls[0]?.[2]).toMatchObject({
+      headers: {
+        'x-smart-scope':
+          'patient/Patient.read patient/Observation.read patient/Provenance.read',
+      },
+    });
   });
 });

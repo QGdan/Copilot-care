@@ -228,6 +228,7 @@ const {
   rounds,
   finalConsensus,
   triageResult,
+  ruleGovernance,
   routeInfo,
   routingPreview,
   explainableReport,
@@ -280,6 +281,7 @@ const {
     rounds,
     finalConsensus,
     triageResult,
+    ruleGovernance,
     routeInfo,
     routingPreview,
     explainableReport,
@@ -419,7 +421,12 @@ const completedTaskCount = computed<number>(() => {
 });
 
 const hasResultPanel = computed<boolean>(() => {
-  return !!routeInfo.value || !!triageResult.value || !!finalConsensus.value;
+  return (
+    !!routeInfo.value
+    || !!triageResult.value
+    || !!finalConsensus.value
+    || !!ruleGovernance.value
+  );
 });
 
 const showMissionEmptyState = computed<boolean>(() => {
@@ -427,7 +434,12 @@ const showMissionEmptyState = computed<boolean>(() => {
   const hasGraphEdges = (orchestrationSnapshot.value?.graph?.edges?.length ?? 0) > 0;
   const hasTasks = (orchestrationSnapshot.value?.tasks?.length ?? 0) > 0;
   const hasStream = reasoningItems.value.length > 0 || rounds.value.length > 0;
-  const hasResult = !!routeInfo.value || !!triageResult.value || !!finalConsensus.value;
+  const hasResult = (
+    !!routeInfo.value
+    || !!triageResult.value
+    || !!finalConsensus.value
+    || !!ruleGovernance.value
+  );
   const hasOutput = typedOutput.value.trim().length > 0;
 
   return !loading.value
@@ -851,6 +863,7 @@ watch(isDragging, (dragging) => {
           v-if="hasResultPanel"
           :route-info="routeInfo"
           :triage-result="triageResult"
+          :rule-governance="ruleGovernance"
           :explainable-report="explainableReport"
           :final-consensus="finalConsensus"
           :result-notes="resultNotes"

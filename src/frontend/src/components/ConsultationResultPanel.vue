@@ -2,6 +2,7 @@
 import type {
   AgentOpinion,
   ExplainableReport,
+  RuleGovernanceSnapshot,
   StructuredTriageResult,
   TriageRoutingInfo,
 } from '@copilot-care/shared/types';
@@ -14,6 +15,7 @@ import {
 interface Props {
   routeInfo: TriageRoutingInfo | null;
   triageResult: StructuredTriageResult | null;
+  ruleGovernance: RuleGovernanceSnapshot | null;
   explainableReport: ExplainableReport | null;
   finalConsensus: AgentOpinion | null;
   resultNotes: string[];
@@ -67,6 +69,34 @@ function handleExport(): void {
         <small>随访周期 {{ props.triageResult.followupDays }} 天</small>
       </article>
     </div>
+    <article
+      v-if="props.ruleGovernance"
+      class="governance-card"
+      data-testid="result-rule-governance"
+    >
+      <h4>规则治理快照</h4>
+      <p>
+        Catalog {{ props.ruleGovernance.catalogVersion }} /
+        Evidence {{ props.ruleGovernance.evidenceTraceId }}
+      </p>
+      <small v-if="props.ruleGovernance.synonymSetVersion">
+        同义词集版本 {{ props.ruleGovernance.synonymSetVersion }}
+      </small>
+      <small v-if="props.ruleGovernance.matchedRuleIds.length > 0">
+        命中规则 {{ props.ruleGovernance.matchedRuleIds.join('、') }}
+      </small>
+      <small v-if="props.ruleGovernance.guidelineRefs.length > 0">
+        指南引用 {{ props.ruleGovernance.guidelineRefs.join(' | ') }}
+      </small>
+      <ul class="layer-decision-list">
+        <li
+          v-for="decision in props.ruleGovernance.layerDecisions"
+          :key="decision.layer"
+        >
+          {{ decision.layer }}: {{ decision.status }} / {{ decision.summary }}
+        </li>
+      </ul>
+    </article>
     <article v-if="props.finalConsensus" class="consensus-card">
       <h4>最终结论</h4>
       <p>{{ props.finalConsensus.reasoning }}</p>
@@ -163,6 +193,43 @@ function handleExport(): void {
   border-radius: 9px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.95);
+}
+
+.governance-card {
+  margin-top: 10px;
+  border: 1px solid #bed4e2;
+  border-radius: 9px;
+  padding: 10px;
+  background: #f7fbff;
+  display: grid;
+  gap: 6px;
+}
+
+.governance-card h4 {
+  margin: 0;
+  font-size: 12px;
+  color: #365c7a;
+}
+
+.governance-card p {
+  margin: 0;
+  font-size: 13px;
+  color: #21445e;
+}
+
+.governance-card small {
+  display: block;
+  color: #496985;
+  line-height: 1.45;
+}
+
+.layer-decision-list {
+  margin: 2px 0 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: #365a74;
 }
 
 .export-btn {

@@ -4,6 +4,7 @@ import type {
   DebateRound,
   ExplainableReport,
   OrchestrationSnapshot,
+  RuleGovernanceSnapshot,
   StructuredTriageResult,
   TriageRoutingInfo,
   TriageStreamStageStatus,
@@ -65,6 +66,7 @@ export function useConsultationStreamState(
   const rounds = ref<DebateRound[]>([]);
   const finalConsensus = ref<AgentOpinion | null>(null);
   const triageResult = ref<StructuredTriageResult | null>(null);
+  const ruleGovernance = ref<RuleGovernanceSnapshot | null>(null);
   const routeInfo = ref<TriageRoutingInfo | null>(null);
   const routingPreview = ref<RoutingPreviewState>({});
   const explainableReport = ref<ExplainableReport | null>(null);
@@ -190,6 +192,7 @@ export function useConsultationStreamState(
     rounds.value = [];
     finalConsensus.value = null;
     triageResult.value = null;
+    ruleGovernance.value = null;
     routeInfo.value = null;
     routingPreview.value = {};
     explainableReport.value = null;
@@ -211,6 +214,7 @@ export function useConsultationStreamState(
     rounds,
     finalConsensus,
     triageResult,
+    ruleGovernance,
     routeInfo,
     routingPreview,
     explainableReport,

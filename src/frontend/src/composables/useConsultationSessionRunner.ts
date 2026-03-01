@@ -4,6 +4,7 @@ import type {
   DebateRound,
   ExplainableReport,
   OrchestrationSnapshot,
+  RuleGovernanceSnapshot,
   StructuredTriageResult,
   TriageApiResponse,
   TriageErrorResponse,
@@ -93,6 +94,7 @@ interface StreamStateBindings {
   rounds: Ref<DebateRound[]>;
   finalConsensus: Ref<AgentOpinion | null>;
   triageResult: Ref<StructuredTriageResult | null>;
+  ruleGovernance: Ref<RuleGovernanceSnapshot | null>;
   routeInfo: Ref<TriageRoutingInfo | null>;
   routingPreview: Ref<RoutingPreviewState>;
   explainableReport: Ref<ExplainableReport | null>;
@@ -231,6 +233,7 @@ export function useConsultationSessionRunner(
       options.streamState.requiredFields.value = payload.requiredFields ?? [];
       options.streamState.resultNotes.value = payload.notes;
       options.streamState.systemError.value = payload.errorCode;
+      options.streamState.ruleGovernance.value = payload.ruleGovernance ?? null;
       options.microStatus.value = `会诊未完成：${payload.notes.join('；')}`;
       options.streamState.pushReasoning('warning', options.microStatus.value);
       if (payload.requiredFields && payload.requiredFields.length > 0) {
@@ -261,6 +264,7 @@ export function useConsultationSessionRunner(
       };
     }
     options.streamState.triageResult.value = payload.triageResult ?? null;
+    options.streamState.ruleGovernance.value = payload.ruleGovernance ?? null;
     options.streamState.explainableReport.value = payload.explainableReport ?? null;
     options.streamState.finalConsensus.value = payload.finalConsensus ?? null;
     options.streamState.resultNotes.value = payload.notes;

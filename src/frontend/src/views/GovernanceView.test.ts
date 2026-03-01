@@ -211,4 +211,33 @@ describe('GovernanceView interactions', () => {
     expect(actionItems.length).toBeGreaterThan(0);
     expect(actionItems[0]?.attributes('data-priority')).toBe('high');
   });
+
+  it('renders rule governance metadata chips in mission header', () => {
+    const wrapper = mount(GovernanceView, {
+      global: {
+        stubs: {
+          GovernanceDashboard: GovernanceDashboardStub,
+          ReviewQueue: ReviewQueueStub,
+          EvidenceDrawer: EvidenceDrawerStub,
+        },
+      },
+    });
+
+    const catalogVersionChip = wrapper.find(
+      '[data-testid="governance-catalog-version"]',
+    );
+    const guidelineCountChip = wrapper.find(
+      '[data-testid="governance-guideline-count"]',
+    );
+    const ruleVersionHint = wrapper.find(
+      '[data-testid="governance-rule-version-hint"]',
+    );
+
+    expect(catalogVersionChip.exists()).toBe(true);
+    expect(catalogVersionChip.text()).toContain('--');
+    expect(guidelineCountChip.exists()).toBe(true);
+    expect(guidelineCountChip.text()).toContain('--');
+    expect(ruleVersionHint.exists()).toBe(true);
+    expect(ruleVersionHint.text()).toContain('Synonym');
+  });
 });
