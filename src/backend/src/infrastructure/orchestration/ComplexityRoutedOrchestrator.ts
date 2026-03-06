@@ -3,7 +3,6 @@
   DebateResult,
   DebateRound,
   DissentComputation,
-  ExplainableEvidenceCard,
   PatientProfile,
   TriageDepartment,
   TriageRequest,
@@ -21,25 +20,19 @@ import {
 import { AuthoritativeMedicalSearchPort } from '../../application/ports/AuthoritativeMedicalSearchPort';
 import { DebateEngine } from '../../core/DebateEngine';
 import { MinimumInfoSetService } from '../../application/services/MinimumInfoSetService';
-import {
-  RiskAssessmentSnapshot,
-  RuleFirstRiskAssessmentService,
-} from '../../application/services/RuleFirstRiskAssessmentService';
+import { RuleFirstRiskAssessmentService } from '../../application/services/RuleFirstRiskAssessmentService';
 import { FollowupPlanningService } from '../../application/services/FollowupPlanningService';
 import { ExplainableReportService } from '../../application/services/ExplainableReportService';
 import { ConsentValidationService } from '../../application/services/ConsentValidationService';
 import { SafetyOutputGuardService } from '../../application/services/SafetyOutputGuardService';
+import { GovernanceReviewService } from '../../application/services/GovernanceReviewService';
 import { resolveNextAction } from '../../application/services/FlowControlNextActionService';
-import {
-  RuleDrivenEvidenceSearchPlan,
-  RuleDrivenEvidenceSearchPlanService,
-} from '../../application/services/RuleDrivenEvidenceSearchPlanService';
 import {
   buildRuleGovernanceSnapshot,
   buildValidationErrorGovernanceSnapshot,
 } from '../../application/services/RuleGovernanceService';
-import { AuthoritativeMedicalEvidence } from '../../domain/knowledge/AuthoritativeMedicalKnowledgeCatalog';
 import { PatientContextEnricher } from '../mcp/PatientContextEnricher';
+import { AuthoritativeEvidenceCollector } from './AuthoritativeEvidenceCollector';
 
 interface DepartmentEngines {
   cardiology: DebateEngine;
@@ -69,9 +62,6 @@ const COLLABORATION_MODE_LABELS: Record<
   MULTI_DISCIPLINARY_CONSULT: '多学科专家协同',
   OFFLINE_ESCALATION: '线下上转',
 };
-
-import { BaselineGuard } from '../../domain/governance/guards/BaselineGuard';
-import { ConfidenceCalibrator } from '../../domain/governance/calibration/ConfidenceCalibrator';
 
 export interface ComplexityRoutedOrchestratorOptions {
   fastDepartmentEngines: DepartmentEngines;
@@ -215,22 +205,6 @@ function createWorkflowStage(
   };
 }
 
-interface EvidenceCompletenessGateResult {
-  enforced: boolean;
-  passed: boolean;
-  message?: string;
-}
-
-interface AuthoritativeEvidencePacket {
-  reportLines: string[];
-  cards: ExplainableEvidenceCard[];
-  gate: EvidenceCompletenessGateResult;
-}
-
-function formatEvidenceOrigin(origin: AuthoritativeMedicalEvidence['origin']): string {
-  return origin === 'catalog_seed' ? '目录兜底' : '实时检索';
-}
-
 export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
   private readonly fastDepartmentEngines: DepartmentEngines;
   private readonly lightDepartmentEngines: DepartmentEngines;
@@ -240,12 +214,10 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
   private readonly riskService: RuleFirstRiskAssessmentService;
   private readonly followupService: FollowupPlanningService;
   private readonly reportService: ExplainableReportService;
-  private readonly evidencePlanService: RuleDrivenEvidenceSearchPlanService;
   private readonly safetyOutputGuardService: SafetyOutputGuardService;
+  private readonly governanceReviewService: GovernanceReviewService;
   private readonly patientContextEnricher: PatientContextEnricher;
-  private readonly authoritativeMedicalSearch?: AuthoritativeMedicalSearchPort;
-  private readonly baselineGuard: BaselineGuard;
-  private readonly confidenceCalibrator: ConfidenceCalibrator;
+  private readonly authoritativeEvidenceCollector: AuthoritativeEvidenceCollector;
 
   constructor(options: ComplexityRoutedOrchestratorOptions) {
     this.fastDepartmentEngines = options.fastDepartmentEngines;
@@ -256,11 +228,9 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
     this.riskService = new RuleFirstRiskAssessmentService();
     this.followupService = new FollowupPlanningService();
     this.reportService = new ExplainableReportService();
-    this.evidencePlanService = new RuleDrivenEvidenceSearchPlanService();
     this.safetyOutputGuardService =
       options.safetyOutputGuardService ?? new SafetyOutputGuardService();
-    this.baselineGuard = new BaselineGuard();
-    this.confidenceCalibrator = new ConfidenceCalibrator();
+    this.governanceReviewService = new GovernanceReviewService();
     this.patientContextEnricher = options.patientContextEnricher ?? {
       async enrich(input: TriageRequest) {
         return {
@@ -271,7 +241,9 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         };
       },
     };
-    this.authoritativeMedicalSearch = options.authoritativeMedicalSearch;
+    this.authoritativeEvidenceCollector = new AuthoritativeEvidenceCollector({
+      authoritativeMedicalSearch: options.authoritativeMedicalSearch,
+    });
   }
 
   private async runByRoute(
@@ -304,204 +276,6 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         options?.onReasoningStep?.(formatRoundReasoning(round));
       },
     });
-  }
-
-  private getRiskNumeric(level: RiskAssessmentSnapshot['riskLevel']): number {
-    if (level === 'L3') {
-      return 3;
-    }
-    if (level === 'L2') {
-      return 2;
-    }
-    if (level === 'L1') {
-      return 1;
-    }
-    return 0;
-  }
-
-  private evaluateEvidenceCompletenessGate(input: {
-    risk: RiskAssessmentSnapshot;
-    plan: RuleDrivenEvidenceSearchPlan;
-    evidenceCount: number;
-    usedSources: string[];
-  }): EvidenceCompletenessGateResult {
-    const riskNumeric = this.getRiskNumeric(input.risk.riskLevel);
-    const enforced = riskNumeric >= 2;
-    if (!enforced) {
-      return { enforced: false, passed: true };
-    }
-
-    const usedSourceSet = new Set(input.usedSources);
-    const missingRequiredSources = input.plan.requiredSources.filter(
-      (sourceId) => !usedSourceSet.has(sourceId),
-    );
-    const countPassed = input.evidenceCount >= input.plan.minEvidenceCount;
-    const sourcePassed = missingRequiredSources.length === 0;
-    const passed = countPassed && sourcePassed;
-    if (passed) {
-      return { enforced: true, passed: true };
-    }
-
-    const issues: string[] = [];
-    if (!countPassed) {
-      issues.push(
-        `证据数量不足(${input.evidenceCount}/${input.plan.minEvidenceCount})`,
-      );
-    }
-    if (!sourcePassed) {
-      issues.push(`缺少必选来源(${missingRequiredSources.join(',')})`);
-    }
-    return {
-      enforced: true,
-      passed: false,
-      message: issues.join('；'),
-    };
-  }
-
-  private toEvidenceCard(
-    evidence: AuthoritativeMedicalEvidence,
-    index: number,
-    risk: RiskAssessmentSnapshot,
-  ): ExplainableEvidenceCard {
-    const snippet = evidence.snippet?.trim() || '来自权威医学数据库的相关证据。';
-    return {
-      id: `auth-med-${index + 1}-${evidence.sourceId.toLowerCase()}`,
-      category: 'authoritative_web',
-      title: evidence.title,
-      summary: snippet,
-      sourceId: evidence.sourceId,
-      sourceName: evidence.sourceName,
-      publishedOn: evidence.publishedOn,
-      retrievedAt: evidence.retrievedAt,
-      url: evidence.url,
-      supportsRuleIds: [...risk.matchedRuleIds],
-    };
-  }
-
-  private async collectAuthoritativeEvidence(
-    input: TriageRequest,
-    risk: RiskAssessmentSnapshot,
-    options?: OrchestratorRunOptions,
-  ): Promise<AuthoritativeEvidencePacket> {
-    if (!this.authoritativeMedicalSearch || !this.authoritativeMedicalSearch.isEnabled()) {
-      options?.onReasoningStep?.(
-        '权威医学联网检索未启用（会诊链路）。设置 COPILOT_CARE_MED_SEARCH_IN_TRIAGE=true 后可注入分诊流程。',
-      );
-      return {
-        reportLines: [],
-        cards: [],
-        gate: { enforced: false, passed: true },
-      };
-    }
-
-    const plan = this.evidencePlanService.build({
-      request: input,
-      risk,
-    });
-    if (plan.query.length < 2) {
-      return {
-        reportLines: [],
-        cards: [],
-        gate: { enforced: false, passed: true },
-      };
-    }
-
-    options?.onReasoningStep?.(
-      '权威医学联网检索启动：仅检索白名单权威数据库。',
-    );
-    options?.onReasoningStep?.(
-      `规则驱动检索策略：risk=${risk.riskLevel}，minEvidence=${plan.minEvidenceCount}，requiredSources=${plan.requiredSources.join(',') || 'NONE'}。`,
-    );
-    for (const note of plan.strategyNotes.slice(0, 2)) {
-      options?.onReasoningStep?.(`策略说明：${note}`);
-    }
-
-    try {
-      const result = await this.authoritativeMedicalSearch.search({
-        query: plan.query,
-        limit: plan.limit,
-        sourceFilter: plan.sourceFilter,
-        requiredSources: plan.requiredSources,
-      });
-      if (result.results.length === 0) {
-        options?.onReasoningStep?.(
-          '权威医学检索未命中结果，已回退为内置规则证据路径。',
-        );
-      }
-
-      const cards = result.results.map((item, index) =>
-        this.toEvidenceCard(item, index, risk),
-      );
-      const sourceSummary =
-        result.usedSources.length > 0 ? result.usedSources.join(', ') : 'UNKNOWN';
-      options?.onReasoningStep?.(
-        `权威医学联网检索命中 ${result.results.length} 条（来源：${sourceSummary}）。`,
-      );
-      options?.onReasoningStep?.(
-        `检索质量统计：实时命中=${result.realtimeCount}，目录兜底=${result.fallbackCount}，策略过滤丢弃=${result.droppedByPolicy}。`,
-      );
-      if (result.fallbackCount > 0) {
-        options?.onReasoningStep?.(
-          '提示：存在目录兜底证据，建议继续补充实时检索后再做最终医学判断。',
-        );
-      }
-      if (result.sourceBreakdown.length > 0) {
-        const breakdownText = result.sourceBreakdown
-          .map((item) => `${item.sourceId}x${item.count}`)
-          .join('，');
-        options?.onReasoningStep?.(
-          `权威医学来源分布：${breakdownText}（策略：${result.strategyVersion}）。`,
-        );
-      }
-
-      const reportLines = cards.map(
-        (item, index) => {
-          const originLabel = formatEvidenceOrigin(result.results[index]?.origin);
-          return `权威医学证据${index + 1}（${item.sourceId ?? 'UNKNOWN'}，${originLabel}）：${item.summary}`;
-        },
-      );
-      for (const line of reportLines) {
-        options?.onReasoningStep?.(line);
-      }
-
-      const gate = this.evaluateEvidenceCompletenessGate({
-        risk,
-        plan,
-        evidenceCount: cards.length,
-        usedSources: result.usedSources,
-      });
-      if (gate.enforced && !gate.passed) {
-        options?.onReasoningStep?.(
-          `证据完整性门禁未通过：${gate.message ?? '证据不足'}。`,
-        );
-      }
-
-      return {
-        reportLines,
-        cards,
-        gate,
-      };
-    } catch {
-      const gate = this.evaluateEvidenceCompletenessGate({
-        risk,
-        plan,
-        evidenceCount: 0,
-        usedSources: [],
-      });
-      options?.onReasoningStep?.(
-        '权威医学检索暂不可用，已回退为内置规则证据路径。',
-      );
-      if (gate.enforced && !gate.passed) {
-        options?.onReasoningStep?.(
-          '证据完整性门禁未通过：联网检索不可用且高风险场景证据不足。',
-        );
-      }
-      return {
-        reportLines: [],
-        cards: [],
-        gate,
-      };
-    }
   }
 
   public async runSession(
@@ -632,11 +406,12 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         `规则评估完成：risk=${risk.riskLevel}, triage=${risk.triageLevel}`,
       ),
     );
-    const authoritativeEvidencePacket = await this.collectAuthoritativeEvidence(
-      workingInput,
-      risk,
-      options,
-    );
+    const authoritativeEvidencePacket =
+      await this.authoritativeEvidenceCollector.collect({
+        request: workingInput,
+        risk,
+        options,
+      });
     const authoritativeEvidence = authoritativeEvidencePacket.reportLines;
     const authoritativeEvidenceCards = authoritativeEvidencePacket.cards;
 
@@ -768,52 +543,13 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
     );
     pushWorkflowStage(createWorkflowStage('CONSENSUS', `状态=${result.status}`));
 
-    // --- 治理层介入 (Governance Layer Injection) ---
-    let governedResult = result;
-    let governanceNotes: string[] = [];
-
-    if (result.finalConsensus) {
-      // 1. 置信度校准
-      const calibration = this.confidenceCalibrator.calibrate(result.finalConsensus);
-      if (calibration.abstain) {
-        governedResult = {
-          ...result,
-          status: 'ABSTAIN',
-          errorCode: 'ERR_LOW_CONFIDENCE_ABSTAIN',
-          finalConsensus: undefined, // 撤销共识
-        };
-        governanceNotes.push(`[置信度校准] 拒答：${calibration.reason}`);
-        options?.onReasoningStep?.(`⚠️ 置信度校准未通过：${calibration.reason}`);
-      } else {
-        // 更新校准后的置信度
-        if (governedResult.finalConsensus) {
-          governedResult.finalConsensus.confidence = calibration.calibratedConfidence;
-        }
-        governanceNotes.push(`[置信度校准] 通过：${calibration.reason}`);
-      }
-
-      // 2. 基线守护 (仅当未被拒答时)
-      if (governedResult.status === 'OUTPUT' && governedResult.finalConsensus) {
-        const baselineCheck = this.baselineGuard.check(
-          governedResult.finalConsensus,
-          risk.riskLevel
-        );
-        
-        if (baselineCheck.conflictFlag) {
-          governanceNotes.push(`[基线守护] 发现冲突：${baselineCheck.conflictReason}`);
-          options?.onReasoningStep?.(`🛡️ 基线守护触发：${baselineCheck.conflictReason}`);
-          
-          if (baselineCheck.mitigationAction === 'force_rule') {
-             // 强制回退到规则基线
-             governedResult.finalConsensus.riskLevel = baselineCheck.ruleRiskLevel;
-             governanceNotes.push(`[基线守护] 已强制执行规则基线：${baselineCheck.ruleRiskLevel}`);
-          }
-        }
-      }
-    }
-    
-    // 更新 result 为受控后的结果
-    const finalResult = governedResult;
+    const governanceOutcome = this.governanceReviewService.apply(
+      result,
+      risk,
+      options,
+    );
+    const finalResult = governanceOutcome.debateResult;
+    const governanceNotes = governanceOutcome.notes;
 
     const finalRiskLevel = finalResult.finalConsensus?.riskLevel ?? risk.riskLevel;
     const triageLevel =
