@@ -1,14 +1,36 @@
 ﻿<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
+import type { TriageRequest } from '@copilot-care/shared/types';
 import {
   fhirApi,
   type FHIRObservation,
   type FHIRPatient,
   type FHIRProvenance,
 } from '../services/api';
+import {
+  createInteropFhirTriageBundle,
+  type InteropFhirBundleDraftResponse,
+} from '../services/triageApi';
 
 type FHIRResource = FHIRPatient | FHIRObservation | FHIRProvenance;
 type ResourceTypeFilter = 'all' | 'Patient' | 'Observation' | 'Provenance';
+type InteropResourceType = 'Patient' | 'Observation' | 'Provenance';
+
+interface InteropDraftSummary {
+  sessionId: string;
+  status: string;
+  generatedAt: string;
+  resourceCounts: {
+    patient: number;
+    observation: number;
+    provenance: number;
+  };
+  referenceIntegrity: {
+    observationSubjectLinked: boolean;
+    provenanceTargetLinked: boolean;
+    provenanceObservationLinked: boolean;
+  };
+}
 
 const resources = ref<FHIRResource[]>([]);
 const loading = ref(true);
@@ -16,6 +38,9 @@ const error = ref<string | null>(null);
 const selectedType = ref<ResourceTypeFilter>('all');
 const searchQuery = ref('');
 const apiAvailable = ref<boolean | null>(null);
+const interopDraftLoading = ref(false);
+const interopDraftError = ref<string | null>(null);
+const interopDraftSummary = ref<InteropDraftSummary | null>(null);
 
 const resourceTypes: Array<{ value: ResourceTypeFilter; label: string }> = [
   { value: 'all', label: '全部资源' },
@@ -206,6 +231,148 @@ function getMockData(): FHIRResource[] {
   ];
 }
 
+function buildInteropDraftPayload(): TriageRequest {
+  return {
+    requestId: `interop-draft-${Date.now()}`,
+    consentToken: 'consent_local_demo',
+    symptomText: 'chest pain, shortness of breath',
+    profile: {
+      patientId: 'fhir-explorer-demo',
+      age: 57,
+      sex: 'male',
+      symptoms: ['chest pain', 'shortness of breath'],
+      chronicDiseases: ['Hypertension'],
+      medicationHistory: ['amlodipine'],
+      vitals: {
+        systolicBP: 168,
+        diastolicBP: 102,
+      },
+    },
+    signals: [
+      {
+        timestamp: new Date().toISOString(),
+        source: 'manual',
+        systolicBP: 168,
+        diastolicBP: 102,
+      },
+    ],
+  };
+}
+
+function resolveBundleResourceCounts(
+  payload: InteropFhirBundleDraftResponse,
+): InteropDraftSummary['resourceCounts'] {
+  const counts = {
+    patient: 0,
+    observation: 0,
+    provenance: 0,
+  };
+
+  for (const entry of payload.bundle.entry) {
+    const resourceType = (entry.resource as { resourceType?: string } | undefined)
+      ?.resourceType;
+    if (resourceType === 'Patient') {
+      counts.patient += 1;
+    } else if (resourceType === 'Observation') {
+      counts.observation += 1;
+    } else if (resourceType === 'Provenance') {
+      counts.provenance += 1;
+    }
+  }
+
+  return counts;
+}
+
+function resolveBundleReferenceIntegrity(
+  payload: InteropFhirBundleDraftResponse,
+): InteropDraftSummary['referenceIntegrity'] {
+  const resources = payload.bundle.entry
+    .map((entry) => entry.resource as {
+      resourceType?: InteropResourceType;
+      id?: string;
+      subject?: { reference?: string };
+      target?: Array<{ reference?: string }>;
+    } | undefined)
+    .filter(
+      (
+        resource,
+      ): resource is {
+        resourceType?: InteropResourceType;
+        id?: string;
+        subject?: { reference?: string };
+        target?: Array<{ reference?: string }>;
+      } => Boolean(resource),
+    );
+  const patients = resources.filter((resource) => resource.resourceType === 'Patient');
+  const observations = resources.filter((resource) => resource.resourceType === 'Observation');
+  const provenances = resources.filter((resource) => resource.resourceType === 'Provenance');
+
+  const patientId = patients
+    .map((item) => item.id)
+    .find((id): id is string => typeof id === 'string' && id.trim().length > 0);
+  const patientReference = patientId ? `Patient/${patientId}` : undefined;
+  const observationReferences = observations
+    .map((item) => item.id)
+    .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+    .map((id) => `Observation/${id}`);
+
+  const observationSubjectLinked =
+    !patientReference
+    || observations.every((item) => item.subject?.reference === patientReference);
+
+  const provenanceTargetLinked =
+    !patientReference
+    || provenances.every((item) =>
+      (item.target ?? []).some((target) => target.reference === patientReference),
+    );
+
+  const provenanceObservationLinked =
+    observationReferences.length === 0
+    || provenances.every((item) =>
+      observationReferences.every((reference) =>
+        (item.target ?? []).some((target) => target.reference === reference),
+      ),
+    );
+
+  return {
+    observationSubjectLinked,
+    provenanceTargetLinked,
+    provenanceObservationLinked,
+  };
+}
+
+function resolveInteropDraftSummary(
+  payload: InteropFhirBundleDraftResponse,
+): InteropDraftSummary {
+  const fallbackCounts = resolveBundleResourceCounts(payload);
+  const fallbackIntegrity = resolveBundleReferenceIntegrity(payload);
+  const sourceSummary = payload.triage.interopSummary;
+
+  return {
+    sessionId: payload.triage.sessionId,
+    status: payload.triage.status,
+    generatedAt: payload.generatedAt,
+    resourceCounts: sourceSummary?.resourceCounts ?? fallbackCounts,
+    referenceIntegrity: sourceSummary?.referenceIntegrity ?? fallbackIntegrity,
+  };
+}
+
+async function generateInteropDraft(): Promise<void> {
+  interopDraftLoading.value = true;
+  interopDraftError.value = null;
+  try {
+    const payload = buildInteropDraftPayload();
+    const response = await createInteropFhirTriageBundle(payload);
+    interopDraftSummary.value = resolveInteropDraftSummary(response);
+  } catch (cause: unknown) {
+    interopDraftSummary.value = null;
+    interopDraftError.value =
+      cause instanceof Error ? cause.message : '生成 triage bundle 草案失败。';
+  } finally {
+    interopDraftLoading.value = false;
+  }
+}
+
 async function fetchFhirResources(): Promise<void> {
   loading.value = true;
   error.value = null;
@@ -298,6 +465,58 @@ onMounted(() => {
       <button class="refresh-btn" :disabled="loading" @click="fetchFhirResources">
         {{ loading ? '加载中...' : '刷新' }}
       </button>
+    </section>
+
+    <section class="interop-panel">
+      <div class="interop-head">
+        <div>
+          <h2>Triage Bundle 草案验收</h2>
+          <p>基于演示样例调用 `/interop/fhir/triage-bundle`，验证最小闭环完整性。</p>
+        </div>
+        <button
+          class="interop-generate-btn"
+          data-testid="interop-generate-btn"
+          :disabled="interopDraftLoading"
+          @click="generateInteropDraft"
+        >
+          {{ interopDraftLoading ? '生成中...' : '生成草案' }}
+        </button>
+      </div>
+      <p v-if="interopDraftError" class="error-box">{{ interopDraftError }}</p>
+      <div
+        v-if="interopDraftSummary"
+        class="interop-summary-grid"
+        data-testid="interop-summary-grid"
+      >
+        <article class="summary-card">
+          <span class="summary-label">会话</span>
+          <strong>{{ interopDraftSummary.sessionId }}</strong>
+          <small>状态：{{ interopDraftSummary.status }}</small>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">资源计数</span>
+          <strong>
+            P{{ interopDraftSummary.resourceCounts.patient }}
+            / O{{ interopDraftSummary.resourceCounts.observation }}
+            / Pr{{ interopDraftSummary.resourceCounts.provenance }}
+          </strong>
+          <small>生成于 {{ new Date(interopDraftSummary.generatedAt).toLocaleString('zh-CN') }}</small>
+        </article>
+        <article class="summary-card integrity-card">
+          <span class="summary-label">引用完整性</span>
+          <ul data-testid="interop-integrity-list">
+            <li :data-ok="interopDraftSummary.referenceIntegrity.observationSubjectLinked">
+              Observation -> Patient
+            </li>
+            <li :data-ok="interopDraftSummary.referenceIntegrity.provenanceTargetLinked">
+              Provenance -> Patient
+            </li>
+            <li :data-ok="interopDraftSummary.referenceIntegrity.provenanceObservationLinked">
+              Provenance -> Observation
+            </li>
+          </ul>
+        </article>
+      </div>
     </section>
 
     <p class="filter-summary">{{ filterSummary }}</p>
@@ -462,6 +681,103 @@ onMounted(() => {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
+}
+
+.interop-panel {
+  margin-bottom: 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(26, 126, 124, 0.1), transparent 44%),
+    color-mix(in srgb, var(--color-bg-primary) 91%, transparent);
+}
+
+.interop-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: start;
+}
+
+.interop-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.interop-head p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.interop-generate-btn {
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(125deg, #1f6f8f 0%, #185379 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.interop-generate-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.interop-summary-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.summary-card {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-bg-primary) 88%, transparent);
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.summary-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.summary-card strong {
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.summary-card small {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.integrity-card ul {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 5px;
+}
+
+.integrity-card li {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.integrity-card li[data-ok='true'] {
+  color: #1b7d68;
+}
+
+.integrity-card li[data-ok='false'] {
+  color: #b85a34;
 }
 
 .control {
@@ -677,6 +993,14 @@ onMounted(() => {
 
   .toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .interop-head {
+    flex-direction: column;
+  }
+
+  .interop-generate-btn {
+    width: 100%;
   }
 
   .stats-grid {

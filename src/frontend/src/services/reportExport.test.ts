@@ -255,5 +255,58 @@ describe('reportExport', () => {
     expect(text).not.toContain('- 123');
     expect(text).not.toContain('[object Object]');
   });
+
+  it('prefers structured evidence cards instead of raw link lines', () => {
+    const data = createReportData();
+    data.evidence = ['https://example.com/very/long/raw/link'];
+    data.explainableReport = {
+      ...data.explainableReport!,
+      evidenceCards: [
+        {
+          id: 'card-1',
+          category: 'authoritative_web',
+          title: 'NICE 高血压指南',
+          summary: '建议基于分层风险实施血压管理。',
+          sourceId: 'NICE',
+          sourceName: 'NICE Guidance',
+          publishedOn: '2026-02-03',
+          url: 'https://www.nice.org.uk/guidance/ng136',
+        },
+      ],
+    };
+
+    const text = generateReportText(data);
+
+    expect(text).toContain('NICE 高血压指南');
+    expect(text).toContain('英国国家卫生与临床优化研究所(NICE)');
+    expect(text).toContain('来源：英国国家卫生与临床优化研究所(NICE)');
+    expect(text).toContain('https://www.nice.org.uk/guidance/ng136');
+    expect(text).not.toContain('https://example.com/very/long/raw/link');
+  });
+
+  it('extracts chinese evidence summary from english source text without template fallback', () => {
+    const data = createReportData();
+    data.explainableReport = {
+      ...data.explainableReport!,
+      evidenceCards: [
+        {
+          id: 'card-2',
+          category: 'authoritative_web',
+          title: 'Hypertension in adults: diagnosis and management',
+          summary: 'Lifestyle interventions reduce blood pressure and cardiovascular risk.',
+          sourceId: 'WHO',
+          sourceName: 'World Health Organization',
+        },
+      ],
+    };
+
+    const text = generateReportText(data);
+
+    expect(text).toContain('高血压');
+    expect(text).toContain('生活方式干预');
+    expect(text).toContain('世界卫生组织(WHO)');
+    expect(text).not.toContain('该证据围绕');
+    expect(text).not.toContain('...');
+  });
 });
 

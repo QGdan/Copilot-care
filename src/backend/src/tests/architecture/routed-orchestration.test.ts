@@ -98,4 +98,115 @@ describe('Architecture Smoke - routed orchestration flow', () => {
     expect(reviewStage).toBeDefined();
     expect(reviewStage?.status).toBe('skipped');
   });
+
+  it('emits authoritative medical search reasoning in triage stream hooks', async () => {
+    const originalInTriage = process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE;
+    const originalEnabled = process.env.COPILOT_CARE_MED_SEARCH_ENABLED;
+    process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE = 'true';
+    process.env.COPILOT_CARE_MED_SEARCH_ENABLED = 'true';
+
+    try {
+      const runtime = createRuntime();
+      const reasoningSteps: string[] = [];
+      await runtime.triageUseCase.execute(
+        {
+          profile: {
+            patientId: 'routed-flow-med-search-001',
+            age: 56,
+            sex: 'male',
+            chiefComplaint: 'mild dizziness',
+            symptoms: ['dizziness'],
+            chronicDiseases: ['Hypertension'],
+            medicationHistory: ['amlodipine'],
+            vitals: {
+              systolicBP: 148,
+              diastolicBP: 94,
+            },
+          },
+          symptomText: 'mild dizziness',
+          consentToken: 'consent_local_demo',
+        },
+        {
+          onReasoningStep: (message) => {
+            reasoningSteps.push(message);
+          },
+        },
+      );
+
+      expect(
+        reasoningSteps.some((item) => item.includes('权威医学联网检索启动')),
+      ).toBe(true);
+      expect(
+        reasoningSteps.some((item) => item.includes('权威医学联网检索命中')),
+      ).toBe(true);
+      expect(
+        reasoningSteps.some((item) => item.includes('权威医学证据1')),
+      ).toBe(true);
+    } finally {
+      if (originalInTriage === undefined) {
+        delete process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE;
+      } else {
+        process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE = originalInTriage;
+      }
+      if (originalEnabled === undefined) {
+        delete process.env.COPILOT_CARE_MED_SEARCH_ENABLED;
+      } else {
+        process.env.COPILOT_CARE_MED_SEARCH_ENABLED = originalEnabled;
+      }
+    }
+  });
+
+  it('defaults triage injection to enabled when medical search is enabled', async () => {
+    const originalInTriage = process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE;
+    const originalEnabled = process.env.COPILOT_CARE_MED_SEARCH_ENABLED;
+    delete process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE;
+    process.env.COPILOT_CARE_MED_SEARCH_ENABLED = 'true';
+
+    try {
+      const runtime = createRuntime();
+      const reasoningSteps: string[] = [];
+      await runtime.triageUseCase.execute(
+        {
+          profile: {
+            patientId: 'routed-flow-med-search-default-001',
+            age: 57,
+            sex: 'female',
+            chiefComplaint: 'mild dizziness',
+            symptoms: ['dizziness'],
+            chronicDiseases: ['Hypertension'],
+            medicationHistory: ['amlodipine'],
+            vitals: {
+              systolicBP: 147,
+              diastolicBP: 93,
+            },
+          },
+          symptomText: 'mild dizziness',
+          consentToken: 'consent_local_demo',
+        },
+        {
+          onReasoningStep: (message) => {
+            reasoningSteps.push(message);
+          },
+        },
+      );
+
+      expect(
+        reasoningSteps.some((item) => item.includes('权威医学联网检索启动')),
+      ).toBe(true);
+      expect(
+        reasoningSteps.some((item) => item.includes('权威医学联网检索未启用')),
+      ).toBe(false);
+    } finally {
+      if (originalInTriage === undefined) {
+        delete process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE;
+      } else {
+        process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE = originalInTriage;
+      }
+      if (originalEnabled === undefined) {
+        delete process.env.COPILOT_CARE_MED_SEARCH_ENABLED;
+      } else {
+        process.env.COPILOT_CARE_MED_SEARCH_ENABLED = originalEnabled;
+      }
+    }
+  });
 });

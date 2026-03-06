@@ -6,7 +6,7 @@ import {
   TriageLevel,
 } from '@copilot-care/shared/types';
 import {
-  buildGuidelineBasis,
+  buildGuidelineBasisByRuleIds,
   evaluateEmergencySignalSnapshot,
   hasClassicHyperglycemiaSymptoms,
   hasHighRiskComorbidity,
@@ -48,7 +48,6 @@ export class RuleFirstRiskAssessmentService {
   ): RiskAssessmentSnapshot {
     const evidence: string[] = [];
     const matchedRuleIds: string[] = [];
-    const guidelineBasis = buildGuidelineBasis();
     const { systolic, diastolic } = resolveLatestBloodPressure(profile, signals);
     const glucose = resolveLatestBloodGlucose(profile, signals);
     const emergencySignals = evaluateEmergencySignalSnapshot(profile, signals);
@@ -74,7 +73,7 @@ export class RuleFirstRiskAssessmentService {
         triageLevel: 'emergency',
         redFlagTriggered: true,
         evidence,
-        guidelineBasis,
+        guidelineBasis: buildGuidelineBasisByRuleIds(matchedRuleIds),
         matchedRuleIds: [...new Set(matchedRuleIds)],
       };
     }
@@ -131,7 +130,7 @@ export class RuleFirstRiskAssessmentService {
         triageLevel: mapRiskToTriageLevel('L2'),
         redFlagTriggered: false,
         evidence,
-        guidelineBasis,
+        guidelineBasis: buildGuidelineBasisByRuleIds(matchedRuleIds),
         matchedRuleIds: [...new Set(matchedRuleIds)],
       };
     }
@@ -153,7 +152,7 @@ export class RuleFirstRiskAssessmentService {
         triageLevel: mapRiskToTriageLevel('L1'),
         redFlagTriggered: false,
         evidence,
-        guidelineBasis,
+        guidelineBasis: buildGuidelineBasisByRuleIds(matchedRuleIds),
         matchedRuleIds: [...new Set(matchedRuleIds)],
       };
     }
@@ -164,7 +163,7 @@ export class RuleFirstRiskAssessmentService {
       triageLevel: mapRiskToTriageLevel('L0'),
       redFlagTriggered: false,
       evidence,
-      guidelineBasis,
+      guidelineBasis: buildGuidelineBasisByRuleIds(matchedRuleIds),
       matchedRuleIds: [...new Set(matchedRuleIds)],
     };
   }

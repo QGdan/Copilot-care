@@ -129,6 +129,8 @@ describe('orchestrateTriageStream', () => {
       data: {
         status: 'ERROR',
         errorCode: 'ERR_MISSING_REQUIRED_DATA',
+        requiredFields: ['consentToken'],
+        nextAction: 'Provide missing fields (consent token) and resubmit triage.',
         notes: ['缺少必要字段'],
       },
     } as never);
@@ -143,6 +145,14 @@ describe('orchestrateTriageStream', () => {
     expect(
       onEvent.mock.calls.some(([event]) => event.type === 'final_result'),
     ).toBe(true);
+    const clarificationEvent = onEvent.mock.calls
+      .map(([event]) => event)
+      .find((event) => event.type === 'clarification_request');
+    const errorEvent = onEvent.mock.calls
+      .map(([event]) => event)
+      .find((event) => event.type === 'error');
+    expect(clarificationEvent?.nextAction).toContain('Provide missing fields');
+    expect(errorEvent?.nextAction).toContain('Provide missing fields');
   });
 
   it('fetches governance rule catalog from dedicated endpoint', async () => {
@@ -188,6 +198,18 @@ describe('orchestrateTriageStream', () => {
         triage: {
           sessionId: 'session-1',
           status: 'OUTPUT',
+          interopSummary: {
+            resourceCounts: {
+              patient: 1,
+              observation: 2,
+              provenance: 1,
+            },
+            referenceIntegrity: {
+              observationSubjectLinked: true,
+              provenanceTargetLinked: true,
+              provenanceObservationLinked: true,
+            },
+          },
         },
         bundle: {
           resourceType: 'Bundle',
@@ -202,9 +224,13 @@ describe('orchestrateTriageStream', () => {
       },
     } as never);
 
-    await createInteropFhirTriageBundle(createPayload());
+    const response = await createInteropFhirTriageBundle(createPayload());
 
     expect(postMock).toHaveBeenCalledTimes(1);
+    expect(response.triage.interopSummary?.resourceCounts.patient).toBe(1);
+    expect(
+      response.triage.interopSummary?.referenceIntegrity.provenanceTargetLinked,
+    ).toBe(true);
     expect(postMock.mock.calls[0]?.[0]).toContain('/interop/fhir/triage-bundle');
     expect(postMock.mock.calls[0]?.[2]).toMatchObject({
       headers: {

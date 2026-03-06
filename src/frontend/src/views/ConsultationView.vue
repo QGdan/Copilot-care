@@ -158,9 +158,15 @@ function formatRequiredField(field: string): string {
 function classifyReasoningKind(message: string): ReasoningKind {
   const text = message.toLowerCase();
   if (/缺少|补充|required|missing/.test(text)) return 'query';
+  if (
+    /检索|数据库|白名单|pubmed|cochrane|who|cdc|nice|guideline|https?:\/\/|证据|依据|指标|评估|指数|检验|化验/.test(
+      text,
+    )
+  ) {
+    return 'evidence';
+  }
   if (/错误|异常|红旗|上转|阻断|风险/.test(text)) return 'warning';
   if (/路由|分诊|复杂度|决策|切换|会诊模式/.test(text)) return 'decision';
-  if (/证据|依据|指标|评估|指数|检验|化验/.test(text)) return 'evidence';
   return 'system';
 }
 
@@ -222,6 +228,7 @@ const microStatus = ref('等待输入需求。');
 const {
   clarificationQuestion,
   requiredFields,
+  nextAction,
   systemError,
   stageRuntime,
   reasoningItems,
@@ -275,6 +282,7 @@ const {
   streamState: {
     clarificationQuestion,
     requiredFields,
+    nextAction,
     systemError,
     stageRuntime,
     reasoningItems,
@@ -425,7 +433,6 @@ const hasResultPanel = computed<boolean>(() => {
     !!routeInfo.value
     || !!triageResult.value
     || !!finalConsensus.value
-    || !!ruleGovernance.value
   );
 });
 
@@ -438,7 +445,6 @@ const showMissionEmptyState = computed<boolean>(() => {
     !!routeInfo.value
     || !!triageResult.value
     || !!finalConsensus.value
-    || !!ruleGovernance.value
   );
   const hasOutput = typedOutput.value.trim().length > 0;
 
@@ -661,6 +667,7 @@ watch(isDragging, (dragging) => {
         :show-advanced-inputs="showAdvancedInputs"
         :clarification-question="clarificationQuestion"
         :required-fields="requiredFields"
+        :next-action="nextAction"
         :messages="messages"
         :micro-status="microStatus"
         :loading-seconds="loadingSeconds"

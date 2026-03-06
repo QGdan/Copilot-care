@@ -257,6 +257,18 @@ export interface InteropFhirBundleDraftResponse {
     triageLevel?: string;
     destination?: string;
     ruleGovernance?: RuleGovernanceSnapshot;
+    interopSummary?: {
+      resourceCounts: {
+        patient: number;
+        observation: number;
+        provenance: number;
+      };
+      referenceIntegrity: {
+        observationSubjectLinked: boolean;
+        provenanceTargetLinked: boolean;
+        provenanceObservationLinked: boolean;
+      };
+    };
   };
   bundle: {
     resourceType: 'Bundle';
@@ -337,22 +349,79 @@ function isErrorResponse(
   return payload.status === 'ERROR';
 }
 
+function normalizeSummaryTextForCompare(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[，。；、:：,./\\\-_\s()（）[\]【】]/g, '');
+}
+
+function dedupeSummaryLines(lines: string[]): string[] {
+  const selected: string[] = [];
+  const selectedNorm: string[] = [];
+  for (const line of lines.map((item) => item.trim()).filter(Boolean)) {
+    const normalized = normalizeSummaryTextForCompare(line);
+    if (!normalized) {
+      continue;
+    }
+    const duplicated = selectedNorm.some((existing) =>
+      existing === normalized
+      || existing.includes(normalized)
+      || normalized.includes(existing),
+    );
+    if (duplicated) {
+      continue;
+    }
+    selected.push(line);
+    selectedNorm.push(normalized);
+  }
+  return selected;
+}
+
+function collapseRepeatedSummaryBlocks(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return '';
+  }
+  const lines = trimmed.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length >= 2 && lines.length % 2 === 0) {
+    const half = lines.length / 2;
+    const firstHalf = lines.slice(0, half);
+    const secondHalf = lines.slice(half);
+    const same = firstHalf.every((line, index) => line === secondHalf[index]);
+    if (same) {
+      return firstHalf.join('\n');
+    }
+  }
+  return dedupeSummaryLines(lines).join('\n');
+}
+
 function buildFallbackSummary(
   payload: Exclude<TriageApiResponse, { status: 'ERROR' }>,
 ): string {
-  const parts = [
+  const actions = dedupeSummaryLines(payload.explainableReport?.actions ?? []);
+  const conclusion = payload.explainableReport?.conclusion ?? '';
+  const normalizedConclusion = normalizeSummaryTextForCompare(conclusion);
+  const triageLine = payload.triageResult
+    ? `分诊：${payload.triageResult.triageLevel} / 去向：${payload.triageResult.destination}`
+    : '';
+  const actionLine = actions.length > 0 ? `建议：${actions.join('；')}` : '';
+
+  const parts = dedupeSummaryLines([
     payload.explainableReport?.conclusion
       ? `结论：${payload.explainableReport.conclusion}`
       : '',
-    payload.triageResult
-      ? `分诊：${payload.triageResult.triageLevel} / 去向：${payload.triageResult.destination}`
+    triageLine
+      && !normalizedConclusion.includes(normalizeSummaryTextForCompare(triageLine))
+      ? triageLine
       : '',
-    payload.explainableReport?.actions?.length
-      ? `建议：${payload.explainableReport.actions.join('；')}`
+    actionLine
+      && !normalizedConclusion.includes(normalizeSummaryTextForCompare(actionLine))
+      ? actionLine
       : '',
-  ].filter(Boolean);
+  ]);
 
-  return parts.join('\n');
+  return collapseRepeatedSummaryBlocks(parts.join('\n'));
 }
 
 function buildFallbackSnapshot(summary: string): OrchestrationSnapshot {
@@ -424,6 +493,7 @@ function emitFallbackEvents(
         (payload.requiredFields ?? []).join('、') || '必填项'
       }。`,
       requiredFields: payload.requiredFields ?? [],
+      nextAction: payload.nextAction,
     });
     onEvent({
       type: 'error',
@@ -431,6 +501,7 @@ function emitFallbackEvents(
       errorCode: payload.errorCode,
       message: payload.notes.join('；') || '请求失败',
       requiredFields: payload.requiredFields,
+      nextAction: payload.nextAction,
     });
     onEvent({
       type: 'final_result',

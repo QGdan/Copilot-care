@@ -158,9 +158,28 @@ export interface StructuredTriageResult {
   dissent?: DissentComputation;
 }
 
+export type ExplainableEvidenceCategory =
+  | 'authoritative_web'
+  | 'guideline_rule'
+  | 'model_citation';
+
+export interface ExplainableEvidenceCard {
+  id: string;
+  category: ExplainableEvidenceCategory;
+  title: string;
+  summary: string;
+  sourceId?: string;
+  sourceName?: string;
+  publishedOn?: string;
+  retrievedAt?: string;
+  url?: string;
+  supportsRuleIds?: string[];
+}
+
 export interface ExplainableReport {
   conclusion: string;
   evidence: string[];
+  evidenceCards?: ExplainableEvidenceCard[];
   basis: string[];
   actions: string[];
   counterfactual?: string[];
@@ -264,6 +283,7 @@ export interface DebateResult {
   dissentIndexHistory: number[];
   errorCode?: ErrorCode;
   requiredFields?: string[];
+  nextAction?: string;
   ruleGovernance?: RuleGovernanceSnapshot;
   notes: string[];
   auditTrail: AuditEvent[];
@@ -274,6 +294,7 @@ export interface TriageErrorResponse {
   errorCode: ErrorCode;
   notes: string[];
   requiredFields?: string[];
+  nextAction?: string;
   auditRef?: string;
   ruleGovernance?: RuleGovernanceSnapshot;
 }
@@ -397,6 +418,7 @@ export type TriageStreamEvent =
       timestamp: string;
       question: string;
       requiredFields: string[];
+      nextAction?: string;
     }
   | {
       type: 'token';
@@ -414,6 +436,7 @@ export type TriageStreamEvent =
       errorCode: ErrorCode;
       message: string;
       requiredFields?: string[];
+      nextAction?: string;
     }
   | {
       type: 'heartbeat';

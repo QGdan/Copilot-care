@@ -1,6 +1,11 @@
-<script setup lang="ts">import { computed, ref, watch, nextTick } from 'vue';
+<script setup lang="ts">
+import { computed, ref, watch, nextTick } from 'vue';
 import type { WorkflowStage, AgentOpinion } from '@copilot-care/shared/types';
 import { useTypewriterManager } from '../composables/useTypewriter';
+import {
+  parseMedicalSourceBreakdownMessage,
+  type MedicalSourceBreakdown,
+} from '../utils/medicalSourceBreakdown';
 
 type ReasoningKind = 'system' | 'evidence' | 'decision' | 'warning' | 'query';
 
@@ -224,6 +229,21 @@ function showCursor(item: ReasoningItem): boolean {
   const typewriter = typewriterManager.get(item.id);
   return typewriter?.showCursor.value || false;
 }
+
+const sourceBreakdownByReasoningId = computed(() => {
+  const map = new Map<string, MedicalSourceBreakdown>();
+  for (const item of displayItems.value) {
+    const parsed = parseMedicalSourceBreakdownMessage(item.text);
+    if (parsed) {
+      map.set(item.id, parsed);
+    }
+  }
+  return map;
+});
+
+function getSourceBreakdown(itemId: string): MedicalSourceBreakdown | undefined {
+  return sourceBreakdownByReasoningId.value.get(itemId);
+}
 </script>
 
 <template>
@@ -348,6 +368,27 @@ function showCursor(item: ReasoningItem): boolean {
                   :class="{ blink: !isTyping(item) }"
                 >▊</span>
               </p>
+
+              <div
+                v-if="getSourceBreakdown(item.id)"
+                class="source-breakdown-card"
+              >
+                <div class="source-breakdown-head">
+                  <strong>权威来源分布</strong>
+                  <span class="source-breakdown-strategy">
+                    {{ getSourceBreakdown(item.id)?.strategyVersion }}
+                  </span>
+                </div>
+                <div class="source-breakdown-list">
+                  <span
+                    v-for="entry in getSourceBreakdown(item.id)?.items"
+                    :key="`${item.id}-${entry.sourceId}`"
+                    class="source-breakdown-chip"
+                  >
+                    {{ entry.sourceId }} x {{ entry.count }}
+                  </span>
+                </div>
+              </div>
 
               <div v-if="isExpanded(item.id) && item.evidence?.length" class="item-evidence"
               >
@@ -709,6 +750,51 @@ function showCursor(item: ReasoningItem): boolean {
 
 @keyframes blink {
   50% { opacity: 0; }
+}
+
+.source-breakdown-card {
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 136, 0.28);
+  background: rgba(0, 255, 136, 0.06);
+}
+
+.source-breakdown-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.source-breakdown-head strong {
+  font-size: 11px;
+  color: #00ff88;
+}
+
+.source-breakdown-strategy {
+  font-size: 10px;
+  color: #9efad0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 136, 0.35);
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.source-breakdown-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.source-breakdown-chip {
+  font-size: 10px;
+  color: #d6ffee;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 255, 136, 0.3);
+  background: rgba(0, 255, 136, 0.12);
 }
 
 .item-evidence {

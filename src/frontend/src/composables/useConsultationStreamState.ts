@@ -57,6 +57,7 @@ export function useConsultationStreamState(
 ) {
   const clarificationQuestion = ref('');
   const requiredFields = ref<string[]>([]);
+  const nextAction = ref('');
   const systemError = ref('');
 
   const stageRuntime = ref<Record<WorkflowStage, StageRuntimeState>>(
@@ -185,6 +186,7 @@ export function useConsultationStreamState(
   function resetStreamStateCore(): void {
     clarificationQuestion.value = '';
     requiredFields.value = [];
+    nextAction.value = '';
     systemError.value = '';
 
     stageRuntime.value = options.createInitialStageRuntime();
@@ -208,6 +210,7 @@ export function useConsultationStreamState(
   return {
     clarificationQuestion,
     requiredFields,
+    nextAction,
     systemError,
     stageRuntime,
     reasoningItems,

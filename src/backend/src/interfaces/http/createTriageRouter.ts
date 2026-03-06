@@ -12,8 +12,11 @@ import {
   WorkflowStage,
 } from '@copilot-care/shared/types';
 import { RequestValidationError } from '../../application/errors/RequestValidationError';
+import { AuthoritativeMedicalSearchPort } from '../../application/ports/AuthoritativeMedicalSearchPort';
+import { resolveNextAction } from '../../application/services/FlowControlNextActionService';
 import { buildValidationErrorGovernanceSnapshot } from '../../application/services/RuleGovernanceService';
 import { RunTriageSessionUseCase } from '../../application/usecases/RunTriageSessionUseCase';
+import { listAuthoritativeMedicalSources } from '../../domain/knowledge/AuthoritativeMedicalKnowledgeCatalog';
 import {
   AUTHORITATIVE_GUIDELINE_REFERENCES,
   AUTHORITATIVE_RULE_CATALOG_VERSION,
@@ -68,15 +71,23 @@ function buildErrorResponse(
   message: string,
   options?: {
     requiredFields?: string[];
+    nextAction?: string;
     auditRef?: string;
     ruleGovernance?: RuleGovernanceSnapshot;
   },
 ): TriageErrorResponse {
+  const nextAction =
+    options?.nextAction
+    ?? resolveNextAction({
+      errorCode,
+      requiredFields: options?.requiredFields,
+    });
   return {
     status: 'ERROR',
     errorCode,
     notes: [message],
     requiredFields: options?.requiredFields,
+    nextAction,
     auditRef: options?.auditRef,
     ruleGovernance: options?.ruleGovernance,
   };
@@ -89,6 +100,7 @@ function toApiResponse(result: DebateResult): TriageApiResponse {
       result.notes.join('；') || 'Request validation failed.',
       {
         requiredFields: result.requiredFields,
+        nextAction: result.nextAction,
         auditRef: result.auditRef,
         ruleGovernance: result.ruleGovernance,
       },
@@ -99,6 +111,19 @@ function toApiResponse(result: DebateResult): TriageApiResponse {
 
 function nowIso(): string {
   return new Date().toISOString();
+}
+
+function parseSourceIdList(value: unknown): string[] {
+  const rawValues: unknown[] = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(/[,\s|]+/)
+      : [];
+  const normalized = rawValues
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim().toUpperCase())
+    .filter((item) => item.length > 0);
+  return [...new Set(normalized)];
 }
 
 function writeStreamEvent(
@@ -118,20 +143,75 @@ function buildClarificationQuestion(requiredFields: string[]): string {
   return `请补充以下信息后继续会诊：${requiredFields.join('、')}。`;
 }
 
+function normalizeSummaryTextForCompare(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[，。；、:：,./\\\-_\s()（）[\]【】]/g, '');
+}
+
+function dedupeSummaryLines(lines: string[]): string[] {
+  const selected: string[] = [];
+  const selectedNorm: string[] = [];
+
+  for (const line of lines.map((item) => item.trim()).filter(Boolean)) {
+    const normalized = normalizeSummaryTextForCompare(line);
+    if (!normalized) {
+      continue;
+    }
+    const duplicated = selectedNorm.some((existing) =>
+      existing === normalized
+      || existing.includes(normalized)
+      || normalized.includes(existing),
+    );
+    if (duplicated) {
+      continue;
+    }
+    selected.push(line);
+    selectedNorm.push(normalized);
+  }
+  return selected;
+}
+
+function collapseRepeatedSummaryBlocks(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return '';
+  }
+  const lines = trimmed.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length >= 2 && lines.length % 2 === 0) {
+    const half = lines.length / 2;
+    const firstHalf = lines.slice(0, half);
+    const secondHalf = lines.slice(half);
+    const same = firstHalf.every((line, index) => line === secondHalf[index]);
+    if (same) {
+      return firstHalf.join('\n');
+    }
+  }
+  return dedupeSummaryLines(lines).join('\n');
+}
+
 function buildTypewriterSummary(result: DebateResult): string {
   const conclusion = result.explainableReport?.conclusion ?? '';
-  const actions = result.explainableReport?.actions ?? [];
+  const actions = dedupeSummaryLines(result.explainableReport?.actions ?? []);
   const destination = result.triageResult?.destination ?? '';
   const triageLevel = result.triageResult?.triageLevel ?? '';
-  const sections = [
+  const normalizedConclusion = normalizeSummaryTextForCompare(conclusion);
+  const triageLine = triageLevel || destination
+    ? `分诊：${triageLevel || '-'} / 去向：${destination || '-'}`
+    : '';
+  const shouldAddTriageLine = triageLine
+    && !normalizedConclusion.includes(normalizeSummaryTextForCompare(triageLine));
+  const actionLine = actions.length > 0 ? `建议：${actions.join('；')}` : '';
+  const shouldAddActionLine = actionLine
+    && !normalizedConclusion.includes(normalizeSummaryTextForCompare(actionLine));
+  const sections = dedupeSummaryLines([
     conclusion ? `结论：${conclusion}` : '',
-    triageLevel || destination
-      ? `分诊：${triageLevel || '-'} / 去向：${destination || '-'}`
-      : '',
-    actions.length > 0 ? `建议：${actions.join('；')}` : '',
-  ].filter(Boolean);
+    shouldAddTriageLine ? triageLine : '',
+    shouldAddActionLine ? actionLine : '',
+  ]);
 
-  return sections.join('\n');
+  return collapseRepeatedSummaryBlocks(sections.join('\n'));
 }
 
 function createInitialSnapshotStageRuntime(): SnapshotStageRuntime {
@@ -234,6 +314,7 @@ export function createTriageRouter(
   architecture?: RuntimeArchitectureView,
   coordinatorSnapshotService?: CoordinatorSnapshotService,
   governanceRuntimeTelemetry?: GovernanceRuntimeTelemetry,
+  authoritativeMedicalSearch?: AuthoritativeMedicalSearchPort,
 ): Router {
   const router = Router();
 
@@ -369,6 +450,130 @@ export function createTriageRouter(
     });
   });
 
+  router.get('/governance/medical-sources', (_request: Request, response: Response) => {
+    const sources =
+      authoritativeMedicalSearch?.getSources() ?? listAuthoritativeMedicalSources();
+    response.status(200).json({
+      enabled: authoritativeMedicalSearch?.isEnabled() ?? false,
+      strictWhitelist: true,
+      sources,
+      generatedAt: nowIso(),
+    });
+  });
+
+  router.get('/governance/medical-search/runtime', (_request: Request, response: Response) => {
+    const runtime = authoritativeMedicalSearch?.getRuntimeStats?.();
+    response.status(200).json({
+      enabled: authoritativeMedicalSearch?.isEnabled() ?? false,
+      strictWhitelist: true,
+      runtime:
+        runtime ?? {
+          generatedAt: nowIso(),
+          searches: 0,
+          cacheHits: 0,
+          cacheMisses: 0,
+          fallbackAppliedCount: 0,
+          providerStats: [],
+        },
+      generatedAt: nowIso(),
+    });
+  });
+
+  router.post('/governance/medical-search', async (request: Request, response: Response) => {
+    const body = request.body as {
+      query?: unknown;
+      limit?: unknown;
+      sourceFilter?: unknown;
+      requiredSources?: unknown;
+    } | null;
+    const query = typeof body?.query === 'string' ? body.query.trim() : '';
+    const rawLimit =
+      typeof body?.limit === 'number'
+        ? body.limit
+        : Number(body?.limit ?? Number.NaN);
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(20, Math.max(1, Math.floor(rawLimit)))
+      : 8;
+    const sourceFilter = parseSourceIdList(body?.sourceFilter);
+    const requiredSources = parseSourceIdList(body?.requiredSources);
+    const availableSources =
+      authoritativeMedicalSearch?.getSources() ?? listAuthoritativeMedicalSources();
+    const availableSourceIds = new Set(availableSources.map((item) => item.id));
+    const invalidSourceFilter = sourceFilter.filter(
+      (sourceId) => !availableSourceIds.has(sourceId),
+    );
+    const invalidRequiredSources = requiredSources.filter(
+      (sourceId) => !availableSourceIds.has(sourceId),
+    );
+
+    if (invalidSourceFilter.length > 0 || invalidRequiredSources.length > 0) {
+      response.status(400).json({
+        error: 'invalid_sources',
+        message: 'sourceFilter/requiredSources contains unknown source ids',
+        invalidSourceFilter,
+        invalidRequiredSources,
+        availableSources: availableSources.map((item) => item.id),
+      });
+      return;
+    }
+
+    if (sourceFilter.length > 0) {
+      const missingRequiredSources = requiredSources.filter(
+        (sourceId) => !sourceFilter.includes(sourceId),
+      );
+      if (missingRequiredSources.length > 0) {
+        response.status(400).json({
+          error: 'invalid_source_constraints',
+          message: 'requiredSources must be a subset of sourceFilter',
+          missingRequiredSources,
+        });
+        return;
+      }
+    }
+
+    if (query.length < 2) {
+      response.status(400).json({
+        error: 'invalid_query',
+        message: 'query must contain at least 2 characters',
+      });
+      return;
+    }
+
+    if (!authoritativeMedicalSearch || !authoritativeMedicalSearch.isEnabled()) {
+      response.status(503).json({
+        error: 'medical_search_disabled',
+        message: 'authoritative medical search is disabled',
+        strictWhitelist: true,
+        sources:
+          authoritativeMedicalSearch?.getSources() ?? listAuthoritativeMedicalSources(),
+      });
+      return;
+    }
+
+    try {
+      const result = await authoritativeMedicalSearch.search({
+        query,
+        limit,
+        sourceFilter: sourceFilter.length > 0 ? sourceFilter : undefined,
+        requiredSources: requiredSources.length > 0 ? requiredSources : undefined,
+      });
+      response.status(200).json({
+        ...result,
+        policy: {
+          strictWhitelist: true,
+          allowedSources: authoritativeMedicalSearch.getSources(),
+          sourceFilter,
+          requiredSources,
+        },
+      });
+    } catch {
+      response.status(502).json({
+        error: 'medical_search_unavailable',
+        message: 'authoritative medical search failed',
+      });
+    }
+  });
+
   router.post(
     '/orchestrate_triage',
     async (request: Request, response: Response<TriageApiResponse>) => {
@@ -424,6 +629,7 @@ export function createTriageRouter(
             .status(400)
             .json(
               buildErrorResponse(error.errorCode, error.message, {
+                requiredFields: ['profile'],
                 auditRef,
                 ruleGovernance: buildValidationErrorGovernanceSnapshot({
                   sessionId: fallbackSessionId,
@@ -776,6 +982,12 @@ export function createTriageRouter(
             timestamp: nowIso(),
             requiredFields: payload.requiredFields ?? [],
             question: buildClarificationQuestion(payload.requiredFields ?? []),
+            nextAction:
+              payload.nextAction
+              ?? resolveNextAction({
+                errorCode: payload.errorCode,
+                requiredFields: payload.requiredFields,
+              }),
           });
           writeStreamEvent(response, {
             type: 'error',
@@ -783,6 +995,12 @@ export function createTriageRouter(
             errorCode: payload.errorCode ?? 'ERR_MISSING_REQUIRED_DATA',
             message: payload.notes.join('；') || '请求失败',
             requiredFields: payload.requiredFields,
+            nextAction:
+              payload.nextAction
+              ?? resolveNextAction({
+                errorCode: payload.errorCode,
+                requiredFields: payload.requiredFields,
+              }),
           });
           writeStreamEvent(response, {
             type: 'final_result',
@@ -823,6 +1041,7 @@ export function createTriageRouter(
           validationError?.errorCode ?? 'ERR_CONFLICT_UNRESOLVED',
           validationError?.message ?? 'Unexpected runtime error. See backend logs.',
           {
+            requiredFields: validationError ? ['profile'] : undefined,
             auditRef,
             ruleGovernance: buildValidationErrorGovernanceSnapshot({
               sessionId: fallbackSessionId,
@@ -846,6 +1065,7 @@ export function createTriageRouter(
           errorCode: errorPayload.errorCode,
           message: errorPayload.notes.join('；'),
           requiredFields: errorPayload.requiredFields,
+          nextAction: errorPayload.nextAction,
         });
         writeStreamEvent(response, {
           type: 'final_result',

@@ -1,7 +1,7 @@
 {
-  "version": "v9.20",
+  "version": "v9.50",
   "createdAt": "2026-02-21T16:37:39.786Z",
-  "updatedAt": "2026-02-25T05:05:59.861Z",
+  "updatedAt": "2026-03-02T13:04:41.862Z",
   "todos": {
     "H01": {
       "state": "done",
@@ -147,22 +147,28 @@
       "evidence": []
     },
     "G06": {
-      "state": "ready",
-      "updatedAt": "2026-02-24T14:42:06.227Z",
-      "notes": "",
-      "evidence": []
+      "state": "done",
+      "updatedAt": "2026-03-02T13:03:53.410Z",
+      "notes": "gate checks passed on 2026-03-02",
+      "evidence": [
+        "reports/metrics/frontend-build-budget.latest.json"
+      ]
     },
     "G07": {
-      "state": "ready",
-      "updatedAt": "2026-02-24T14:42:06.227Z",
-      "notes": "",
-      "evidence": []
+      "state": "done",
+      "updatedAt": "2026-03-02T13:03:53.476Z",
+      "notes": "governance integration rehearsal log captured on 2026-03-02",
+      "evidence": [
+        "reports/runtime/frontend-live-5173.out.log"
+      ]
     },
     "G08": {
-      "state": "ready",
-      "updatedAt": "2026-02-24T14:42:06.227Z",
-      "notes": "",
-      "evidence": []
+      "state": "done",
+      "updatedAt": "2026-03-02T13:03:53.526Z",
+      "notes": "release gate all passed on 2026-03-02",
+      "evidence": [
+        "reports/todos/workflow-state.json"
+      ]
     },
     "G21": {
       "state": "done",
@@ -183,22 +189,28 @@
       "evidence": []
     },
     "G24": {
-      "state": "ready",
-      "updatedAt": "2026-02-24T15:15:01.696Z",
-      "notes": "",
-      "evidence": []
+      "state": "done",
+      "updatedAt": "2026-03-02T13:03:53.579Z",
+      "notes": "accessibility and interaction convergence verified on 2026-03-02",
+      "evidence": [
+        "src/frontend/src/components/GovernanceDashboard.vue"
+      ]
     },
     "G25": {
-      "state": "ready",
-      "updatedAt": "2026-02-24T15:15:01.696Z",
-      "notes": "",
-      "evidence": []
+      "state": "done",
+      "updatedAt": "2026-03-02T13:03:53.629Z",
+      "notes": "governance-consultation regression verified on 2026-03-02",
+      "evidence": [
+        "reports/runtime/frontend-live-5173.out.log"
+      ]
     },
     "G26": {
-      "state": "ready",
-      "updatedAt": "2026-02-24T15:15:01.696Z",
-      "notes": "",
-      "evidence": []
+      "state": "done",
+      "updatedAt": "2026-03-02T13:03:53.683Z",
+      "notes": "release gate all passed on 2026-03-02",
+      "evidence": [
+        "reports/todos/workflow-state.json"
+      ]
     },
     "G31": {
       "state": "done",
@@ -387,6 +399,6 @@
     "docs\\process\\todos-workflow.v9_40-governance-backend-factors.json",
     "docs\\process\\todos-workflow.v9_50-governance-autopilot.json"
   ],
-  "lastBackfillAt": "2026-02-24T15:16:05.112Z",
+  "lastBackfillAt": "2026-03-02T13:04:41.862Z",
   "lastGovernanceManifest": "docs\\process\\todos-workflow.v9_50-governance-autopilot.json"
 }

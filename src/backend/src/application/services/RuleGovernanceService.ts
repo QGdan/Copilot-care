@@ -56,6 +56,7 @@ function buildFlowControlDecision(
   if (
     input.errorCode === 'ERR_MISSING_REQUIRED_DATA'
     || input.errorCode === 'ERR_INVALID_VITAL_SIGN'
+    || input.errorCode === 'ERR_GUIDELINE_EVIDENCE_MISSING'
   ) {
     return {
       layer: 'FLOW_CONTROL',

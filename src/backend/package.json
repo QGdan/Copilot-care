@@ -5,6 +5,7 @@
   "scripts": {
     "build": "npm run build --prefix ../shared && node scripts/clean-dist.cjs && tsc -p tsconfig.json && node scripts/check-dist-hygiene.cjs",
     "typecheck": "npm run build --prefix ../shared && tsc --noEmit -p tsconfig.json",
+    "start:prod": "node dist/index.js",
     "start": "npm run build && node dist/index.js",
     "test": "npm run build --prefix ../shared && jest --config jest.config.cjs"
   },

@@ -102,6 +102,7 @@ describe('Contract - orchestrate_triage v6.13', () => {
     const payload = await response.json() as {
       errorCode: string;
       requiredFields?: string[];
+      nextAction?: string;
       ruleGovernance?: {
         layerDecisions: Array<{ layer: string; status: string }>;
       };
@@ -111,6 +112,8 @@ describe('Contract - orchestrate_triage v6.13', () => {
     expect(payload.errorCode).toBe('ERR_MISSING_REQUIRED_DATA');
     expect(Array.isArray(payload.requiredFields)).toBe(true);
     expect((payload.requiredFields ?? []).length).toBeGreaterThan(0);
+    expect(typeof payload.nextAction).toBe('string');
+    expect((payload.nextAction ?? '').length).toBeGreaterThan(0);
     expect(payload.ruleGovernance).toBeDefined();
     expect(
       payload.ruleGovernance?.layerDecisions.some(

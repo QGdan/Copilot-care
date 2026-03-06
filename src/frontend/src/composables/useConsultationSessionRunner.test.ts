@@ -66,6 +66,9 @@ interface CreateRunnerOptions {
     payload: TriageRequest,
     options: { signal?: AbortSignal; onEvent: (event: any) => void },
   ) => Promise<void>;
+  classifyReasoningKind?: (
+    message: string,
+  ) => 'system' | 'evidence' | 'decision' | 'warning' | 'query';
   createDemoSteps?: (
     items: Array<{ kind: string; text: string; stage?: string }>,
     stageRuntime: Record<string, { status: string; message: string }>,
@@ -93,7 +96,7 @@ function createRunner(options: CreateRunnerOptions = {}) {
     streamState,
     validateInput: options.validateInput ?? (() => null),
     buildRequestPayload: () => createRequestFromForm(form.value),
-    classifyReasoningKind: () => 'system',
+    classifyReasoningKind: options.classifyReasoningKind ?? (() => 'system'),
     formatRequiredField: (field: string) => field,
     stageLabels: {
       START: '启动',
@@ -299,6 +302,50 @@ describe('useConsultationSessionRunner', () => {
     expect(state.messages.value.some((item) => item.role === 'system')).toBe(true);
   });
 
+  it('attaches running stage and evidence kind for authoritative search reasoning step', async () => {
+    const success = createSuccessResponse();
+    const classifyReasoningKind = vi.fn((message: string) => {
+      return message.includes('权威医学联网检索') ? 'evidence' : 'system';
+    });
+
+    const streamRequest = vi.fn(async (_payload, streamOptions) => {
+      streamOptions.onEvent({
+        type: 'stage_update',
+        timestamp: new Date().toISOString(),
+        stage: 'INFO_GATHER' as WorkflowStage,
+        status: 'running',
+        message: '信息采集中',
+      });
+      streamOptions.onEvent({
+        type: 'reasoning_step',
+        timestamp: new Date().toISOString(),
+        message: '权威医学联网检索命中 3 条（来源：PUBMED）。',
+      });
+      streamOptions.onEvent({
+        type: 'final_result',
+        timestamp: new Date().toISOString(),
+        result: success,
+      });
+    });
+
+    const state = createRunner({
+      streamRequest,
+      classifyReasoningKind,
+    });
+
+    await state.runner.submitConsultation();
+    await vi.advanceTimersByTimeAsync(300);
+
+    const evidenceItem = state.streamState.reasoningItems.value.find(
+      (item) => item.text === '权威医学联网检索命中 3 条（来源：PUBMED）。',
+    );
+    expect(classifyReasoningKind).toHaveBeenCalledWith(
+      '权威医学联网检索命中 3 条（来源：PUBMED）。',
+    );
+    expect(evidenceItem?.kind).toBe('evidence');
+    expect(evidenceItem?.stage).toBe('INFO_GATHER');
+  });
+
   it('builds fallback typewriter text when stream emits no token', async () => {
     const success = createSuccessResponse();
     const streamRequest = vi.fn(async (_payload, options) => {
@@ -325,6 +372,7 @@ describe('useConsultationSessionRunner', () => {
         timestamp: new Date().toISOString(),
         question: '请补充收缩压',
         requiredFields: ['systolicBP'],
+        nextAction: 'Provide missing fields (systolic blood pressure) and resubmit triage.',
       });
       options.onEvent({
         type: 'error',
@@ -332,6 +380,7 @@ describe('useConsultationSessionRunner', () => {
         errorCode: 'ERR_MISSING_REQUIRED_DATA',
         message: '缺少收缩压',
         requiredFields: ['systolicBP'],
+        nextAction: 'Provide missing fields (systolic blood pressure) and resubmit triage.',
       });
       options.onEvent({
         type: 'final_result',
@@ -341,6 +390,7 @@ describe('useConsultationSessionRunner', () => {
           errorCode: 'ERR_MISSING_REQUIRED_DATA',
           notes: ['缺少收缩压'],
           requiredFields: ['systolicBP'],
+          nextAction: 'Provide missing fields (systolic blood pressure) and resubmit triage.',
           ruleGovernance: {
             catalogVersion: '2026.03-r1',
             matchedRuleIds: ['RULE-FC-MIS-GATE'],
@@ -366,6 +416,7 @@ describe('useConsultationSessionRunner', () => {
     expect(state.status.value).toBe('ERROR');
     expect(state.showAdvancedInputs.value).toBe(true);
     expect(state.streamState.requiredFields.value).toContain('systolicBP');
+    expect(state.streamState.nextAction.value).toContain('Provide missing fields');
     expect(state.streamState.ruleGovernance.value?.catalogVersion).toBe(
       '2026.03-r1',
     );

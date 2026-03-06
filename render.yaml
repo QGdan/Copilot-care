@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: copilot-care
+    env: node
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /health
+    buildCommand: npm ci && npm run build:deploy
+    startCommand: npm run start:deploy
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.0
+      - key: NODE_ENV
+        value: production
+      - key: COPILOT_CARE_FRONTEND_DIST
+        value: src/frontend/dist
+      - key: COPILOT_CARE_LLM_PROVIDER
+        value: auto
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: KIMI_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false

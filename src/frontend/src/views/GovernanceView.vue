@@ -943,6 +943,10 @@ onBeforeUnmount(() => {
           :external-focus-stage="dashboardFocusStage"
           :runtime-stage-runtime="runtimeSnapshot?.stageRuntime ?? null"
           :runtime-current-stage="runtimeSnapshot?.currentStage ?? null"
+          :rule-catalog-layers="ruleCatalog?.layers ?? []"
+          :rule-guideline-references="ruleCatalog?.guidelineReferences ?? []"
+          :rule-catalog-version="ruleCatalogVersionText === '--' ? null : ruleCatalogVersionText"
+          :rule-synonym-version="ruleSynonymVersionText === '--' ? null : ruleSynonymVersionText"
           @queue-filter-change="handleDashboardQueueFilterChange"
         />
       </section>

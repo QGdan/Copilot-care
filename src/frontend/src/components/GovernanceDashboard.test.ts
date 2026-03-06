@@ -108,6 +108,42 @@ describe('GovernanceDashboard queue navigation behavior', () => {
     expect(wrapper.find('[data-testid="orchestration-task-grid"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="evidence-wall-grid"]').exists()).toBe(true);
     expect(wrapper.find('[data-testid="evidence-detail"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="rule-layer-grid"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="guideline-reference-grid"]').exists()).toBe(true);
+  });
+
+  it('renders rule catalog layers and guideline references from runtime props', async () => {
+    const wrapper = mountDashboard({
+      ruleCatalogVersion: '2026.03-r1',
+      ruleSynonymVersion: '2026.03-r1',
+      ruleCatalogLayers: [
+        {
+          id: 'RULE-FC-MIS-GATE',
+          layer: 'FLOW_CONTROL',
+          title: 'Minimum Information Set Gate',
+          summary: 'Requires minimal structured clinical data before routing.',
+          implementationRefs: ['src/backend/src/application/services/MinimumInfoSetService.ts'],
+        },
+      ],
+      ruleGuidelineReferences: [
+        {
+          id: 'NICE_NG136_2026',
+          title: 'Hypertension in adults',
+          publisher: 'NICE',
+          publishedOn: '2026-01-01',
+          url: 'https://www.nice.org.uk/guidance/ng136',
+        },
+      ],
+    });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain('Catalog 2026.03-r1');
+    expect(wrapper.find('[data-testid="rule-layer-grid"]').text()).toContain(
+      'FLOW_CONTROL',
+    );
+    expect(wrapper.find('[data-testid="guideline-reference-grid"]').text()).toContain(
+      'NICE_NG136_2026',
+    );
   });
 
   it('toggles 3-minute briefing mode and updates visual state', async () => {

@@ -23,6 +23,7 @@ describe('useConsultationStreamState', () => {
 
     expect(state.clarificationQuestion.value).toBe('');
     expect(state.requiredFields.value).toEqual([]);
+    expect(state.nextAction.value).toBe('');
     expect(state.systemError.value).toBe('');
     expect(state.rounds.value).toEqual([]);
     expect(state.routeInfo.value).toBeNull();
@@ -37,6 +38,7 @@ describe('useConsultationStreamState', () => {
 
     state.clarificationQuestion.value = '请补充血压';
     state.requiredFields.value = ['systolicBP'];
+    state.nextAction.value = 'Provide blood pressure values and retry.';
     state.systemError.value = 'ERR_INPUT';
     state.reasoningItems.value.push({
       id: 'reason-1',
@@ -54,6 +56,7 @@ describe('useConsultationStreamState', () => {
 
     expect(state.clarificationQuestion.value).toContain('补充');
     expect(state.requiredFields.value).toContain('systolicBP');
+    expect(state.nextAction.value).toContain('retry');
     expect(state.systemError.value).toBe('ERR_INPUT');
     expect(state.reasoningItems.value).toHaveLength(1);
     expect(state.routeInfo.value?.department).toBe('cardiology');
@@ -115,6 +118,7 @@ describe('useConsultationStreamState', () => {
 
     state.clarificationQuestion.value = '请补充用药史';
     state.requiredFields.value = ['medicationHistory'];
+    state.nextAction.value = 'Add medication history before rerun.';
     state.systemError.value = 'ERR_REQUIRED_FIELDS';
     state.resultNotes.value = ['缺失关键信息'];
     state.routingPreview.value = { routeMode: 'DEEP_DEBATE' };
@@ -129,6 +133,7 @@ describe('useConsultationStreamState', () => {
 
     expect(state.clarificationQuestion.value).toBe('');
     expect(state.requiredFields.value).toEqual([]);
+    expect(state.nextAction.value).toBe('');
     expect(state.systemError.value).toBe('');
     expect(state.resultNotes.value).toEqual([]);
     expect(state.routingPreview.value).toEqual({});

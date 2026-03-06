@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-02-25T05:49:21.612Z",
+  "generatedAt": "2026-03-02T12:57:18.475Z",
   "budget": {
     "totalJsMaxBytes": 2600000,
     "totalCssMaxBytes": 150000,
@@ -12,29 +12,29 @@
     "measuredBy": "vite-manifest-entry-graph"
   },
   "summary": {
-    "totalAssets": 21,
-    "totalJsBytes": 1710307,
-    "totalCssBytes": 116417,
+    "totalAssets": 24,
+    "totalJsBytes": 1733830,
+    "totalCssBytes": 133496,
     "largestAssetPath": "dist/assets/echarts-charts-Dl6whd7t.js",
     "largestAssetBytes": 476837,
-    "consultationChunkPath": "dist/assets/ConsultationView-3Vj-xOxB.js",
-    "consultationChunkBytes": 89935
+    "consultationChunkPath": "dist/assets/ConsultationView-DuRm5ygb.js",
+    "consultationChunkBytes": 90843
   },
   "assets": [
     {
-      "path": "dist/assets/api-DWinV2hI.js",
+      "path": "dist/assets/api-DZQQU73S.js",
       "ext": ".js",
-      "bytes": 37984
+      "bytes": 1407
     },
     {
-      "path": "dist/assets/ConsultationView-3Vj-xOxB.js",
-      "ext": ".js",
-      "bytes": 89935
-    },
-    {
-      "path": "dist/assets/ConsultationView-BktbFfpF.css",
+      "path": "dist/assets/ConsultationView-BbqPykoy.css",
       "ext": ".css",
-      "bytes": 35184
+      "bytes": 38680
+    },
+    {
+      "path": "dist/assets/ConsultationView-DuRm5ygb.js",
+      "ext": ".js",
+      "bytes": 90843
     },
     {
       "path": "dist/assets/echarts-charts-Dl6whd7t.js",
@@ -52,24 +52,24 @@
       "bytes": 12896
     },
     {
-      "path": "dist/assets/FhirExplorerView-B6WMGQ0w.js",
+      "path": "dist/assets/FhirExplorerView-BOFPLeu_.js",
       "ext": ".js",
-      "bytes": 6758
+      "bytes": 10366
     },
     {
-      "path": "dist/assets/FhirExplorerView-DX4Rd6C6.css",
+      "path": "dist/assets/FhirExplorerView-D25XsSX8.css",
       "ext": ".css",
-      "bytes": 5811
+      "bytes": 7707
     },
     {
-      "path": "dist/assets/GovernanceView-BD19W7u3.js",
+      "path": "dist/assets/GovernanceView-D403FqWc.js",
       "ext": ".js",
-      "bytes": 63026
+      "bytes": 73928
     },
     {
-      "path": "dist/assets/GovernanceView-Kr53nw2X.css",
+      "path": "dist/assets/GovernanceView-DqX2gXeJ.css",
       "ext": ".css",
-      "bytes": 39915
+      "bytes": 48061
     },
     {
       "path": "dist/assets/html2canvas.esm-DXEQVQnt.js",
@@ -77,24 +77,29 @@
       "bytes": 201041
     },
     {
-      "path": "dist/assets/index-Bx3bZF1q.js",
+      "path": "dist/assets/index-C0Zqfgkc.js",
       "ext": ".js",
-      "bytes": 61473
+      "bytes": 36615
     },
     {
-      "path": "dist/assets/index-DbkBF2Kz.css",
+      "path": "dist/assets/index-CVvoJsGo.css",
       "ext": ".css",
-      "bytes": 18691
+      "bytes": 21653
     },
     {
-      "path": "dist/assets/index.es-BPV4QX7Z.js",
+      "path": "dist/assets/index-DPUjTirT.js",
       "ext": ".js",
-      "bytes": 159027
+      "bytes": 61609
     },
     {
-      "path": "dist/assets/PatientDashboardView-DINcMVuH.js",
+      "path": "dist/assets/index.es-DVcX5UgB.js",
       "ext": ".js",
-      "bytes": 12223
+      "bytes": 159115
+    },
+    {
+      "path": "dist/assets/PatientDashboardView-Dq03mmIS.js",
+      "ext": ".js",
+      "bytes": 13115
     },
     {
       "path": "dist/assets/PatientDashboardView-i0THHSvB.css",
@@ -107,19 +112,29 @@
       "bytes": 22449
     },
     {
-      "path": "dist/assets/reportExport-12LXUsgp.js",
+      "path": "dist/assets/reportExport-CEzbSx6T.js",
       "ext": ".js",
-      "bytes": 395645
+      "bytes": 395739
     },
     {
-      "path": "dist/assets/ThinkingGraph-DOtjzUbJ.css",
+      "path": "dist/assets/theme-D0698-ip.js",
+      "ext": ".js",
+      "bytes": 2261
+    },
+    {
+      "path": "dist/assets/ThinkingGraph-BtF4t7Ou.js",
+      "ext": ".js",
+      "bytes": 16336
+    },
+    {
+      "path": "dist/assets/ThinkingGraph-etuiHo_Y.css",
       "ext": ".css",
-      "bytes": 8622
+      "bytes": 9201
     },
     {
-      "path": "dist/assets/ThinkingGraph-SecD4CMs.js",
+      "path": "dist/assets/triageApi-OniuZx2u.js",
       "ext": ".js",
-      "bytes": 15983
+      "bytes": 4243
     },
     {
       "path": "dist/assets/vue-vendor-D0NjLzHG.js",

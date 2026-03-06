@@ -138,10 +138,23 @@ export function useConsultationViewModel(
   });
 
   const coordinatorSourceText = computed<string>(() => {
+    const hasRealtimeEvidence = options.resultNotes.value.some((note) =>
+      note.includes('权威医学证据') && note.includes('实时检索'),
+    );
+    const hasFallbackEvidence = options.resultNotes.value.some((note) =>
+      note.includes('权威医学证据') && note.includes('目录兜底'),
+    );
+
     if (coordinatorSourceKind.value === 'model') {
       return 'AI动态';
     }
     if (coordinatorSourceKind.value === 'rule') {
+      if (hasRealtimeEvidence) {
+        return hasFallbackEvidence ? '规则+实时证据(含兜底)' : '规则+实时证据';
+      }
+      if (hasFallbackEvidence) {
+        return '规则+目录兜底';
+      }
       return '规则';
     }
     return '待判定';
@@ -282,13 +295,16 @@ export function useConsultationViewModel(
 
   const reasoningIntegrationText = computed<string>(() => {
     if (reasoningIntegrationMode.value === 'model') {
-      return 'AI 实时编排已接入，展示动态图谱。';
+      return 'AI 实时编排已接入，展示动态推理图谱。';
     }
     if (reasoningIntegrationMode.value === 'rule') {
-      return '规则编排运行中，展示本地推理图。';
+      if (coordinatorSourceText.value.includes('实时证据')) {
+        return '规则编排运行中，已接入联网证据检索。';
+      }
+      return '规则编排运行中，当前以本地推理图谱为主。';
     }
     if (options.routeInfo.value || options.routingPreview.value.routeMode) {
-      return '分流结果已生成，正在同步推理图。';
+      return '分流结果已生成，正在同步推理图谱。';
     }
     if (reasoningIntegrationMode.value === 'syncing') {
       return '会诊已启动，等待图谱事件。';

@@ -107,11 +107,32 @@ interface ScenarioEvidence {
   output: string;
 }
 
+interface RuleCatalogLayer {
+  id: string;
+  layer: string;
+  title: string;
+  summary: string;
+  implementationRefs: string[];
+}
+
+interface GuidelineReference {
+  id: string;
+  title: string;
+  publisher: string;
+  publishedOn: string;
+  lastUpdatedOn?: string;
+  url: string;
+}
+
 interface Props {
   queueOverview?: QueueOverview;
   externalFocusStage?: WorkflowStage | null;
   runtimeStageRuntime?: Record<WorkflowStage, RuntimeStageRuntimeState> | null;
   runtimeCurrentStage?: WorkflowStage | null;
+  ruleCatalogLayers?: RuleCatalogLayer[];
+  ruleGuidelineReferences?: GuidelineReference[];
+  ruleCatalogVersion?: string | null;
+  ruleSynonymVersion?: string | null;
 }
 
 interface Emits {
@@ -128,6 +149,10 @@ const props = withDefaults(defineProps<Props>(), {
   externalFocusStage: null,
   runtimeStageRuntime: null,
   runtimeCurrentStage: null,
+  ruleCatalogLayers: () => [],
+  ruleGuidelineReferences: () => [],
+  ruleCatalogVersion: null,
+  ruleSynonymVersion: null,
 });
 
 const emit = defineEmits<Emits>();
@@ -915,6 +940,22 @@ const selectedEvidence = computed<ScenarioEvidence | null>(() => {
   return SCENARIO_EVIDENCE_WALL.find((item) => item.id === selectedEvidenceId.value) ?? null;
 });
 
+const displayRuleCatalogVersion = computed<string>(() => {
+  return props.ruleCatalogVersion?.trim() || '--';
+});
+
+const displayRuleSynonymVersion = computed<string>(() => {
+  return props.ruleSynonymVersion?.trim() || '--';
+});
+
+const displayRuleCatalogLayers = computed<RuleCatalogLayer[]>(() => {
+  return props.ruleCatalogLayers.slice(0, 8);
+});
+
+const displayGuidelineReferences = computed<GuidelineReference[]>(() => {
+  return props.ruleGuidelineReferences.slice(0, 8);
+});
+
 function formatTime(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -1561,6 +1602,64 @@ onBeforeUnmount(() => {
           <p><strong>触发机制：</strong>{{ selectedEvidence.trigger }}</p>
           <p><strong>输出动作：</strong>{{ selectedEvidence.output }}</p>
         </article>
+      </section>
+
+      <section class="panel rule-catalog-panel" aria-label="规则目录与指南证据">
+        <div class="panel-head">
+          <h3>规则目录与指南证据</h3>
+          <span class="replay-chip">
+            Catalog {{ displayRuleCatalogVersion }} / Synonym {{ displayRuleSynonymVersion }}
+          </span>
+        </div>
+        <div class="rule-layer-grid" data-testid="rule-layer-grid">
+          <article
+            v-for="layer in displayRuleCatalogLayers"
+            :key="layer.id"
+            class="rule-layer-card"
+          >
+            <header>
+              <strong>{{ layer.layer }}</strong>
+              <span>{{ layer.id }}</span>
+            </header>
+            <h4>{{ layer.title }}</h4>
+            <p>{{ layer.summary }}</p>
+            <small>
+              Refs: {{
+                layer.implementationRefs.length > 0
+                  ? layer.implementationRefs.join(', ')
+                  : '--'
+              }}
+            </small>
+          </article>
+          <article
+            v-if="displayRuleCatalogLayers.length === 0"
+            class="rule-layer-empty"
+            data-testid="rule-layer-empty"
+          >
+            <p>暂无规则目录数据，请检查 /governance/rules/catalog。</p>
+          </article>
+        </div>
+        <div class="guideline-reference-grid" data-testid="guideline-reference-grid">
+          <a
+            v-for="guideline in displayGuidelineReferences"
+            :key="guideline.id"
+            class="guideline-card"
+            :href="guideline.url"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <strong>{{ guideline.id }} · {{ guideline.title }}</strong>
+            <span>{{ guideline.publisher }}</span>
+            <small>Published {{ guideline.publishedOn }}</small>
+          </a>
+          <article
+            v-if="displayGuidelineReferences.length === 0"
+            class="guideline-empty"
+            data-testid="guideline-empty"
+          >
+            <p>暂无指南引用数据。</p>
+          </article>
+        </div>
       </section>
 
       <section class="panel">
@@ -2425,6 +2524,101 @@ onBeforeUnmount(() => {
   margin: 0 0 6px;
   font-size: 12px;
   color: var(--color-text-secondary);
+}
+
+.rule-catalog-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.rule-layer-grid,
+.guideline-reference-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.rule-layer-card,
+.guideline-card {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-bg-primary) 90%, transparent);
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+}
+
+.rule-layer-card header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.rule-layer-card header strong {
+  font-size: 11px;
+  color: #1f5e86;
+}
+
+.rule-layer-card header span {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.rule-layer-card h4 {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+
+.rule-layer-card p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+}
+
+.rule-layer-card small {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.guideline-card {
+  text-decoration: none;
+}
+
+.guideline-card:hover {
+  border-color: color-mix(in srgb, var(--color-primary) 44%, var(--color-border));
+}
+
+.guideline-card strong {
+  font-size: 12px;
+  color: var(--color-text-primary);
+}
+
+.guideline-card span {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.guideline-card small {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.rule-layer-empty,
+.guideline-empty {
+  border: 1px dashed var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  background: color-mix(in srgb, var(--color-bg-tertiary) 80%, transparent);
+}
+
+.rule-layer-empty p,
+.guideline-empty p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
 }
 
 .milestone-grid {

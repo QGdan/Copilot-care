@@ -20,6 +20,7 @@ interface ConsultationInputPanelProps {
   showAdvancedInputs: boolean;
   clarificationQuestion: string;
   requiredFields: string[];
+  nextAction: string;
   messages: ChatMessage[];
   microStatus: string;
   loadingSeconds: number;
@@ -182,6 +183,9 @@ const emit = defineEmits<{
     <div v-if="clarificationQuestion" class="clarify-card">
       <h3>中途补充信息</h3>
       <p>{{ clarificationQuestion }}</p>
+      <p v-if="nextAction" class="next-action-tip">
+        下一步：{{ nextAction }}
+      </p>
       <div class="chips">
         <span v-for="field in requiredFields" :key="field" class="chip">
           {{ formatRequiredField(field) }}
@@ -403,6 +407,12 @@ const emit = defineEmits<{
 .micro-stage {
   color: var(--muted);
   font-size: 12px;
+}
+
+.next-action-tip {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: #3f5f78;
 }
 
 .chips {

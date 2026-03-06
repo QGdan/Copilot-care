@@ -27,6 +27,43 @@ npm run devwf:arch
 
 前端默认请求后端 `http://localhost:3001`，可通过 `VITE_API_BASE_URL` 覆盖。
 
+## 一键部署（GitHub -> Render）
+
+仓库已提供 `render.yaml`，可直接使用 Render Blueprint 单服务部署（同一域名同时提供前端页面与后端 API）。
+
+### 1) 推送代码到 GitHub
+
+```bash
+git add .
+git commit -m "chore: prepare deployment"
+git push origin main
+```
+
+### 2) 在 Render 创建 Blueprint
+
+1. 登录 Render，选择 `New +` -> `Blueprint`。
+2. 连接本仓库并选择分支（通常 `main`）。
+3. Render 会自动读取 `render.yaml`：
+   - `buildCommand`: `npm ci && npm run build:deploy`
+   - `startCommand`: `npm run start:deploy`
+   - `healthCheckPath`: `/health`
+
+### 3) 配置生产环境变量
+
+至少确认以下变量：
+
+- `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `KIMI_API_KEY`（按你使用的 provider 填写）
+- `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`（如果启用对应 provider）
+- `COPILOT_CARE_LLM_PROVIDER`（默认 `auto`）
+
+> `COPILOT_CARE_FRONTEND_DIST=src/frontend/dist` 已在 blueprint 默认配置中提供，用于后端托管前端构建产物。
+
+### 4) 部署后验收
+
+- 健康检查：`GET /health`
+- 主站页面：`GET /`
+- 分诊接口：`POST /orchestrate_triage`
+
 ## 常用命令
 
 ```bash
@@ -116,28 +153,70 @@ npm run design:gate
 
 ## 本地运行（前后端）
 
-推荐固定后端 `3001` 端口启动，前端默认就能直连，无需额外改动。
+为避免前端连到旧后端实例，建议使用“同一端口显式绑定”方式启动。
+
+推荐端口：`3101`（若你本机 `3001/8002` 已被其他进程占用，这个端口更稳妥）。
 
 ```bash
-# terminal A（后端）
-# PowerShell: $env:APP_PORT='3001'
-# Bash: export APP_PORT=3001
+# terminal A（后端，PowerShell）
+$env:APP_PORT='3101'
 npm run start --workspace=@copilot-care/backend
 
-# terminal B（前端）
+# terminal B（前端，PowerShell）
+$env:VITE_API_BASE_URL='http://127.0.0.1:3101'
+npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173
+```
+
+```bash
+# terminal A（后端，Bash）
+export APP_PORT=3101
+npm run start --workspace=@copilot-care/backend
+
+# terminal B（前端，Bash）
+export VITE_API_BASE_URL=http://127.0.0.1:3101
 npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173
 ```
 
 启动后访问：
 
 - 前端：`http://127.0.0.1:5173`
-- 后端健康检查：`http://127.0.0.1:3001/health`
+- 后端健康检查：`http://127.0.0.1:3101/health`
+- 规则版本：`http://127.0.0.1:3101/governance/rules/version`
+- 规则目录：`http://127.0.0.1:3101/governance/rules/catalog`
+- 医学权威源白名单：`http://127.0.0.1:3101/governance/medical-sources`
 
-如果你在 `.env` 中把后端端口改成了 `8002`（或其他端口），请同步设置：
+说明：
+
+- 前端代码默认会尝试 `3001/8002`；如果你本机已有旧实例在这些端口，页面可能看不到最新 `ruleGovernance` 与 FHIR 互操作能力；
+- 因此请优先设置 `VITE_API_BASE_URL`，确保前后端严格指向同一后端进程。
+
+### 新功能联调快速验收
 
 ```bash
-# .env
-VITE_API_BASE_URL=http://127.0.0.1:8002
+# 1) 规则治理端点
+curl http://127.0.0.1:3101/governance/rules/version
+curl http://127.0.0.1:3101/governance/rules/catalog
+
+# 2) 分诊接口（检查响应中是否包含 ruleGovernance）
+curl -X POST http://127.0.0.1:3101/orchestrate_triage ^
+  -H "content-type: application/json" ^
+  -d "{\"requestId\":\"readme-smoke-001\",\"consentToken\":\"consent_local_demo\",\"symptomText\":\"fatigue\",\"profile\":{\"patientId\":\"readme-smoke-001\",\"age\":52,\"sex\":\"male\",\"symptoms\":[\"fatigue\"],\"chronicDiseases\":[\"Hypertension\"],\"medicationHistory\":[\"none\"],\"vitals\":{\"systolicBP\":150,\"diastolicBP\":95}}}"
+
+# 3) FHIR 最小闭环（SMART scope 通过路径）
+curl -X POST http://127.0.0.1:3101/interop/fhir/triage-bundle ^
+  -H "content-type: application/json" ^
+  -H "x-smart-scope: user/Patient.read user/Observation.read user/Provenance.read" ^
+  -d "{\"requestId\":\"readme-interop-001\",\"consentToken\":\"consent_local_demo\",\"symptomText\":\"dizziness\",\"profile\":{\"patientId\":\"readme-interop-001\",\"age\":55,\"sex\":\"female\",\"symptoms\":[\"dizziness\"],\"chronicDiseases\":[\"Hypertension\"],\"medicationHistory\":[\"amlodipine\"],\"vitals\":{\"systolicBP\":146,\"diastolicBP\":92}},\"signals\":[{\"timestamp\":\"2026-03-01T10:00:00Z\",\"source\":\"manual\",\"systolicBP\":146,\"diastolicBP\":92}]}"
+
+# 4) 权威医学联网检索（严格白名单域名）
+curl -X POST http://127.0.0.1:3101/governance/medical-search ^
+  -H "content-type: application/json" ^
+  -d "{\"query\":\"hypertension guideline\",\"limit\":6}"
+
+# 5) 可控多源检索（按来源过滤 + 必选来源覆盖）
+curl -X POST http://127.0.0.1:3101/governance/medical-search ^
+  -H "content-type: application/json" ^
+  -d "{\"query\":\"hypertension guideline\",\"limit\":6,\"sourceFilter\":[\"NICE\",\"WHO\",\"CDC_US\"],\"requiredSources\":[\"WHO\",\"CDC_US\"]}"
 ```
 
 ### 启动排障（Windows）
@@ -145,7 +224,7 @@ VITE_API_BASE_URL=http://127.0.0.1:8002
 1. 后端端口被占用（`EADDRINUSE`）：
 
 ```bash
-netstat -ano | findstr :3001
+netstat -ano | findstr :3101
 taskkill /PID <PID> /F
 ```
 
@@ -199,6 +278,19 @@ KIMI_API_KEY=...
 - `DEEPSEEK_BASE_URL`（默认 `https://api.deepseek.com/v1`）
 - `KIMI_BASE_URL`（默认 `https://api.moonshot.cn/v1`）
 
+可选权威医学联网检索开关：
+
+- `COPILOT_CARE_MED_SEARCH_ENABLED`（默认 `true`）
+- `COPILOT_CARE_MED_SEARCH_TIMEOUT_MS`（默认 `8000`）
+- `COPILOT_CARE_MED_SEARCH_MAX_RESULTS`（默认 `8`）
+- `COPILOT_CARE_MED_SEARCH_DDG_ENABLED`（默认 `true`，用于白名单域名检索补充）
+- `COPILOT_CARE_MED_SEARCH_ALLOW_PARTIAL_SEED_FILL`（默认 `false`；若设为 `true`，当实时命中不足时可用目录种子补齐）
+- `COPILOT_CARE_MED_SEARCH_CACHE_TTL_MS`（默认 `180000`；检索结果缓存 TTL，单位毫秒，设为 `0` 可禁用缓存）
+- `COPILOT_CARE_MED_SEARCH_CACHE_MAX_ENTRIES`（默认 `128`；检索结果缓存最大条目数）
+- `COPILOT_CARE_MED_SEARCH_PROVIDER_FAILURE_THRESHOLD`（默认 `3`；单个 provider 连续失败达到阈值后进入熔断）
+- `COPILOT_CARE_MED_SEARCH_PROVIDER_CIRCUIT_OPEN_MS`（默认 `60000`；provider 熔断保持时长，单位毫秒）
+- `COPILOT_CARE_MED_SEARCH_IN_TRIAGE`（默认跟随 `COPILOT_CARE_MED_SEARCH_ENABLED`；显式设为 `false` 可关闭分诊注入）
+
 ## 架构与可观测接口
 
 后端提供专家路由快照接口：
@@ -216,6 +308,28 @@ GET /governance/rules/catalog
 GET /governance/rules/version
 ```
 
+新增权威医学检索接口（严格域名白名单）：
+
+```bash
+GET /governance/medical-sources
+GET /governance/medical-search/runtime
+POST /governance/medical-search
+```
+
+`POST /governance/medical-search` 采用多源去偏策略：优先覆盖 `NICE/WHO/CDC/NHC/China CDC` 等公共卫生与指南来源，再补充 `PUBMED` 文献证据，避免单一来源主导结果集。
+返回中新增 `sourceBreakdown`（来源分布统计）与 `strategyVersion`（策略版本），便于联调与审计。
+支持可选请求参数：
+
+- `sourceFilter: string[]`：限制检索来源（仅允许白名单来源 ID）
+- `requiredSources: string[]`：要求结果尽量覆盖的来源（必须是 `sourceFilter` 子集）
+
+会诊主链路中的证据注入已升级为“规则驱动策略”：
+
+- 先执行规则风险评估，再生成检索策略（来源约束、必选来源、证据数量要求）
+- 高风险场景（`L2/L3`）启用证据完整性门禁，证据不足将阻断自动输出并返回 `ERR_GUIDELINE_EVIDENCE_MISSING`
+- 可解释报告新增结构化 `evidenceCards`，默认展示可读证据摘要，链接退居次要层级
+- 会诊前端“结构化结果”面板新增“规则-证据对齐”视图，展示每条命中规则的证据覆盖状态
+
 `/orchestrate_triage` 与 `/orchestrate_triage/stream` 的响应中新增可选字段
 `ruleGovernance`，用于返回规则版本、命中规则ID、分层决策与证据链追踪ID。
 
@@ -230,7 +344,10 @@ POST /interop/fhir/triage-bundle
 - 该端点要求请求头 `x-smart-scope`，需同时包含 `Patient`、`Observation`、
   `Provenance` 的 `read` scope；
 - 返回 draft FHIR Bundle（Patient/Observation/Provenance）以及 triage 摘要；
+- triage 摘要新增 `interopSummary`（资源计数 + 引用完整性校验），可直接用于验收；
+- Provenance 将关联 Patient 与 Bundle 中 Observation，保证最小闭环可追溯；
 - 当前为“最小闭环”，不执行外部 FHIR 服务器写回。
+- 前端 `/fhir` 页面支持一键生成 triage bundle 草案并展示闭环验收结果。
 
 ## 比赛演示建议
 

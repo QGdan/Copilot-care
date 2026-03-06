@@ -153,6 +153,32 @@ export const AUTHORITATIVE_GUIDELINE_REFERENCES: readonly GuidelineReference[] =
   },
 ] as const;
 
+const GUIDELINE_REFERENCE_BY_ID = new Map<string, GuidelineReference>(
+  AUTHORITATIVE_GUIDELINE_REFERENCES.map((item) => [item.id, item]),
+);
+
+export const RULE_TO_GUIDELINE_IDS: Readonly<Record<string, string[]>> = {
+  [RULE_IDS.BASIC_SAFETY_EMERGENCY_SYMPTOM]: [
+    'CDC_STROKE_SIGNS_2025',
+    'NICE_NG136_2026',
+  ],
+  [RULE_IDS.BASIC_SAFETY_STROKE_WARNING]: ['CDC_STROKE_SIGNS_2025'],
+  [RULE_IDS.BASIC_SAFETY_LEVEL2_HYPOGLYCEMIA]: ['ENDO_HYPOGLYCEMIA_2023'],
+  [RULE_IDS.FLOW_CONTROL_SEVERE_HTN_SAME_DAY]: [
+    'NICE_NG136_2026',
+    'ACC_AHA_BP_2025',
+  ],
+  [RULE_IDS.FLOW_CONTROL_STAGE2_HTN]: [
+    'NICE_NG136_2026',
+    'ACC_AHA_BP_2025',
+  ],
+  [RULE_IDS.FLOW_CONTROL_STAGE1_HTN_HIGH_RISK]: [
+    'NICE_NG136_2026',
+    'ACC_AHA_BP_2025',
+  ],
+  [RULE_IDS.FLOW_CONTROL_RANDOM_GLUCOSE_CLASSIC]: ['ADA_DIAGNOSIS_2026'],
+} as const;
+
 export const BP_THRESHOLDS = {
   crisis: { systolic: 180, diastolic: 120 },
   stage2Nice: { systolic: 160, diastolic: 100 },
@@ -428,6 +454,40 @@ export function evaluateEmergencySignalSnapshot(
 export function buildGuidelineBasis(): string[] {
   return AUTHORITATIVE_GUIDELINE_REFERENCES.map(
     (item) => `${item.id}: ${item.title} (${item.url})`,
+  );
+}
+
+export function resolveGuidelineReferencesByRuleIds(
+  ruleIds: readonly string[],
+): GuidelineReference[] {
+  const guidelineIds = new Set<string>();
+  for (const ruleId of ruleIds) {
+    const mapped = RULE_TO_GUIDELINE_IDS[ruleId] ?? [];
+    for (const guidelineId of mapped) {
+      guidelineIds.add(guidelineId);
+    }
+  }
+
+  if (guidelineIds.size === 0) {
+    return [...AUTHORITATIVE_GUIDELINE_REFERENCES];
+  }
+
+  const resolved: GuidelineReference[] = [];
+  for (const guidelineId of guidelineIds) {
+    const guideline = GUIDELINE_REFERENCE_BY_ID.get(guidelineId);
+    if (guideline) {
+      resolved.push(guideline);
+    }
+  }
+  return resolved;
+}
+
+export function buildGuidelineBasisByRuleIds(
+  ruleIds: readonly string[],
+): string[] {
+  return resolveGuidelineReferencesByRuleIds(ruleIds).map(
+    (item) =>
+      `${item.id}: ${item.title} (${item.publisher}, ${item.publishedOn})`,
   );
 }
 

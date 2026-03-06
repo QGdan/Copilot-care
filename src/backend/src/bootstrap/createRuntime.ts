@@ -7,10 +7,12 @@ import {
   SafetyOutputGuardService,
 } from '../application/services/SafetyOutputGuardService';
 import { RunTriageSessionUseCase } from '../application/usecases/RunTriageSessionUseCase';
+import { AuthoritativeMedicalSearchPort } from '../application/ports/AuthoritativeMedicalSearchPort';
 import { DebateEngine } from '../core/DebateEngine';
 import { ComplexityRoutedOrchestrator } from '../infrastructure/orchestration/ComplexityRoutedOrchestrator';
 import { CoordinatorSnapshotService } from '../infrastructure/orchestration/CoordinatorSnapshotService';
 import { GovernanceRuntimeTelemetry } from '../infrastructure/governance/GovernanceRuntimeTelemetry';
+import { createAuthoritativeMedicalSearchService } from '../infrastructure/knowledge/AuthoritativeMedicalWebSearchService';
 import { createPatientContextEnricher } from '../infrastructure/mcp/PatientContextEnricher';
 import {
   createClinicalExpertLLMClients,
@@ -60,6 +62,7 @@ export interface BackendRuntime {
   architecture: RuntimeArchitectureSnapshot;
   coordinatorSnapshotService: CoordinatorSnapshotService;
   governanceRuntimeTelemetry: GovernanceRuntimeTelemetry;
+  authoritativeMedicalSearch: AuthoritativeMedicalSearchPort;
 }
 
 const PANEL_PROVIDER_DEFAULTS: Record<
@@ -87,6 +90,23 @@ const PANEL_PROVIDER_CANDIDATES: ReadonlySet<ClinicalLLMProvider> = new Set([
   'openai',
   'anthropic',
 ]);
+
+function parseBooleanFlag(
+  value: string | undefined,
+  fallback: boolean,
+): boolean {
+  if (!value) {
+    return fallback;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+  return fallback;
+}
 
 function parsePanelProviders(value: string | undefined): ClinicalLLMProvider[] {
   if (!value) {
@@ -257,6 +277,11 @@ export function createRuntime(): BackendRuntime {
   const llmClients = createClinicalExpertLLMClients();
   const assignments = resolveClinicalExpertProviderAssignments();
   const patientContextEnricher = createPatientContextEnricher(env);
+  const authoritativeMedicalSearch = createAuthoritativeMedicalSearchService(env);
+  const injectAuthoritativeEvidence = parseBooleanFlag(
+    env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE,
+    authoritativeMedicalSearch.isEnabled(),
+  );
   const coordinatorSnapshotService = new CoordinatorSnapshotService(env);
   const governanceRuntimeTelemetry = new GovernanceRuntimeTelemetry();
   const panelProviders = resolvePanelProviders(env);
@@ -311,6 +336,8 @@ export function createRuntime(): BackendRuntime {
     lightDepartmentEngines,
     deepDebateEngine,
     patientContextEnricher,
+    authoritativeMedicalSearch:
+      injectAuthoritativeEvidence ? authoritativeMedicalSearch : undefined,
     safetyOutputGuardService,
   });
   const triageUseCase = new RunTriageSessionUseCase(orchestrator);
@@ -362,6 +389,7 @@ export function createRuntime(): BackendRuntime {
     architecture,
     coordinatorSnapshotService,
     governanceRuntimeTelemetry,
+    authoritativeMedicalSearch,
   };
 }
 

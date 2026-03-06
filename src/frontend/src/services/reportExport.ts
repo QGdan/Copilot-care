@@ -1,5 +1,6 @@
 ﻿import { jsPDF } from 'jspdf';
 import type {
+  ExplainableEvidenceCard,
   ExplainableReport,
   PatientProfile,
   StructuredTriageResult,
@@ -90,6 +91,199 @@ function normalizeList(
   return normalized;
 }
 
+function hasChinese(text: string): boolean {
+  return /[\u4e00-\u9fff]/.test(text);
+}
+
+function normalizeMedicalExpression(text: string): string {
+  if (!text.trim()) {
+    return '';
+  }
+
+  const dictionary: Array<[RegExp, string]> = [
+    [/\bhypertension\b/gi, '高血压'],
+    [/\badults?\b/gi, '成人'],
+    [/\bdiagnosis\b/gi, '诊断'],
+    [/\btreatment\b/gi, '治疗'],
+    [/\bprevention\b/gi, '预防'],
+    [/\btherapy\b/gi, '治疗'],
+    [/\bsystolic\b/gi, '收缩压'],
+    [/\bdiastolic\b/gi, '舒张压'],
+    [/\bmmhg\b/gi, 'mmHg'],
+    [/\btarget\b/gi, '目标'],
+    [/\bthreshold\b/gi, '阈值'],
+    [/\brecommended?\b/gi, '推荐'],
+    [/\bshould\b/gi, '应当'],
+    [/\bmonitoring\b/gi, '监测'],
+    [/\boutcome\b/gi, '结局'],
+    [/\bmortality\b/gi, '死亡率'],
+    [/\bincidence\b/gi, '发生率'],
+    [/\bblood pressure\b/gi, '血压'],
+    [/\blifestyle interventions?\b/gi, '生活方式干预'],
+    [/\bmanagement\b/gi, '管理'],
+    [/\brisk\b/gi, '风险'],
+    [/\bguidelines?\b/gi, '指南'],
+    [/\bevidence\b/gi, '证据'],
+    [/\bcardiovascular\b/gi, '心血管'],
+    [/\bscreening\b/gi, '筛查'],
+    [/\bfollow-up\b/gi, '随访'],
+  ];
+
+  let normalized = text.trim();
+  dictionary.forEach(([pattern, replacement]) => {
+    normalized = normalized.replace(pattern, replacement);
+  });
+  return normalized.replace(/\s+/g, ' ').trim();
+}
+
+function splitCandidateSentences(text: string): string[] {
+  const normalized = text
+    .replace(/\s+/g, ' ')
+    .replace(/[;；]+/g, '。')
+    .trim();
+  if (!normalized) {
+    return [];
+  }
+
+  const candidates = normalized
+    .split(/[。.!?]/)
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0);
+
+  return candidates.length > 0 ? candidates : [normalized];
+}
+
+function scoreMedicalSentence(sentence: string): number {
+  let score = 0;
+  if (/\d/.test(sentence)) {
+    score += 3;
+  }
+  if (
+    /(mmhg|mg\/dl|%|风险|建议|应当|推荐|阈值|目标|收缩压|舒张压|血压|高血压|指南|证据)/i
+      .test(sentence)
+  ) {
+    score += 3;
+  }
+  if (sentence.length >= 16 && sentence.length <= 140) {
+    score += 2;
+  }
+  return score;
+}
+
+function extractEvidenceKeyPoint(card: ExplainableEvidenceCard): string {
+  const primaryText = normalizeMedicalExpression(card.summary || '');
+  const fallbackText = normalizeMedicalExpression(card.title || '');
+  const combinedText = primaryText || fallbackText;
+
+  if (!combinedText) {
+    return '暂无可用证据正文，建议补充权威来源后再进行临床判断。';
+  }
+
+  const candidates = splitCandidateSentences(combinedText);
+  if (candidates.length === 0) {
+    return combinedText;
+  }
+
+  const ranked = candidates
+    .map((sentence, index) => ({
+      sentence,
+      index,
+      score: scoreMedicalSentence(sentence),
+    }))
+    .sort((a, b) => b.score - a.score || a.index - b.index);
+
+  const selected = ranked
+    .slice(0, 2)
+    .sort((a, b) => a.index - b.index)
+    .map((item) => item.sentence);
+
+  const keyPoint = selected.join('；').trim();
+  if (keyPoint.length > 0) {
+    return keyPoint;
+  }
+
+  return combinedText;
+}
+
+function resolveSourceNameToChinese(card: ExplainableEvidenceCard): string {
+  const rawSource = card.sourceName || card.sourceId || '';
+  const sourceText = `${card.sourceId ?? ''} ${card.sourceName ?? ''} ${card.url ?? ''}`
+    .toUpperCase();
+
+  if (!sourceText.trim()) {
+    return '权威医学数据库';
+  }
+  if (sourceText.includes('WHO')) {
+    return '世界卫生组织(WHO)';
+  }
+  if (sourceText.includes('NICE')) {
+    return '英国国家卫生与临床优化研究所(NICE)';
+  }
+  if (sourceText.includes('CDC')) {
+    return '美国疾病控制与预防中心(CDC)';
+  }
+  if (sourceText.includes('NIH')) {
+    return '美国国立卫生研究院(NIH)';
+  }
+  if (sourceText.includes('NHC') || sourceText.includes('国家卫健')) {
+    return '国家卫生健康委员会';
+  }
+  if (sourceText.includes('PUBMED')) {
+    return 'PubMed 文献数据库';
+  }
+  if (sourceText.includes('COCHRANE')) {
+    return 'Cochrane 系统评价数据库';
+  }
+  if (sourceText.includes('JAMA')) {
+    return 'JAMA 医学期刊';
+  }
+  if (sourceText.includes('LANCET')) {
+    return '柳叶刀医学期刊';
+  }
+  if (sourceText.includes('NEJM')) {
+    return '新英格兰医学期刊';
+  }
+  if (sourceText.includes('BMJ')) {
+    return '英国医学杂志(BMJ)';
+  }
+  return rawSource || '权威医学数据库';
+}
+
+function buildChineseEvidenceTitle(card: ExplainableEvidenceCard): string {
+  const normalizedTitle = normalizeMedicalExpression(card.title || '');
+  if (normalizedTitle && hasChinese(normalizedTitle)) {
+    return normalizedTitle;
+  }
+  return `来自${resolveSourceNameToChinese(card)}的医学证据`;
+}
+
+function buildChineseEvidenceSummary(card: ExplainableEvidenceCard): string {
+  const keyPoint = extractEvidenceKeyPoint(card);
+  if (keyPoint && hasChinese(keyPoint)) {
+    return keyPoint;
+  }
+  return normalizeMedicalExpression(keyPoint);
+}
+
+function formatEvidenceCardLine(card: ExplainableEvidenceCard): string {
+  const title = buildChineseEvidenceTitle(card);
+  const source = resolveSourceNameToChinese(card);
+  const summary = buildChineseEvidenceSummary(card);
+  const published = card.publishedOn ? `，${card.publishedOn}` : '';
+  const link = card.url ? `；原文链接：${card.url}` : '';
+  return `《${title}》（来源：${source}${published}）：${summary}${link}`;
+}
+
+function resolveReadableEvidence(report: ExplainableReport | null): string[] {
+  const cards = report?.evidenceCards ?? [];
+  if (!Array.isArray(cards) || cards.length === 0) {
+    return [];
+  }
+  return cards
+    .map((card) => formatEvidenceCardLine(card))
+    .filter((item) => item.trim().length > 0);
+}
+
 function renderList(items: string[]): string {
   if (items.length === 0) {
     return '<li>无</li>';
@@ -137,7 +331,11 @@ function buildReportHtml(data: ReportData): string {
 
   const conclusion = pickFirstNonEmpty(data.conclusion, data.explainableReport?.conclusion) || '无';
   const actions = normalizeList(data.actions, data.explainableReport?.actions ?? []);
-  const evidence = normalizeList(data.evidence, data.explainableReport?.basis ?? []);
+  const reportEvidence = resolveReadableEvidence(data.explainableReport);
+  const evidence = normalizeList(
+    reportEvidence.length > 0 ? reportEvidence : data.evidence,
+    data.explainableReport?.basis ?? [],
+  );
   const notes = normalizeList(data.notes).slice(0, 5);
 
   const triageLevel = data.triageResult?.triageLevel || '待定';
@@ -497,7 +695,11 @@ export function generateReportText(data: ReportData): string {
   const systolicBP = data.patientProfile.vitals?.systolicBP;
   const diastolicBP = data.patientProfile.vitals?.diastolicBP;
   const actions = normalizeList(data.actions, data.explainableReport?.actions ?? []);
-  const evidence = normalizeList(data.evidence, data.explainableReport?.basis ?? []);
+  const reportEvidence = resolveReadableEvidence(data.explainableReport);
+  const evidence = normalizeList(
+    reportEvidence.length > 0 ? reportEvidence : data.evidence,
+    data.explainableReport?.basis ?? [],
+  );
   const notes = normalizeList(data.notes);
   const conclusion = pickFirstNonEmpty(data.conclusion, data.explainableReport?.conclusion) || '无';
 

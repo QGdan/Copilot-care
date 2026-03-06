@@ -9,10 +9,10 @@ import {
 function createStageRuntime() {
   return {
     START: { status: 'pending', message: '等待启动' },
-    INFO_GATHER: { status: 'pending', message: '等待采集信息' },
+    INFO_GATHER: { status: 'pending', message: '等待信息采集' },
     RISK_ASSESS: { status: 'pending', message: '等待风险评估' },
     ROUTING: { status: 'pending', message: '等待分流决策' },
-    DEBATE: { status: 'pending', message: '等待讨论' },
+    DEBATE: { status: 'pending', message: '等待协同讨论' },
     CONSENSUS: { status: 'pending', message: '等待共识收敛' },
     REVIEW: { status: 'pending', message: '等待审校复核' },
     OUTPUT: { status: 'pending', message: '等待输出' },
@@ -68,7 +68,7 @@ function createViewModelState() {
     analysis: '证据分析',
     execution: '协同执行',
     synthesis: '汇总结论',
-    complete: '最终汇报',
+    complete: '最终输出',
   } as const;
 
   const status = ref<ConsultationUiStatus>('IDLE');
@@ -236,7 +236,7 @@ describe('useConsultationViewModel', () => {
 
     state.routingPreview.value.routeMode = 'LIGHT_DEBATE';
     expect(state.model.reasoningIntegrationMode.value).toBe('syncing');
-    expect(state.model.reasoningIntegrationText.value).toBe('分流结果已生成，正在同步推理图。');
+    expect(state.model.reasoningIntegrationText.value).toBe('分流结果已生成，正在同步推理图谱。');
     expect(state.model.chartDensity.value).toBe('comfortable');
 
     state.orchestrationSnapshot.value = {
@@ -250,11 +250,17 @@ describe('useConsultationViewModel', () => {
     };
     expect(state.model.coordinatorSourceKind.value).toBe('rule');
     expect(state.model.reasoningIntegrationMode.value).toBe('rule');
-    expect(state.model.reasoningIntegrationText.value).toBe('规则编排运行中，展示本地推理图。');
+    expect(state.model.reasoningIntegrationText.value).toBe('规则编排运行中，当前以本地推理图谱为主。');
+
+    state.resultNotes.value = [
+      '权威医学证据1 [WHO|实时检索] ...',
+    ];
+    expect(state.model.coordinatorSourceText.value).toBe('规则+实时证据');
+    expect(state.model.reasoningIntegrationText.value).toBe('规则编排运行中，已接入联网证据检索。');
 
     state.orchestrationSnapshot.value.source = 'model';
     expect(state.model.coordinatorSourceKind.value).toBe('model');
     expect(state.model.reasoningIntegrationMode.value).toBe('model');
-    expect(state.model.reasoningIntegrationText.value).toBe('AI 实时编排已接入，展示动态图谱。');
+    expect(state.model.reasoningIntegrationText.value).toBe('AI 实时编排已接入，展示动态推理图谱。');
   });
 });

@@ -1,6 +1,6 @@
 # M5 Batch Replay Report
 
-GeneratedAt: 2026-02-24T10:27:51.620Z
+GeneratedAt: 2026-03-02T12:59:43.414Z
 SampleCount: 120
 TargetMinimum: 120
 PassCount: 120

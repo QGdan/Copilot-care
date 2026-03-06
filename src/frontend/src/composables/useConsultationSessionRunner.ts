@@ -1,4 +1,4 @@
-import { ref, type Ref } from 'vue';
+﻿import { ref, type Ref } from 'vue';
 import type {
   AgentOpinion,
   DebateRound,
@@ -82,6 +82,7 @@ interface SnapshotPhaseLabels {
 interface StreamStateBindings {
   clarificationQuestion: Ref<string>;
   requiredFields: Ref<string[]>;
+  nextAction: Ref<string>;
   systemError: Ref<string>;
   stageRuntime: Ref<Record<WorkflowStage, StageRuntimeState>>;
   reasoningItems: Ref<
@@ -158,22 +159,101 @@ function isErrorResponse(
   return payload.status === 'ERROR';
 }
 
+const STAGE_ORDER: WorkflowStage[] = [
+  'START',
+  'INFO_GATHER',
+  'RISK_ASSESS',
+  'ROUTING',
+  'DEBATE',
+  'CONSENSUS',
+  'REVIEW',
+  'OUTPUT',
+  'ESCALATION',
+];
+
+function resolveRunningStage(
+  stageRuntime: Record<WorkflowStage, StageRuntimeState>,
+): WorkflowStage | undefined {
+  for (const stage of STAGE_ORDER) {
+    if (stageRuntime[stage]?.status === 'running') {
+      return stage;
+    }
+  }
+  return undefined;
+}
+
+
+function normalizeSummaryTextForCompare(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[，。；、:：,./\\\-_\s()（）[\]【】]/g, '');
+}
+
+function dedupeSummaryLines(lines: string[]): string[] {
+  const selected: string[] = [];
+  const selectedNorm: string[] = [];
+  for (const line of lines.map((item) => item.trim()).filter(Boolean)) {
+    const normalized = normalizeSummaryTextForCompare(line);
+    if (!normalized) {
+      continue;
+    }
+    const duplicated = selectedNorm.some((existing) =>
+      existing === normalized
+      || existing.includes(normalized)
+      || normalized.includes(existing),
+    );
+    if (duplicated) {
+      continue;
+    }
+    selected.push(line);
+    selectedNorm.push(normalized);
+  }
+  return selected;
+}
+
+function collapseRepeatedSummaryBlocks(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return '';
+  }
+  const lines = trimmed.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length >= 2 && lines.length % 2 === 0) {
+    const half = lines.length / 2;
+    const firstHalf = lines.slice(0, half);
+    const secondHalf = lines.slice(half);
+    const same = firstHalf.every((line, index) => line === secondHalf[index]);
+    if (same) {
+      return firstHalf.join('\n');
+    }
+  }
+  return dedupeSummaryLines(lines).join('\n');
+}
+
 function buildFallbackTypedSummary(
   payload: Exclude<TriageApiResponse, { status: 'ERROR' }>,
 ): string {
-  const lines: string[] = [];
-  if (payload.explainableReport?.conclusion) {
-    lines.push(`结论：${payload.explainableReport.conclusion}`);
-  }
-  if (payload.triageResult) {
-    lines.push(
-      `分诊：${payload.triageResult.triageLevel} / 去向：${payload.triageResult.destination}`,
-    );
-  }
-  if (payload.explainableReport?.actions?.length) {
-    lines.push(`建议：${payload.explainableReport.actions.join('；')}`);
-  }
-  return lines.join('\n');
+  const conclusion = payload.explainableReport?.conclusion ?? '';
+  const normalizedConclusion = normalizeSummaryTextForCompare(conclusion);
+  const triageLine = payload.triageResult
+    ? `分诊：${payload.triageResult.triageLevel} / 去向：${payload.triageResult.destination}`
+    : '';
+  const actions = dedupeSummaryLines(payload.explainableReport?.actions ?? []);
+  const actionLine = actions.length > 0 ? `建议：${actions.join('；')}` : '';
+
+  const lines = dedupeSummaryLines([
+    conclusion ? `结论：${conclusion}` : '',
+    triageLine
+      && !normalizedConclusion.includes(normalizeSummaryTextForCompare(triageLine))
+      ? triageLine
+      : '',
+    actionLine
+      && !normalizedConclusion.includes(normalizeSummaryTextForCompare(actionLine))
+      ? actionLine
+      : '',
+  ]);
+
+  return collapseRepeatedSummaryBlocks(lines.join('\n'));
 }
 
 export function useConsultationSessionRunner(
@@ -231,6 +311,7 @@ export function useConsultationSessionRunner(
     if (isErrorResponse(payload)) {
       options.status.value = 'ERROR';
       options.streamState.requiredFields.value = payload.requiredFields ?? [];
+      options.streamState.nextAction.value = payload.nextAction ?? '';
       options.streamState.resultNotes.value = payload.notes;
       options.streamState.systemError.value = payload.errorCode;
       options.streamState.ruleGovernance.value = payload.ruleGovernance ?? null;
@@ -264,6 +345,7 @@ export function useConsultationSessionRunner(
       };
     }
     options.streamState.triageResult.value = payload.triageResult ?? null;
+    options.streamState.nextAction.value = payload.nextAction ?? '';
     options.streamState.ruleGovernance.value = payload.ruleGovernance ?? null;
     options.streamState.explainableReport.value = payload.explainableReport ?? null;
     options.streamState.finalConsensus.value = payload.finalConsensus ?? null;
@@ -276,6 +358,8 @@ export function useConsultationSessionRunner(
       if (fallback) {
         enqueueTokens(fallback);
       }
+    } else {
+      typedOutput.value = collapseRepeatedSummaryBlocks(typedOutput.value);
     }
 
     options.messages.value.push({
@@ -338,9 +422,13 @@ export function useConsultationSessionRunner(
         return;
       }
       options.streamState.captureRoutingFromText(event.message);
+      const runningStage = resolveRunningStage(
+        options.streamState.stageRuntime.value,
+      );
       options.streamState.pushReasoning(
         options.classifyReasoningKind(event.message),
         event.message,
+        runningStage,
       );
       return;
     }
@@ -348,6 +436,7 @@ export function useConsultationSessionRunner(
     if (event.type === 'clarification_request') {
       options.streamState.clarificationQuestion.value = event.question;
       options.streamState.requiredFields.value = event.requiredFields;
+      options.streamState.nextAction.value = event.nextAction ?? '';
       options.showAdvancedInputs.value = true;
       options.streamState.pushReasoning('query', `补充信息请求：${event.question}`);
       options.microStatus.value = event.question;
@@ -369,6 +458,7 @@ export function useConsultationSessionRunner(
     if (event.type === 'error') {
       options.status.value = 'ERROR';
       options.streamState.systemError.value = event.errorCode;
+      options.streamState.nextAction.value = event.nextAction ?? '';
       if (event.requiredFields && event.requiredFields.length > 0) {
         options.streamState.requiredFields.value = event.requiredFields;
         options.showAdvancedInputs.value = true;
@@ -474,3 +564,4 @@ export function useConsultationSessionRunner(
     disposeSessionRunner,
   };
 }
+

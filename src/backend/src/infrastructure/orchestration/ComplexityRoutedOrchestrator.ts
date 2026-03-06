@@ -3,6 +3,7 @@
   DebateResult,
   DebateRound,
   DissentComputation,
+  ExplainableEvidenceCard,
   PatientProfile,
   TriageDepartment,
   TriageRequest,
@@ -17,17 +18,27 @@ import {
   OrchestratorRunOptions,
   TriageOrchestratorPort,
 } from '../../application/ports/TriageOrchestratorPort';
+import { AuthoritativeMedicalSearchPort } from '../../application/ports/AuthoritativeMedicalSearchPort';
 import { DebateEngine } from '../../core/DebateEngine';
 import { MinimumInfoSetService } from '../../application/services/MinimumInfoSetService';
-import { RuleFirstRiskAssessmentService } from '../../application/services/RuleFirstRiskAssessmentService';
+import {
+  RiskAssessmentSnapshot,
+  RuleFirstRiskAssessmentService,
+} from '../../application/services/RuleFirstRiskAssessmentService';
 import { FollowupPlanningService } from '../../application/services/FollowupPlanningService';
 import { ExplainableReportService } from '../../application/services/ExplainableReportService';
 import { ConsentValidationService } from '../../application/services/ConsentValidationService';
 import { SafetyOutputGuardService } from '../../application/services/SafetyOutputGuardService';
+import { resolveNextAction } from '../../application/services/FlowControlNextActionService';
+import {
+  RuleDrivenEvidenceSearchPlan,
+  RuleDrivenEvidenceSearchPlanService,
+} from '../../application/services/RuleDrivenEvidenceSearchPlanService';
 import {
   buildRuleGovernanceSnapshot,
   buildValidationErrorGovernanceSnapshot,
 } from '../../application/services/RuleGovernanceService';
+import { AuthoritativeMedicalEvidence } from '../../domain/knowledge/AuthoritativeMedicalKnowledgeCatalog';
 import { PatientContextEnricher } from '../mcp/PatientContextEnricher';
 
 interface DepartmentEngines {
@@ -67,6 +78,7 @@ export interface ComplexityRoutedOrchestratorOptions {
   lightDepartmentEngines: DepartmentEngines;
   deepDebateEngine: DebateEngine;
   patientContextEnricher?: PatientContextEnricher;
+  authoritativeMedicalSearch?: AuthoritativeMedicalSearchPort;
   safetyOutputGuardService?: SafetyOutputGuardService;
 }
 
@@ -202,6 +214,22 @@ function createWorkflowStage(
   };
 }
 
+interface EvidenceCompletenessGateResult {
+  enforced: boolean;
+  passed: boolean;
+  message?: string;
+}
+
+interface AuthoritativeEvidencePacket {
+  reportLines: string[];
+  cards: ExplainableEvidenceCard[];
+  gate: EvidenceCompletenessGateResult;
+}
+
+function formatEvidenceOrigin(origin: AuthoritativeMedicalEvidence['origin']): string {
+  return origin === 'catalog_seed' ? '目录兜底' : '实时检索';
+}
+
 export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
   private readonly fastDepartmentEngines: DepartmentEngines;
   private readonly lightDepartmentEngines: DepartmentEngines;
@@ -211,8 +239,10 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
   private readonly riskService: RuleFirstRiskAssessmentService;
   private readonly followupService: FollowupPlanningService;
   private readonly reportService: ExplainableReportService;
+  private readonly evidencePlanService: RuleDrivenEvidenceSearchPlanService;
   private readonly safetyOutputGuardService: SafetyOutputGuardService;
   private readonly patientContextEnricher: PatientContextEnricher;
+  private readonly authoritativeMedicalSearch?: AuthoritativeMedicalSearchPort;
   private readonly baselineGuard: BaselineGuard;
   private readonly confidenceCalibrator: ConfidenceCalibrator;
 
@@ -225,6 +255,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
     this.riskService = new RuleFirstRiskAssessmentService();
     this.followupService = new FollowupPlanningService();
     this.reportService = new ExplainableReportService();
+    this.evidencePlanService = new RuleDrivenEvidenceSearchPlanService();
     this.safetyOutputGuardService =
       options.safetyOutputGuardService ?? new SafetyOutputGuardService();
     this.baselineGuard = new BaselineGuard();
@@ -239,6 +270,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         };
       },
     };
+    this.authoritativeMedicalSearch = options.authoritativeMedicalSearch;
   }
 
   private async runByRoute(
@@ -273,6 +305,204 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
     });
   }
 
+  private getRiskNumeric(level: RiskAssessmentSnapshot['riskLevel']): number {
+    if (level === 'L3') {
+      return 3;
+    }
+    if (level === 'L2') {
+      return 2;
+    }
+    if (level === 'L1') {
+      return 1;
+    }
+    return 0;
+  }
+
+  private evaluateEvidenceCompletenessGate(input: {
+    risk: RiskAssessmentSnapshot;
+    plan: RuleDrivenEvidenceSearchPlan;
+    evidenceCount: number;
+    usedSources: string[];
+  }): EvidenceCompletenessGateResult {
+    const riskNumeric = this.getRiskNumeric(input.risk.riskLevel);
+    const enforced = riskNumeric >= 2;
+    if (!enforced) {
+      return { enforced: false, passed: true };
+    }
+
+    const usedSourceSet = new Set(input.usedSources);
+    const missingRequiredSources = input.plan.requiredSources.filter(
+      (sourceId) => !usedSourceSet.has(sourceId),
+    );
+    const countPassed = input.evidenceCount >= input.plan.minEvidenceCount;
+    const sourcePassed = missingRequiredSources.length === 0;
+    const passed = countPassed && sourcePassed;
+    if (passed) {
+      return { enforced: true, passed: true };
+    }
+
+    const issues: string[] = [];
+    if (!countPassed) {
+      issues.push(
+        `证据数量不足(${input.evidenceCount}/${input.plan.minEvidenceCount})`,
+      );
+    }
+    if (!sourcePassed) {
+      issues.push(`缺少必选来源(${missingRequiredSources.join(',')})`);
+    }
+    return {
+      enforced: true,
+      passed: false,
+      message: issues.join('；'),
+    };
+  }
+
+  private toEvidenceCard(
+    evidence: AuthoritativeMedicalEvidence,
+    index: number,
+    risk: RiskAssessmentSnapshot,
+  ): ExplainableEvidenceCard {
+    const snippet = evidence.snippet?.trim() || '来自权威医学数据库的相关证据。';
+    return {
+      id: `auth-med-${index + 1}-${evidence.sourceId.toLowerCase()}`,
+      category: 'authoritative_web',
+      title: evidence.title,
+      summary: snippet,
+      sourceId: evidence.sourceId,
+      sourceName: evidence.sourceName,
+      publishedOn: evidence.publishedOn,
+      retrievedAt: evidence.retrievedAt,
+      url: evidence.url,
+      supportsRuleIds: [...risk.matchedRuleIds],
+    };
+  }
+
+  private async collectAuthoritativeEvidence(
+    input: TriageRequest,
+    risk: RiskAssessmentSnapshot,
+    options?: OrchestratorRunOptions,
+  ): Promise<AuthoritativeEvidencePacket> {
+    if (!this.authoritativeMedicalSearch || !this.authoritativeMedicalSearch.isEnabled()) {
+      options?.onReasoningStep?.(
+        '权威医学联网检索未启用（会诊链路）。设置 COPILOT_CARE_MED_SEARCH_IN_TRIAGE=true 后可注入分诊流程。',
+      );
+      return {
+        reportLines: [],
+        cards: [],
+        gate: { enforced: false, passed: true },
+      };
+    }
+
+    const plan = this.evidencePlanService.build({
+      request: input,
+      risk,
+    });
+    if (plan.query.length < 2) {
+      return {
+        reportLines: [],
+        cards: [],
+        gate: { enforced: false, passed: true },
+      };
+    }
+
+    options?.onReasoningStep?.(
+      '权威医学联网检索启动：仅检索白名单权威数据库。',
+    );
+    options?.onReasoningStep?.(
+      `规则驱动检索策略：risk=${risk.riskLevel}，minEvidence=${plan.minEvidenceCount}，requiredSources=${plan.requiredSources.join(',') || 'NONE'}。`,
+    );
+    for (const note of plan.strategyNotes.slice(0, 2)) {
+      options?.onReasoningStep?.(`策略说明：${note}`);
+    }
+
+    try {
+      const result = await this.authoritativeMedicalSearch.search({
+        query: plan.query,
+        limit: plan.limit,
+        sourceFilter: plan.sourceFilter,
+        requiredSources: plan.requiredSources,
+      });
+      if (result.results.length === 0) {
+        options?.onReasoningStep?.(
+          '权威医学检索未命中结果，已回退为内置规则证据路径。',
+        );
+      }
+
+      const cards = result.results.map((item, index) =>
+        this.toEvidenceCard(item, index, risk),
+      );
+      const sourceSummary =
+        result.usedSources.length > 0 ? result.usedSources.join(', ') : 'UNKNOWN';
+      options?.onReasoningStep?.(
+        `权威医学联网检索命中 ${result.results.length} 条（来源：${sourceSummary}）。`,
+      );
+      options?.onReasoningStep?.(
+        `检索质量统计：实时命中=${result.realtimeCount}，目录兜底=${result.fallbackCount}，策略过滤丢弃=${result.droppedByPolicy}。`,
+      );
+      if (result.fallbackCount > 0) {
+        options?.onReasoningStep?.(
+          '提示：存在目录兜底证据，建议继续补充实时检索后再做最终医学判断。',
+        );
+      }
+      if (result.sourceBreakdown.length > 0) {
+        const breakdownText = result.sourceBreakdown
+          .map((item) => `${item.sourceId}x${item.count}`)
+          .join('，');
+        options?.onReasoningStep?.(
+          `权威医学来源分布：${breakdownText}（策略：${result.strategyVersion}）。`,
+        );
+      }
+
+      const reportLines = cards.map(
+        (item, index) => {
+          const originLabel = formatEvidenceOrigin(result.results[index]?.origin);
+          return `权威医学证据${index + 1}（${item.sourceId ?? 'UNKNOWN'}，${originLabel}）：${item.summary}`;
+        },
+      );
+      for (const line of reportLines) {
+        options?.onReasoningStep?.(line);
+      }
+
+      const gate = this.evaluateEvidenceCompletenessGate({
+        risk,
+        plan,
+        evidenceCount: cards.length,
+        usedSources: result.usedSources,
+      });
+      if (gate.enforced && !gate.passed) {
+        options?.onReasoningStep?.(
+          `证据完整性门禁未通过：${gate.message ?? '证据不足'}。`,
+        );
+      }
+
+      return {
+        reportLines,
+        cards,
+        gate,
+      };
+    } catch {
+      const gate = this.evaluateEvidenceCompletenessGate({
+        risk,
+        plan,
+        evidenceCount: 0,
+        usedSources: [],
+      });
+      options?.onReasoningStep?.(
+        '权威医学检索暂不可用，已回退为内置规则证据路径。',
+      );
+      if (gate.enforced && !gate.passed) {
+        options?.onReasoningStep?.(
+          '证据完整性门禁未通过：联网检索不可用且高风险场景证据不足。',
+        );
+      }
+      return {
+        reportLines: [],
+        cards: [],
+        gate,
+      };
+    }
+  }
+
   public async runSession(
     input: TriageRequest,
     options?: OrchestratorRunOptions,
@@ -299,6 +529,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
     if (!consent.ok) {
       const notes = [consent.message ?? 'consentToken 校验失败。'];
       const errorCode = consent.errorCode ?? 'ERR_MISSING_REQUIRED_DATA';
+      const requiredFields = consent.requiredFields ?? ['consentToken'];
       return {
         sessionId,
         requestId,
@@ -307,12 +538,13 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         rounds: [],
         dissentIndexHistory: [],
         errorCode,
-        requiredFields: consent.requiredFields ?? ['consentToken'],
+        requiredFields,
+        nextAction: resolveNextAction({ errorCode, requiredFields }),
         ruleGovernance: buildValidationErrorGovernanceSnapshot({
           sessionId,
           auditRef,
           errorCode,
-          requiredFields: consent.requiredFields ?? ['consentToken'],
+          requiredFields,
         }),
         notes,
         workflowTrace: [...workflowTrace],
@@ -357,6 +589,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
 
     if (!intake.ok) {
       const errorCode: DebateResult['errorCode'] = 'ERR_MISSING_REQUIRED_DATA';
+      const requiredFields = intake.requiredFields;
       return {
         sessionId,
         requestId,
@@ -365,12 +598,13 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         rounds: [],
         dissentIndexHistory: [],
         errorCode,
-        requiredFields: intake.requiredFields,
+        requiredFields,
+        nextAction: resolveNextAction({ errorCode, requiredFields }),
         ruleGovernance: buildValidationErrorGovernanceSnapshot({
           sessionId,
           auditRef,
           errorCode,
-          requiredFields: intake.requiredFields,
+          requiredFields,
         }),
         notes: [...intake.notes, ...mcpInsights],
         workflowTrace: [...workflowTrace],
@@ -397,6 +631,13 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         `规则评估完成：risk=${risk.riskLevel}, triage=${risk.triageLevel}`,
       ),
     );
+    const authoritativeEvidencePacket = await this.collectAuthoritativeEvidence(
+      workingInput,
+      risk,
+      options,
+    );
+    const authoritativeEvidence = authoritativeEvidencePacket.reportLines;
+    const authoritativeEvidenceCards = authoritativeEvidencePacket.cards;
 
     const decision = decideRouting(intake.normalizedProfile);
     pushWorkflowStage(
@@ -406,6 +647,56 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       ),
     );
     emitRoutingNarrative(decision, options);
+
+    if (
+      !risk.redFlagTriggered &&
+      decision.routeMode !== 'ESCALATE_TO_OFFLINE' &&
+      authoritativeEvidencePacket.gate.enforced &&
+      !authoritativeEvidencePacket.gate.passed
+    ) {
+      const detail =
+        authoritativeEvidencePacket.gate.message ??
+        '高风险场景未达到权威证据完整性要求。';
+      pushWorkflowStage(
+        createWorkflowStage('REVIEW', `证据完整性门禁未通过：${detail}`, 'failed'),
+      );
+      pushWorkflowStage(
+        createWorkflowStage('OUTPUT', '已阻断自动输出，等待人工复核', 'failed'),
+      );
+      return {
+        sessionId,
+        requestId,
+        auditRef,
+        status: 'ERROR',
+        rounds: [],
+        routing: decision,
+        dissentIndexHistory: [],
+        errorCode: 'ERR_GUIDELINE_EVIDENCE_MISSING',
+        nextAction: resolveNextAction({
+          errorCode: 'ERR_GUIDELINE_EVIDENCE_MISSING',
+        }),
+        ruleGovernance: buildRuleGovernanceSnapshot({
+          sessionId,
+          auditRef,
+          risk,
+          routing: decision,
+          status: 'ERROR',
+          errorCode: 'ERR_GUIDELINE_EVIDENCE_MISSING',
+        }),
+        workflowTrace: [...workflowTrace],
+        notes: [
+          '证据完整性门禁触发，自动输出已阻断。',
+          detail,
+          ...mcpInsights,
+          ...authoritativeEvidence,
+          ...decision.reasons,
+        ],
+        auditTrail: [
+          createRoutingAuditEvent(sessionId, decision),
+          createReviewAuditEvent(sessionId, true, `Evidence completeness gate: ${detail}`),
+        ],
+      };
+    }
 
     if (risk.redFlagTriggered || decision.routeMode === 'ESCALATE_TO_OFFLINE') {
       options?.onReasoningStep?.('触发红旗或上转条件，执行线下就医升级路径。');
@@ -423,7 +714,8 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         triageResult,
         routing: decision,
         ruleEvidence: risk.guidelineBasis,
-        additionalEvidence: risk.evidence,
+        additionalEvidence: [...risk.evidence, ...authoritativeEvidence],
+        evidenceCards: authoritativeEvidenceCards,
       });
 
       const outputStage = createWorkflowStage('OUTPUT', '生成上转结果');
@@ -441,6 +733,9 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         workflowTrace: [...workflowTrace],
         dissentIndexHistory: [],
         errorCode: 'ERR_ESCALATE_TO_OFFLINE',
+        nextAction: resolveNextAction({
+          errorCode: 'ERR_ESCALATE_TO_OFFLINE',
+        }),
         ruleGovernance: buildRuleGovernanceSnapshot({
           sessionId,
           auditRef,
@@ -449,7 +744,12 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
           status: 'ESCALATE_TO_OFFLINE',
           errorCode: 'ERR_ESCALATE_TO_OFFLINE',
         }),
-        notes: ['红旗边界触发，执行线下上转。', ...mcpInsights, ...decision.reasons],
+        notes: [
+          '红旗边界触发，执行线下上转。',
+          ...mcpInsights,
+          ...authoritativeEvidence,
+          ...decision.reasons,
+        ],
         auditTrail: [createRoutingAuditEvent(sessionId, decision)],
       };
     }
@@ -536,7 +836,8 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       finalConsensus: finalResult.finalConsensus,
       routing: decision,
       ruleEvidence: risk.guidelineBasis,
-      additionalEvidence: risk.evidence,
+      additionalEvidence: [...risk.evidence, ...authoritativeEvidence],
+      evidenceCards: authoritativeEvidenceCards,
     });
 
     const safetyOutcome = this.safetyOutputGuardService.review({
@@ -587,6 +888,11 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       auditRef,
       status: safetyOutcome.status,
       errorCode: safetyOutcome.errorCode,
+      nextAction: safetyOutcome.errorCode
+        ? resolveNextAction({
+          errorCode: safetyOutcome.errorCode,
+        })
+        : undefined,
       finalConsensus: safetyOutcome.finalConsensus,
       routing: decision,
       triageResult: safetyOutcome.triageResult,
@@ -604,6 +910,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         '状态机路径：开始 -> 信息采集 -> 风险评估 -> 分流处理 -> 审校 -> 输出',
         routingNote,
         ...mcpInsights,
+        ...authoritativeEvidence,
         ...decision.reasons,
         ...finalResult.notes,
         ...governanceNotes,

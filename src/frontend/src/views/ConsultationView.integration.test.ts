@@ -453,9 +453,9 @@ describe('ConsultationView integration smoke', () => {
       reasoningIntegrationText: string;
     };
     expect(viewModel.reasoningIntegrationText).toBe(
-      'AI 实时编排已接入，展示动态图谱。',
+      'AI 实时编排已接入，展示动态推理图谱。',
     );
-    expect(wrapper.text()).toContain('AI 实时编排已接入，展示动态图谱。');
+    expect(wrapper.text()).toContain('AI 实时编排已接入，展示动态推理图谱。');
   });
 
   it('enters red-flag escalation branch and keeps stage transitions consistent', async () => {
