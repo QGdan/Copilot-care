@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
   DebateResult,
   PatientProfile,
@@ -11,6 +14,7 @@ import {
   RunTriageSessionUseCase,
   TRIAGE_IDEMPOTENCY_TTL_MS,
 } from '../../application/usecases/RunTriageSessionUseCase';
+import { FileBackedTriageIdempotencyStore } from '../../infrastructure/persistence/TriageIdempotencyStore';
 
 function createProfile(overrides: Partial<PatientProfile> = {}): PatientProfile {
   return {
@@ -117,5 +121,47 @@ describe('Architecture Smoke - use case idempotency', () => {
 
     expect(runSession).toHaveBeenCalledTimes(1);
     expect(runSession).toHaveBeenCalledWith(request, options);
+  });
+
+  it('reuses persisted idempotency entries across use case instances', async () => {
+    const tempDirectory = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'copilot-care-idempotency-'),
+    );
+    const filePath = path.join(tempDirectory, 'idempotency.json');
+
+    try {
+      const firstRunSession = jest
+        .fn<Promise<DebateResult>, [TriageRequest, OrchestratorRunOptions?]>()
+        .mockResolvedValue(createResult('sess-persisted'));
+      const firstUseCase = new RunTriageSessionUseCase(
+        { runSession: firstRunSession },
+        () => 1000,
+        new FileBackedTriageIdempotencyStore(filePath),
+      );
+
+      const request: TriageRequest = {
+        profile: createProfile(),
+        sessionId: 'sess-persisted',
+      };
+
+      const first = await firstUseCase.execute(request);
+
+      const secondRunSession = jest
+        .fn<Promise<DebateResult>, [TriageRequest, OrchestratorRunOptions?]>()
+        .mockResolvedValue(createResult('sess-persisted-second'));
+      const secondUseCase = new RunTriageSessionUseCase(
+        { runSession: secondRunSession },
+        () => 1000,
+        new FileBackedTriageIdempotencyStore(filePath),
+      );
+
+      const second = await secondUseCase.execute(request);
+
+      expect(firstRunSession).toHaveBeenCalledTimes(1);
+      expect(secondRunSession).toHaveBeenCalledTimes(0);
+      expect(second).toEqual(first);
+    } finally {
+      fs.rmSync(tempDirectory, { recursive: true, force: true });
+    }
   });
 });

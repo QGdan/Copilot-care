@@ -1,4 +1,8 @@
 import { ErrorCode } from '@copilot-care/shared/types';
+import {
+  DEMO_CONSENT_TOKEN,
+  resolveBackendExposurePolicy,
+} from '../../config/runtimePolicy';
 
 export interface ConsentValidationResult {
   ok: boolean;
@@ -28,8 +32,14 @@ export class ConsentValidationService {
   private readonly allowlist: Set<string>;
 
   constructor(env: NodeJS.ProcessEnv = process.env) {
-    const defaults = ['consent_local_demo'];
-    const configured = parseAllowlist(env.COPILOT_CARE_CONSENT_TOKEN_ALLOWLIST);
+    const policy = resolveBackendExposurePolicy(env);
+    const defaults = policy.allowDemoConsentToken ? [DEMO_CONSENT_TOKEN] : [];
+    const configured = parseAllowlist(
+      env.COPILOT_CARE_CONSENT_TOKEN_ALLOWLIST,
+    ).filter((token) => {
+      return policy.allowDemoConsentToken || token !== DEMO_CONSENT_TOKEN;
+    });
+
     this.allowlist = new Set([...defaults, ...configured]);
   }
 
@@ -39,7 +49,7 @@ export class ConsentValidationService {
       return {
         ok: false,
         errorCode: 'ERR_MISSING_REQUIRED_DATA',
-        message: '缺少 consentToken，无法完成授权校验。',
+        message: 'Missing consentToken.',
         requiredFields: ['consentToken'],
       };
     }
@@ -48,7 +58,7 @@ export class ConsentValidationService {
       return {
         ok: false,
         errorCode: 'ERR_MISSING_REQUIRED_DATA',
-        message: 'consentToken 格式无效。',
+        message: 'Invalid consentToken format.',
         requiredFields: ['consentToken'],
       };
     }
@@ -57,7 +67,7 @@ export class ConsentValidationService {
       return {
         ok: false,
         errorCode: 'ERR_MISSING_REQUIRED_DATA',
-        message: 'consentToken 未授权。',
+        message: 'consentToken is not authorized.',
         requiredFields: ['consentToken'],
       };
     }

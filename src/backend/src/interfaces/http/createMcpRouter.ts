@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express';
-import { PatientProfile, HealthSignal } from '@copilot-care/shared/types';
+import { HealthSignal, PatientProfile } from '@copilot-care/shared/types';
+import { resolveBackendExposurePolicy } from '../../config/runtimePolicy';
 
 interface MockPatientData {
   profilePatch: Partial<PatientProfile>;
@@ -12,12 +13,12 @@ const mockPatientDatabase: Record<string, MockPatientData> = {
     profilePatch: {
       age: 56,
       sex: 'male',
-      name: '张三',
-      chiefComplaint: '头晕、血压偏高',
+      name: 'Zhang San',
+      chiefComplaint: 'Dizziness and elevated blood pressure',
       chronicDiseases: ['Hypertension', 'Hyperlipidemia'],
       medicationHistory: ['Amlodipine 5mg', 'Atorvastatin 20mg'],
-      lifestyleTags: ['戒烟', '适度运动'],
-      tcmConstitution: '气虚质',
+      lifestyleTags: ['Smoking cessation', 'Moderate exercise'],
+      tcmConstitution: 'Qi deficiency',
     },
     signals: [
       {
@@ -36,21 +37,21 @@ const mockPatientDatabase: Record<string, MockPatientData> = {
       },
     ],
     insights: [
-      '患者近两天血压波动，收缩压波动在148-152mmHg',
-      '建议关注降压药物依从性',
-      '可考虑生活方式的进一步干预',
+      'Recent blood pressure remained in the 148-152 mmHg range.',
+      'Medication adherence should be reviewed.',
+      'Lifestyle intervention can be intensified if tolerated.',
     ],
   },
   'patient-002': {
     profilePatch: {
       age: 49,
       sex: 'female',
-      name: '李四',
-      chiefComplaint: '多饮多尿、体重下降',
+      name: 'Li Si',
+      chiefComplaint: 'Polyuria, polydipsia, and weight loss',
       chronicDiseases: ['Prediabetes', 'Obesity'],
       medicationHistory: ['Metformin 500mg'],
-      lifestyleTags: ['控制饮食', '定期锻炼'],
-      tcmConstitution: '痰湿质',
+      lifestyleTags: ['Diet control', 'Scheduled exercise'],
+      tcmConstitution: 'Phlegm dampness',
     },
     signals: [
       {
@@ -66,22 +67,69 @@ const mockPatientDatabase: Record<string, MockPatientData> = {
       },
     ],
     insights: [
-      '患者血糖控制不佳，空腹血糖波动在6.8-7.2mmol/L',
-      '建议复查糖化血红蛋白',
-      '需关注糖尿病并发症筛查',
+      'Fasting glucose has remained between 6.8 and 7.2 mmol/L.',
+      'HbA1c follow-up is recommended.',
+      'Complication screening should be planned if symptoms persist.',
     ],
   },
 };
 
-export function createMcpRouter(): Router {
+function normalizeBearerToken(request: Request): string {
+  const headerValue = request.header('authorization');
+  if (typeof headerValue !== 'string') {
+    return '';
+  }
+
+  const match = headerValue.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    return '';
+  }
+  return match[1].trim();
+}
+
+export function createMcpRouter(
+  env: NodeJS.ProcessEnv = process.env,
+): Router {
   const router = Router();
+  const policy = resolveBackendExposurePolicy(env);
+
+  router.use((request: Request, response: Response, next) => {
+    if (!policy.mcpEnabled) {
+      response.status(404).json({
+        error: 'mcp_disabled',
+        message: 'MCP mock endpoints are disabled in this environment.',
+      });
+      return;
+    }
+
+    if (policy.isProduction && !policy.mcpApiKey) {
+      response.status(503).json({
+        error: 'mcp_misconfigured',
+        message: 'MCP route is not configured for production access.',
+      });
+      return;
+    }
+
+    if (policy.mcpApiKey) {
+      const bearerToken = normalizeBearerToken(request);
+      if (bearerToken !== policy.mcpApiKey) {
+        response.status(401).json({
+          error: 'unauthorized',
+          message: 'Authorization bearer token required for MCP access.',
+        });
+        return;
+      }
+    }
+
+    next();
+  });
 
   router.get('/health', (_req: Request, res: Response) => {
     res.status(200).json({
       status: 'ok',
       mode: 'mock',
       endpoints: [
-        'GET /mcp/patient/context',
+        'POST /mcp/patient/context',
         'GET /mcp/patient/:id',
         'GET /mcp/patient/:id/signals',
         'GET /mcp/patient/:id/insights',
@@ -95,7 +143,7 @@ export function createMcpRouter(): Router {
     if (!profile?.patientId) {
       res.status(400).json({
         error: 'missing_patient_id',
-        message: 'Patient ID is required',
+        message: 'Patient ID is required.',
       });
       return;
     }
@@ -103,7 +151,7 @@ export function createMcpRouter(): Router {
     if (!consentToken) {
       res.status(401).json({
         error: 'missing_consent',
-        message: 'Consent token is required for MCP access',
+        message: 'Consent token is required for MCP access.',
       });
       return;
     }
@@ -114,7 +162,7 @@ export function createMcpRouter(): Router {
       res.status(200).json({
         profilePatch: {},
         signals: [],
-        insights: ['未找到该患者的云端数据'],
+        insights: ['No cloud patient data found for this identifier.'],
       });
       return;
     }
@@ -129,7 +177,7 @@ export function createMcpRouter(): Router {
     if (!mockData) {
       res.status(404).json({
         error: 'not_found',
-        message: `Patient ${id} not found`,
+        message: `Patient ${id} not found.`,
       });
       return;
     }
@@ -147,7 +195,7 @@ export function createMcpRouter(): Router {
     if (!mockData) {
       res.status(404).json({
         error: 'not_found',
-        message: `Patient ${id} not found`,
+        message: `Patient ${id} not found.`,
       });
       return;
     }
@@ -167,7 +215,7 @@ export function createMcpRouter(): Router {
     if (!mockData) {
       res.status(404).json({
         error: 'not_found',
-        message: `Patient ${id} not found`,
+        message: `Patient ${id} not found.`,
       });
       return;
     }

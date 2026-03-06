@@ -9,6 +9,15 @@ import {
   WorkflowStage,
 } from '@copilot-care/shared/types';
 import {
+  GovernanceRuntimeCompletedSessionStats,
+  GovernanceRuntimePersistentState,
+  GovernanceRuntimeSessionSummary,
+  GovernanceRuntimeStageTransitionCounters,
+  GovernanceRuntimeStageTransitionRuntimeState,
+  GovernanceRuntimeStateStore,
+  InMemoryGovernanceRuntimeStateStore,
+} from './GovernanceRuntimeStateStore';
+import {
   AUTHORITATIVE_GUIDELINE_REFERENCES,
   AUTHORITATIVE_RULE_CATALOG_VERSION,
 } from '../../domain/rules/AuthoritativeMedicalRuleCatalog';
@@ -26,14 +35,7 @@ const ORDERED_STAGES: WorkflowStage[] = [
 ];
 
 type SessionOutcome = TriageStatus | 'ERROR' | 'RUNNING';
-type StageTransitionCounters = Record<TriageStreamStageStatus, number>;
-
-interface StageTransitionRuntimeState {
-  status: TriageStreamStageStatus;
-  message: string;
-  updatedAt: string;
-  updatedAtMs: number;
-}
+type StageTransitionCounters = GovernanceRuntimeStageTransitionCounters;
 
 interface ActiveSessionState {
   id: string;
@@ -48,22 +50,9 @@ interface ActiveSessionState {
   stageBlocked: number;
   touchedStages: Set<WorkflowStage>;
   seenTransitions: Set<string>;
-  stageRuntime: Partial<Record<WorkflowStage, StageTransitionRuntimeState>>;
-}
-
-export interface GovernanceRuntimeSessionSummary {
-  id: string;
-  requestId?: string;
-  patientId: string;
-  outcome: SessionOutcome;
-  routeMode?: TriageRouteMode;
-  triageLevel?: string;
-  destination?: string;
-  complexityScore?: number;
-  durationMs?: number;
-  startedAt: string;
-  endedAt?: string;
-  errorCode?: ErrorCode;
+  stageRuntime: Partial<
+    Record<WorkflowStage, GovernanceRuntimeStageTransitionRuntimeState>
+  >;
 }
 
 export interface GovernanceRuntimeStageState {
@@ -107,13 +96,7 @@ export interface GovernanceRuntimeSnapshot {
   currentStage: WorkflowStage;
 }
 
-interface CompletedSessionStats {
-  durationMs: number;
-  repeatedTransitions: number;
-  stageFailures: number;
-  stageBlocked: number;
-  complexityScore?: number;
-}
+type CompletedSessionStats = GovernanceRuntimeCompletedSessionStats;
 
 function clampMetric(value: number, min = 0, max = 100): number {
   return Math.min(max, Math.max(min, value));
@@ -300,6 +283,7 @@ function createEmptySnapshot(): GovernanceRuntimeSnapshot {
 
 export class GovernanceRuntimeTelemetry {
   private readonly maxRecentSessions: number;
+  private readonly stateStore: GovernanceRuntimeStateStore;
   private readonly activeSessions: Map<string, ActiveSessionState>;
   private readonly recentCompletedSessions: GovernanceRuntimeSessionSummary[];
   private readonly completedStats: CompletedSessionStats[];
@@ -308,24 +292,44 @@ export class GovernanceRuntimeTelemetry {
     StageTransitionCounters
   >;
   private readonly stageLatestRuntime: Partial<
-    Record<WorkflowStage, StageTransitionRuntimeState>
+    Record<WorkflowStage, GovernanceRuntimeStageTransitionRuntimeState>
   >;
   private totalSessions: number;
   private successSessions: number;
   private escalatedSessions: number;
   private errorSessions: number;
 
-  constructor(maxRecentSessions: number = 80) {
+  constructor(
+    maxRecentSessions: number = 80,
+    stateStore: GovernanceRuntimeStateStore = new InMemoryGovernanceRuntimeStateStore(),
+  ) {
     this.maxRecentSessions = maxRecentSessions;
+    this.stateStore = stateStore;
     this.activeSessions = new Map<string, ActiveSessionState>();
-    this.recentCompletedSessions = [];
-    this.completedStats = [];
-    this.stageTransitionCounters = createStageCounters();
-    this.stageLatestRuntime = {};
-    this.totalSessions = 0;
-    this.successSessions = 0;
-    this.escalatedSessions = 0;
-    this.errorSessions = 0;
+    const persisted = this.stateStore.load();
+    this.recentCompletedSessions = persisted?.recentCompletedSessions ?? [];
+    this.completedStats = persisted?.completedStats ?? [];
+    this.stageTransitionCounters =
+      persisted?.stageTransitionCounters ?? createStageCounters();
+    this.stageLatestRuntime = persisted?.stageLatestRuntime ?? {};
+    this.totalSessions = persisted?.totalSessions ?? 0;
+    this.successSessions = persisted?.successSessions ?? 0;
+    this.escalatedSessions = persisted?.escalatedSessions ?? 0;
+    this.errorSessions = persisted?.errorSessions ?? 0;
+  }
+
+  private persistState(): void {
+    const state: GovernanceRuntimePersistentState = {
+      recentCompletedSessions: this.recentCompletedSessions,
+      completedStats: this.completedStats,
+      stageTransitionCounters: this.stageTransitionCounters,
+      stageLatestRuntime: this.stageLatestRuntime,
+      totalSessions: this.totalSessions,
+      successSessions: this.successSessions,
+      escalatedSessions: this.escalatedSessions,
+      errorSessions: this.errorSessions,
+    };
+    this.stateStore.save(state);
   }
 
   public startSession(input: TriageRequest): string {
@@ -372,6 +376,7 @@ export class GovernanceRuntimeTelemetry {
 
     const active = this.activeSessions.get(trackingId);
     if (!active) {
+      this.persistState();
       return;
     }
 
@@ -396,6 +401,7 @@ export class GovernanceRuntimeTelemetry {
     if (status === 'blocked') {
       active.stageBlocked += 1;
     }
+    this.persistState();
   }
 
   public completeSession(
@@ -458,6 +464,8 @@ export class GovernanceRuntimeTelemetry {
     if (this.completedStats.length > this.maxRecentSessions) {
       this.completedStats.length = this.maxRecentSessions;
     }
+
+    this.persistState();
   }
 
   public failSession(

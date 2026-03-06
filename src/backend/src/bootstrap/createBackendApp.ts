@@ -1,8 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import cors from 'cors';
+import cors, { CorsOptions } from 'cors';
 import express, { Express } from 'express';
 import { BackendRuntime } from './createRuntime';
+import {
+  isOriginAllowed,
+  resolveBackendExposurePolicy,
+} from '../config/runtimePolicy';
 import { createTriageRouter } from '../interfaces/http/createTriageRouter';
 import { createFhirRouter } from '../interfaces/http/createFhirRouter';
 import { createInteropRouter } from '../interfaces/http/createInteropRouter';
@@ -52,10 +56,32 @@ function shouldSkipSpaFallback(requestPath: string): boolean {
   );
 }
 
-export function createBackendApp(runtime: BackendRuntime): Express {
+function createCorsOptions(env: NodeJS.ProcessEnv): CorsOptions {
+  const policy = resolveBackendExposurePolicy(env);
+  return {
+    origin(origin, callback) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      if (!policy.isProduction && policy.corsAllowedOrigins.length === 0) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, isOriginAllowed(origin, policy.corsAllowedOrigins));
+    },
+  };
+}
+
+export function createBackendApp(
+  runtime: BackendRuntime,
+  env: NodeJS.ProcessEnv = process.env,
+): Express {
   const app = express();
 
-  app.use(cors());
+  app.use(cors(createCorsOptions(env)));
   app.use(express.json());
 
   app.use(
@@ -69,8 +95,8 @@ export function createBackendApp(runtime: BackendRuntime): Express {
   );
 
   app.use('/fhir', createFhirRouter());
-  app.use('/interop', createInteropRouter(runtime.triageUseCase));
-  app.use('/mcp', createMcpRouter());
+  app.use('/interop', createInteropRouter(runtime.triageUseCase, env));
+  app.use('/mcp', createMcpRouter(env));
 
   const frontendDistDirectory = resolveFrontendDistDirectory();
   if (frontendDistDirectory) {

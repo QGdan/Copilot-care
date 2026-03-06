@@ -55,8 +55,19 @@ git push origin main
 - `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `KIMI_API_KEY`（按你使用的 provider 填写）
 - `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`（如果启用对应 provider）
 - `COPILOT_CARE_LLM_PROVIDER`（默认 `auto`）
+- `COPILOT_CARE_CONSENT_TOKEN_ALLOWLIST`（生产环境必须显式提供可用 consent token）
+- `COPILOT_CARE_CORS_ALLOWED_ORIGINS`（如 `https://your-app.onrender.com`）
+- `COPILOT_CARE_RUNTIME_STATE_BACKEND`（`memory` 或 `file`）
 
 > `COPILOT_CARE_FRONTEND_DIST=src/frontend/dist` 已在 blueprint 默认配置中提供，用于后端托管前端构建产物。
+> 生产环境默认关闭 `/interop` 与 `/mcp`，且不再接受 `consent_local_demo`。
+
+如需在生产环境开启受保护接口：
+
+- `COPILOT_CARE_ENABLE_INTEROP=true`
+- `COPILOT_CARE_INTEROP_API_KEY=<bearer token>`
+- `COPILOT_CARE_ENABLE_MCP=true`
+- `COPILOT_CARE_MCP_API_KEY=<bearer token>`
 
 ### 4) 部署后验收
 
@@ -189,6 +200,20 @@ npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173
 
 - 前端代码默认会尝试 `3001/8002`；如果你本机已有旧实例在这些端口，页面可能看不到最新 `ruleGovernance` 与 FHIR 互操作能力；
 - 因此请优先设置 `VITE_API_BASE_URL`，确保前后端严格指向同一后端进程。
+
+### 生产暴露面说明
+
+- `consent_local_demo` 仅限非生产环境；生产环境必须使用 `COPILOT_CARE_CONSENT_TOKEN_ALLOWLIST`。
+- `/interop/**` 默认只在非生产环境开放；生产环境需显式开启并提供 `Authorization: Bearer <COPILOT_CARE_INTEROP_API_KEY>`。
+- `/mcp/**` 默认只在非生产环境开放；生产环境需显式开启并提供 `Authorization: Bearer <COPILOT_CARE_MCP_API_KEY>`。
+- CORS 在生产环境默认不放行跨域来源；如前后端分域部署，需设置 `COPILOT_CARE_CORS_ALLOWED_ORIGINS`。
+
+### 运行态持久化
+
+- `COPILOT_CARE_RUNTIME_STATE_BACKEND=memory`：默认模式，幂等缓存和治理遥测只保留在当前进程内。
+- `COPILOT_CARE_RUNTIME_STATE_BACKEND=file`：将幂等状态和治理遥测落盘到 `COPILOT_CARE_RUNTIME_STATE_DIR`，适合单实例重启恢复。
+- `COPILOT_CARE_RUNTIME_STATE_DIR` 默认是 `reports/runtime/state`，该目录已被 `.gitignore` 忽略。
+- `file` 后端只能解决“同一磁盘上的单实例重启恢复”，不能替代 Redis/数据库，也不适合多实例共享状态。
 
 ### 新功能联调快速验收
 

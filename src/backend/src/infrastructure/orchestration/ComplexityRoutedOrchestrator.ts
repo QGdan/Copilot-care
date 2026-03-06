@@ -77,6 +77,7 @@ export interface ComplexityRoutedOrchestratorOptions {
   fastDepartmentEngines: DepartmentEngines;
   lightDepartmentEngines: DepartmentEngines;
   deepDebateEngine: DebateEngine;
+  env?: NodeJS.ProcessEnv;
   patientContextEnricher?: PatientContextEnricher;
   authoritativeMedicalSearch?: AuthoritativeMedicalSearchPort;
   safetyOutputGuardService?: SafetyOutputGuardService;
@@ -251,7 +252,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
     this.lightDepartmentEngines = options.lightDepartmentEngines;
     this.deepDebateEngine = options.deepDebateEngine;
     this.intakeService = new MinimumInfoSetService();
-    this.consentService = new ConsentValidationService();
+    this.consentService = new ConsentValidationService(options.env);
     this.riskService = new RuleFirstRiskAssessmentService();
     this.followupService = new FollowupPlanningService();
     this.reportService = new ExplainableReportService();

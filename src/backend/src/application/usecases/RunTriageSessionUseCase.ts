@@ -5,20 +5,42 @@ import {
 } from '@copilot-care/shared/types';
 import { RequestValidationError } from '../errors/RequestValidationError';
 import {
+  StoredTriageIdempotencyEntry,
+  TriageIdempotencyStorePort,
+} from '../ports/TriageIdempotencyStorePort';
+import {
   OrchestratorRunOptions,
   TriageOrchestratorPort,
 } from '../ports/TriageOrchestratorPort';
 
-interface IdempotencyEntry {
-  requestFingerprint: string;
-  createdAtMs: number;
-  result: DebateResult;
-}
-
 export const TRIAGE_IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
 
+class MemoryTriageIdempotencyStore implements TriageIdempotencyStorePort {
+  private readonly entries: Map<string, StoredTriageIdempotencyEntry>;
+
+  constructor() {
+    this.entries = new Map();
+  }
+
+  public pruneExpired(referenceTimeMs: number, ttlMs: number): void {
+    for (const [key, entry] of this.entries.entries()) {
+      if (referenceTimeMs - entry.createdAtMs > ttlMs) {
+        this.entries.delete(key);
+      }
+    }
+  }
+
+  public get(key: string): StoredTriageIdempotencyEntry | undefined {
+    return this.entries.get(key);
+  }
+
+  public set(key: string, entry: StoredTriageIdempotencyEntry): void {
+    this.entries.set(key, entry);
+  }
+}
+
 function formatRoundReasoning(round: DebateRound): string {
-  return `第${round.roundNumber}轮：分歧指数=${round.dissentIndex.toFixed(3)}，分歧等级=${round.dissentBand}`;
+  return `Round ${round.roundNumber}: dissentIndex=${round.dissentIndex.toFixed(3)}, dissentBand=${round.dissentBand}`;
 }
 
 function canonicalizeValue(value: unknown): unknown {
@@ -55,6 +77,7 @@ function resolveIdempotencyKey(input: TriageRequest): string | undefined {
   if (requestId) {
     return requestId;
   }
+
   const sessionId =
     typeof input.sessionId === 'string' ? input.sessionId.trim() : '';
   return sessionId || undefined;
@@ -62,24 +85,17 @@ function resolveIdempotencyKey(input: TriageRequest): string | undefined {
 
 export class RunTriageSessionUseCase {
   private readonly orchestrator: TriageOrchestratorPort;
-  private readonly idempotencyEntries: Map<string, IdempotencyEntry>;
   private readonly now: () => number;
+  private readonly idempotencyStore: TriageIdempotencyStorePort;
 
   constructor(
     orchestrator: TriageOrchestratorPort,
     now: () => number = () => Date.now(),
+    idempotencyStore: TriageIdempotencyStorePort = new MemoryTriageIdempotencyStore(),
   ) {
     this.orchestrator = orchestrator;
     this.now = now;
-    this.idempotencyEntries = new Map();
-  }
-
-  private evictExpiredEntries(referenceTimeMs: number): void {
-    for (const [sessionId, entry] of this.idempotencyEntries.entries()) {
-      if (referenceTimeMs - entry.createdAtMs > TRIAGE_IDEMPOTENCY_TTL_MS) {
-        this.idempotencyEntries.delete(sessionId);
-      }
-    }
+    this.idempotencyStore = idempotencyStore;
   }
 
   public async execute(
@@ -87,7 +103,7 @@ export class RunTriageSessionUseCase {
     options?: OrchestratorRunOptions,
   ): Promise<DebateResult> {
     const nowMs = this.now();
-    this.evictExpiredEntries(nowMs);
+    this.idempotencyStore.pruneExpired(nowMs, TRIAGE_IDEMPOTENCY_TTL_MS);
 
     const idempotencyKey = resolveIdempotencyKey(input);
     if (!idempotencyKey) {
@@ -95,7 +111,7 @@ export class RunTriageSessionUseCase {
     }
 
     const requestFingerprint = buildRequestFingerprint(input);
-    const existing = this.idempotencyEntries.get(idempotencyKey);
+    const existing = this.idempotencyStore.get(idempotencyKey);
     if (existing) {
       if (existing.requestFingerprint !== requestFingerprint) {
         throw new RequestValidationError(
@@ -103,11 +119,13 @@ export class RunTriageSessionUseCase {
           'requestId/sessionId already exists with a different payload.',
         );
       }
+
       if (options?.onWorkflowStage) {
         for (const stage of existing.result.workflowTrace ?? []) {
           options.onWorkflowStage(stage);
         }
       }
+
       if (options?.onReasoningStep) {
         for (const reason of existing.result.routing?.reasons ?? []) {
           options.onReasoningStep(reason);
@@ -116,11 +134,12 @@ export class RunTriageSessionUseCase {
           options.onReasoningStep(formatRoundReasoning(round));
         }
       }
+
       return existing.result;
     }
 
     const result = await this.orchestrator.runSession(input, options);
-    this.idempotencyEntries.set(idempotencyKey, {
+    this.idempotencyStore.set(idempotencyKey, {
       requestFingerprint,
       createdAtMs: nowMs,
       result,

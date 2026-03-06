@@ -2,6 +2,7 @@ import { Request, Response, Router } from 'express';
 import { AuditEvent, TriageRequest } from '@copilot-care/shared/types';
 import { RequestValidationError } from '../../application/errors/RequestValidationError';
 import { RunTriageSessionUseCase } from '../../application/usecases/RunTriageSessionUseCase';
+import { resolveBackendExposurePolicy } from '../../config/runtimePolicy';
 import { SmartAccessEnforcer } from '../../infrastructure/auth/SmartAccessEnforcer';
 import { ObservationMapper } from '../../infrastructure/fhir/ObservationMapper';
 import { PatientMapper } from '../../infrastructure/fhir/PatientMapper';
@@ -118,6 +119,19 @@ function normalizeSmartScopeHeader(request: Request): string {
   return headerValue.trim();
 }
 
+function normalizeBearerToken(request: Request): string {
+  const headerValue = request.header('authorization');
+  if (typeof headerValue !== 'string') {
+    return '';
+  }
+
+  const match = headerValue.match(/^Bearer\s+(.+)$/i);
+  if (!match) {
+    return '';
+  }
+  return match[1].trim();
+}
+
 function hasInteropScope(scopeString: string): boolean {
   if (!scopeString) {
     return false;
@@ -172,8 +186,46 @@ function createFallbackInteropAuditEvent(sessionId: string): AuditEvent {
   };
 }
 
-export function createInteropRouter(useCase: RunTriageSessionUseCase): Router {
+export function createInteropRouter(
+  useCase: RunTriageSessionUseCase,
+  env: NodeJS.ProcessEnv = process.env,
+): Router {
   const router = Router();
+  const policy = resolveBackendExposurePolicy(env);
+
+  router.use((request: Request, response: Response, next) => {
+    if (!policy.interopEnabled) {
+      const denied = toOperationOutcome(
+        'FHIR interop route is disabled in this environment.',
+        404,
+      );
+      response.status(denied.statusCode).json(denied.payload);
+      return;
+    }
+
+    if (policy.isProduction && !policy.interopApiKey) {
+      const failed = toOperationOutcome(
+        'FHIR interop route is not configured for production access.',
+        503,
+      );
+      response.status(failed.statusCode).json(failed.payload);
+      return;
+    }
+
+    if (policy.interopApiKey) {
+      const bearerToken = normalizeBearerToken(request);
+      if (bearerToken !== policy.interopApiKey) {
+        const denied = toOperationOutcome(
+          'Authorization bearer token required for FHIR interop access.',
+          401,
+        );
+        response.status(denied.statusCode).json(denied.payload);
+        return;
+      }
+    }
+
+    next();
+  });
 
   router.post(
     '/fhir/triage-bundle',

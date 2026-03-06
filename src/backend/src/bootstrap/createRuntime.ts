@@ -12,8 +12,11 @@ import { DebateEngine } from '../core/DebateEngine';
 import { ComplexityRoutedOrchestrator } from '../infrastructure/orchestration/ComplexityRoutedOrchestrator';
 import { CoordinatorSnapshotService } from '../infrastructure/orchestration/CoordinatorSnapshotService';
 import { GovernanceRuntimeTelemetry } from '../infrastructure/governance/GovernanceRuntimeTelemetry';
+import { createGovernanceRuntimeStateStore } from '../infrastructure/governance/GovernanceRuntimeStateStore';
 import { createAuthoritativeMedicalSearchService } from '../infrastructure/knowledge/AuthoritativeMedicalWebSearchService';
 import { createPatientContextEnricher } from '../infrastructure/mcp/PatientContextEnricher';
+import { createTriageIdempotencyStore } from '../infrastructure/persistence/TriageIdempotencyStore';
+import { parseBooleanFlag } from '../config/runtimePolicy';
 import {
   createClinicalExpertLLMClients,
   createClinicalLLMClientForProvider,
@@ -90,23 +93,6 @@ const PANEL_PROVIDER_CANDIDATES: ReadonlySet<ClinicalLLMProvider> = new Set([
   'openai',
   'anthropic',
 ]);
-
-function parseBooleanFlag(
-  value: string | undefined,
-  fallback: boolean,
-): boolean {
-  if (!value) {
-    return fallback;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
-    return true;
-  }
-  if (['0', 'false', 'no', 'off'].includes(normalized)) {
-    return false;
-  }
-  return fallback;
-}
 
 function parsePanelProviders(value: string | undefined): ClinicalLLMProvider[] {
   if (!value) {
@@ -272,18 +258,24 @@ function createMetabolicPanelAgents(
   return panelAgents;
 }
 
-export function createRuntime(): BackendRuntime {
-  const env = process.env;
-  const llmClients = createClinicalExpertLLMClients();
-  const assignments = resolveClinicalExpertProviderAssignments();
+export function createRuntime(
+  env: NodeJS.ProcessEnv = process.env,
+): BackendRuntime {
+  const llmClients = createClinicalExpertLLMClients(env);
+  const assignments = resolveClinicalExpertProviderAssignments(env);
   const patientContextEnricher = createPatientContextEnricher(env);
   const authoritativeMedicalSearch = createAuthoritativeMedicalSearchService(env);
+  const idempotencyStore = createTriageIdempotencyStore(env);
+  const governanceRuntimeStateStore = createGovernanceRuntimeStateStore(env);
   const injectAuthoritativeEvidence = parseBooleanFlag(
     env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE,
     authoritativeMedicalSearch.isEnabled(),
   );
   const coordinatorSnapshotService = new CoordinatorSnapshotService(env);
-  const governanceRuntimeTelemetry = new GovernanceRuntimeTelemetry();
+  const governanceRuntimeTelemetry = new GovernanceRuntimeTelemetry(
+    80,
+    governanceRuntimeStateStore,
+  );
   const panelProviders = resolvePanelProviders(env);
   const cardioPanel = buildPanelProviderStates(panelProviders.cardiology, env);
   const gpPanel = buildPanelProviderStates(panelProviders.generalPractice, env);
@@ -332,6 +324,7 @@ export function createRuntime(): BackendRuntime {
   };
 
   const orchestrator = new ComplexityRoutedOrchestrator({
+    env,
     fastDepartmentEngines,
     lightDepartmentEngines,
     deepDebateEngine,
@@ -340,7 +333,11 @@ export function createRuntime(): BackendRuntime {
       injectAuthoritativeEvidence ? authoritativeMedicalSearch : undefined,
     safetyOutputGuardService,
   });
-  const triageUseCase = new RunTriageSessionUseCase(orchestrator);
+  const triageUseCase = new RunTriageSessionUseCase(
+    orchestrator,
+    () => Date.now(),
+    idempotencyStore,
+  );
 
   const architecture: RuntimeArchitectureSnapshot = {
     experts: {
