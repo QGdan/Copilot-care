@@ -182,4 +182,60 @@ describe('useConsultationInputForm', () => {
     expect(state.buildSignals()).toEqual([]);
     expect(state.buildProfile().vitals).toBeUndefined();
   });
+
+  it('syncs selected patient context into form and request profile', () => {
+    const state = useConsultationInputForm({
+      validationMessages: VALIDATION_MESSAGES,
+      defaultForm: {
+        symptomText: 'manual symptom',
+        age: 42,
+        sex: 'other',
+      },
+    });
+
+    state.applyPatientDataContext(
+      {
+        patientId: 'patient-777',
+        age: 61,
+        sex: 'female',
+        chiefComplaint: 'headache and dizziness',
+        chronicDiseases: ['Hypertension', 'Diabetes'],
+        medicationHistory: ['amlodipine', 'metformin'],
+      },
+      'patient-777',
+    );
+
+    expect(state.form.value.symptomText).toBe('headache and dizziness');
+    expect(state.form.value.age).toBe(61);
+    expect(state.form.value.sex).toBe('female');
+    expect(state.form.value.chronicDiseasesText).toBe(
+      'Hypertension, Diabetes',
+    );
+    expect(state.form.value.medicationHistoryText).toBe(
+      'amlodipine, metformin',
+    );
+
+    const payload = state.buildRequestPayload();
+    expect(payload.profile.patientId).toBe('patient-777');
+    expect(payload.profile.chiefComplaint).toBe('headache and dizziness');
+
+    const exportProfile = state.buildExportPatientProfile();
+    expect(exportProfile.patientId).toBe('patient-777');
+  });
+
+  it('uses selected patient id even when patient details are unavailable', () => {
+    const state = useConsultationInputForm({
+      validationMessages: VALIDATION_MESSAGES,
+      defaultForm: {
+        symptomText: 'persistent cough',
+        age: 33,
+        sex: 'male',
+      },
+    });
+
+    state.applyPatientDataContext(null, 'patient-404');
+
+    expect(state.buildRequestPayload().profile.patientId).toBe('patient-404');
+    expect(state.buildProfile().patientId).toBe('patient-404');
+  });
 });

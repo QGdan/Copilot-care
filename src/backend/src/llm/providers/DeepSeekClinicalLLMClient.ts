@@ -37,11 +37,35 @@ function extractDeepSeekText(payload: unknown): string {
   }
 
   const content = (message as Record<string, unknown>).content;
-  if (typeof content !== 'string') {
-    return '';
+  if (typeof content === 'string' && content.trim()) {
+    return content;
+  }
+  if (Array.isArray(content)) {
+    const joined = content
+      .map((item) => {
+        if (typeof item === 'string') {
+          return item.trim();
+        }
+        if (!item || typeof item !== 'object') {
+          return '';
+        }
+        const record = item as Record<string, unknown>;
+        const text = record.text;
+        return typeof text === 'string' ? text.trim() : '';
+      })
+      .filter(Boolean)
+      .join('\n');
+    if (joined) {
+      return joined;
+    }
   }
 
-  return content;
+  const reasoningContent = (message as Record<string, unknown>).reasoning_content;
+  if (typeof reasoningContent === 'string' && reasoningContent.trim()) {
+    return reasoningContent;
+  }
+
+  return '';
 }
 
 export class DeepSeekClinicalLLMClient implements ClinicalLLMClient {

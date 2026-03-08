@@ -145,6 +145,46 @@ describe('Architecture Smoke - rule-first risk assessment', () => {
     ).toBe(true);
   });
 
+  it('matches UTF-8 Chinese red-flag symptom input and triggers emergency path', () => {
+    const service = new RuleFirstRiskAssessmentService();
+    const snapshot = service.evaluate(
+      createProfile({
+        chiefComplaint: '\u80f8\u75db\u4f34\u547c\u5438\u56f0\u96be',
+        symptoms: ['\u80f8\u75db', '\u547c\u5438\u56f0\u96be'],
+        vitals: {
+          systolicBP: 168,
+          diastolicBP: 104,
+        },
+      }),
+    );
+
+    expect(snapshot.riskLevel).toBe('L3');
+    expect(snapshot.redFlagTriggered).toBe(true);
+    expect(
+      snapshot.matchedRuleIds.some(
+        (ruleId) => ruleId === 'RULE-BS-EMERGENCY-SYMPTOM',
+      ),
+    ).toBe(true);
+  });
+
+  it('does not trigger emergency when chest pain and dyspnea are explicitly negated', () => {
+    const service = new RuleFirstRiskAssessmentService();
+    const snapshot = service.evaluate(
+      createProfile({
+        chiefComplaint:
+          '\u65e0\u80f8\u75db\u65e0\u547c\u5438\u56f0\u96be\uff0c\u8f7b\u5ea6\u75b2\u52b3',
+        symptoms: ['\u75b2\u52b3'],
+        vitals: {
+          systolicBP: 118,
+          diastolicBP: 76,
+        },
+      }),
+    );
+
+    expect(snapshot.redFlagTriggered).toBe(false);
+    expect(snapshot.riskLevel).not.toBe('L3');
+  });
+
   it('throws typed error for invalid blood pressure pairing', () => {
     const service = new RuleFirstRiskAssessmentService();
 

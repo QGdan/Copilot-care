@@ -11,6 +11,7 @@ import { AnthropicClinicalLLMClient } from './providers/AnthropicClinicalLLMClie
 import { GeminiClinicalLLMClient } from './providers/GeminiClinicalLLMClient';
 import { DeepSeekClinicalLLMClient } from './providers/DeepSeekClinicalLLMClient';
 import { KimiClinicalLLMClient } from './providers/KimiClinicalLLMClient';
+import { DashScopeClinicalLLMClient } from './providers/DashScopeClinicalLLMClient';
 
 function parseTimeout(value: string | undefined): number {
   if (!value) {
@@ -111,6 +112,7 @@ const VALID_EXPERT_PROVIDER_SET: ReadonlySet<ClinicalLLMProvider> = new Set([
   'deepseek',
   'gemini',
   'kimi',
+  'dashscope',
   'openai',
   'anthropic',
   'deepseek_gemini',
@@ -151,6 +153,18 @@ function createProviderClients(
           maxRetries: transportPolicy.maxRetries,
           retryDelayMs: transportPolicy.retryDelayMs,
           baseUrl: env.KIMI_BASE_URL || 'https://api.moonshot.cn/v1',
+        })
+      : null,
+    dashscope: env.DASHSCOPE_API_KEY
+      ? new DashScopeClinicalLLMClient({
+          apiKey: env.DASHSCOPE_API_KEY,
+          model: selectModel(env, env.DASHSCOPE_LLM_MODEL, 'qwen-plus'),
+          timeoutMs: transportPolicy.timeoutMs,
+          maxRetries: transportPolicy.maxRetries,
+          retryDelayMs: transportPolicy.retryDelayMs,
+          baseUrl:
+            env.DASHSCOPE_BASE_URL
+            || 'https://dashscope.aliyuncs.com/compatible-mode/v1',
         })
       : null,
     openai: env.OPENAI_API_KEY
@@ -197,6 +211,23 @@ function parseProviderChain(value: string): string[] {
     .filter(Boolean);
 }
 
+function resolveAutoProviderOrder(env: NodeJS.ProcessEnv): string[] {
+  const fallback = ['deepseek', 'gemini', 'kimi', 'dashscope', 'openai', 'anthropic'];
+  const raw = env.COPILOT_CARE_LLM_AUTO_CHAIN;
+  if (!raw || !raw.trim()) {
+    return fallback;
+  }
+
+  const parsed = parseProviderChain(raw).filter((provider) =>
+    fallback.includes(provider),
+  );
+  if (parsed.length === 0) {
+    return fallback;
+  }
+
+  return [...new Set(parsed)];
+}
+
 export function createClinicalLLMClient(
   env: NodeJS.ProcessEnv = process.env,
 ): ClinicalLLMClient | null {
@@ -229,29 +260,58 @@ export function createClinicalLLMClient(
     return clients[chainProviders[0]] || null;
   }
 
-  const autoChain = buildFallbackChain(
-    ['deepseek', 'gemini', 'kimi', 'openai', 'anthropic'],
-    clients,
-  );
+  const autoChain = buildFallbackChain(resolveAutoProviderOrder(env), clients);
   return autoChain;
+}
+
+function resolveProviderModelEnvKey(
+  provider: ClinicalLLMProvider,
+): keyof NodeJS.ProcessEnv | null {
+  if (provider === 'deepseek') {
+    return 'DEEPSEEK_LLM_MODEL';
+  }
+  if (provider === 'gemini') {
+    return 'GEMINI_LLM_MODEL';
+  }
+  if (provider === 'kimi') {
+    return 'KIMI_LLM_MODEL';
+  }
+  if (provider === 'dashscope') {
+    return 'DASHSCOPE_LLM_MODEL';
+  }
+  if (provider === 'openai') {
+    return 'OPENAI_LLM_MODEL';
+  }
+  if (provider === 'anthropic') {
+    return 'ANTHROPIC_LLM_MODEL';
+  }
+  return null;
 }
 
 function buildClientWithScopedProvider(
   env: NodeJS.ProcessEnv,
   provider: ClinicalLLMProvider,
+  modelOverride?: string,
 ): ClinicalLLMClient | null {
   const scopedEnv = {
     ...env,
     COPILOT_CARE_LLM_PROVIDER: provider,
   } as NodeJS.ProcessEnv;
+
+  const modelEnvKey = resolveProviderModelEnvKey(provider);
+  if (modelEnvKey && modelOverride && modelOverride.trim()) {
+    scopedEnv[modelEnvKey] = modelOverride.trim();
+  }
+
   return createClinicalLLMClient(scopedEnv);
 }
 
 export function createClinicalLLMClientForProvider(
   provider: ClinicalLLMProvider,
   env: NodeJS.ProcessEnv = process.env,
+  modelOverride?: string,
 ): ClinicalLLMClient | null {
-  return buildClientWithScopedProvider(env, provider);
+  return buildClientWithScopedProvider(env, provider, modelOverride);
 }
 
 function resolveSingleExpertProvider(

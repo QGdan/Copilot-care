@@ -29,6 +29,48 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function stripCodeFences(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('```')) {
+    return trimmed;
+  }
+  return trimmed
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim();
+}
+
+function extractJsonObject(text: string): string | null {
+  const start = text.indexOf('{');
+  const end = text.lastIndexOf('}');
+  if (start === -1 || end === -1 || end <= start) {
+    return null;
+  }
+  return text.slice(start, end + 1);
+}
+
+function parseJsonObject<T>(raw: string): T | null {
+  const stripped = stripCodeFences(raw);
+  const candidates: string[] = [stripped];
+  const extracted = extractJsonObject(stripped);
+  if (extracted && extracted !== stripped) {
+    candidates.push(extracted);
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate) as unknown;
+      if (parsed && typeof parsed === 'object') {
+        return parsed as T;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 async function searchPubMed(input: {
   query: string;
   limit: number;
@@ -44,9 +86,12 @@ async function searchPubMed(input: {
     'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?' +
     `db=pubmed&retmode=json&retmax=${max}&sort=relevance&term=${encodeURIComponent(input.query)}`;
   const searchRaw = await input.httpGetText(searchUrl, input.config.timeoutMs);
-  const searchPayload = JSON.parse(searchRaw) as {
+  const searchPayload = parseJsonObject<{
     esearchresult?: { idlist?: string[] };
-  };
+  }>(searchRaw);
+  if (!searchPayload) {
+    return [];
+  }
 
   const idList = searchPayload.esearchresult?.idlist;
   if (!Array.isArray(idList) || idList.length === 0) {
@@ -61,9 +106,12 @@ async function searchPubMed(input: {
     'https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?' +
     `db=pubmed&retmode=json&id=${encodeURIComponent(ids.join(','))}`;
   const summaryRaw = await input.httpGetText(summaryUrl, input.config.timeoutMs);
-  const summaryPayload = JSON.parse(summaryRaw) as {
+  const summaryPayload = parseJsonObject<{
     result?: Record<string, unknown>;
-  };
+  }>(summaryRaw);
+  if (!summaryPayload) {
+    return [];
+  }
   const summaryResult = summaryPayload.result;
   if (!summaryResult || typeof summaryResult !== 'object') {
     return [];
@@ -97,6 +145,7 @@ async function searchPubMed(input: {
       title,
       journal: sourceNameRaw,
       publishedOn,
+      queryTokens,
     });
     const matchedQueryTokens = extractMatchedQueryTokens(
       queryTokens,
@@ -131,12 +180,24 @@ function extractWhitelistedResultsFromDuckDuckGoHtml(input: {
   const results: AuthoritativeMedicalEvidence[] = [];
   let droppedByPolicy = 0;
   const matcher =
-    /<a[^>]*class="[^"]*result__a[^"]*"[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+    /<a\b([^>]*?)href=(["'])([^"']+)\2([^>]*)>([\s\S]*?)<\/a>/gi;
   let match: RegExpExecArray | null = matcher.exec(input.html);
 
   while (match) {
-    const href = match[1];
-    const titleHtml = match[2];
+    const href = match[3];
+    const titleHtml = match[5];
+    const attributes = `${match[1]} ${match[4]}`.toLowerCase();
+    const looksLikeResultAnchor =
+      attributes.includes('result__a') ||
+      attributes.includes('result-link') ||
+      attributes.includes('result__title') ||
+      attributes.includes('result-title') ||
+      attributes.includes('result') ||
+      href.startsWith('/l/?');
+    if (!looksLikeResultAnchor) {
+      match = matcher.exec(input.html);
+      continue;
+    }
     const resolvedUrl = resolveSearchResultUrl(href);
     if (resolvedUrl) {
       if (!isAuthoritativeMedicalUrl(resolvedUrl)) {
@@ -147,6 +208,10 @@ function extractWhitelistedResultsFromDuckDuckGoHtml(input: {
           input.seen.add(key);
           const source = resolveSourceByUrl(resolvedUrl) ?? input.preferredSource;
           const title = stripHtml(decodeHtmlEntities(titleHtml)) || resolvedUrl;
+          if (title.length < 2) {
+            match = matcher.exec(input.html);
+            continue;
+          }
           const rawSnippet = extractSearchSnippetNearAnchor(
             input.html,
             typeof match.index === 'number' ? match.index : -1,
@@ -159,6 +224,7 @@ function extractWhitelistedResultsFromDuckDuckGoHtml(input: {
             sourceName: source?.name ?? '权威医学来源',
             title,
             rawSnippet,
+            queryTokens: input.queryTokens,
           });
           results.push({
             sourceId: source?.id ?? 'WHITELIST_WEB',
@@ -210,29 +276,61 @@ async function searchWhitelistedDuckDuckGo(input: {
   let droppedByPolicy = 0;
   let hadRequestFailure = false;
 
-  for (const plan of plans) {
+  const planExecutions = await Promise.all(
+    plans.map(async (plan, index) => {
+      try {
+        const endpoint =
+          `https://duckduckgo.com/html/?q=${encodeURIComponent(plan.searchQuery)}`;
+        const html = await input.httpGetText(endpoint, input.config.timeoutMs);
+        const extracted = extractWhitelistedResultsFromDuckDuckGoHtml({
+          html,
+          // Parse enough candidates from each plan; final merge still obeys global limit.
+          limit: input.limit,
+          seen: new Set<string>(),
+          queryTokens,
+          preferredSource: plan.sourceId
+            ? sourceById.get(plan.sourceId)
+            : undefined,
+        });
+        return {
+          index,
+          failed: false,
+          extracted,
+        };
+      } catch {
+        return {
+          index,
+          failed: true,
+          extracted: null,
+        };
+      }
+    }),
+  );
+
+  const orderedExecutions = [...planExecutions].sort(
+    (left, right) => left.index - right.index,
+  );
+
+  for (const execution of orderedExecutions) {
     if (results.length >= input.limit) {
       break;
     }
-    try {
-      const endpoint =
-        `https://duckduckgo.com/html/?q=${encodeURIComponent(plan.searchQuery)}`;
-      const html = await input.httpGetText(endpoint, input.config.timeoutMs);
-      const extracted = extractWhitelistedResultsFromDuckDuckGoHtml({
-        html,
-        limit: input.limit - results.length,
-        seen,
-        queryTokens,
-        preferredSource: plan.sourceId
-          ? sourceById.get(plan.sourceId)
-          : undefined,
-      });
-      droppedByPolicy += extracted.droppedByPolicy;
-      results.push(...extracted.results);
-    } catch {
-      // Keep searching with remaining plans when one query fails.
+    if (execution.failed || !execution.extracted) {
       hadRequestFailure = true;
       continue;
+    }
+
+    droppedByPolicy += execution.extracted.droppedByPolicy;
+    for (const item of execution.extracted.results) {
+      if (results.length >= input.limit) {
+        break;
+      }
+      const key = item.url.toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      results.push(item);
     }
   }
 

@@ -1,3 +1,4 @@
+import path from 'node:path';
 import {
   ResolvedSearchRuntimeConfig,
   SearchRuntimeConfig,
@@ -7,6 +8,7 @@ const DEFAULT_CACHE_TTL_MS = 180000;
 const DEFAULT_CACHE_MAX_ENTRIES = 128;
 const DEFAULT_PROVIDER_FAILURE_THRESHOLD = 3;
 const DEFAULT_PROVIDER_CIRCUIT_OPEN_MS = 60000;
+const DEFAULT_RECENT_SEARCH_LOG_LIMIT = 40;
 
 function parseBoolean(
   value: string | undefined,
@@ -45,6 +47,11 @@ function parsePositiveInt(
 function resolveSearchRuntimeConfig(
   raw: SearchRuntimeConfig,
 ): ResolvedSearchRuntimeConfig {
+  const runtimeLogFilePath =
+    typeof raw.runtimeLogFilePath === 'string'
+      ? raw.runtimeLogFilePath.trim()
+      : '';
+
   return {
     enabled: raw.enabled,
     networkEnabled: raw.networkEnabled,
@@ -68,6 +75,11 @@ function resolveSearchRuntimeConfig(
       1000,
       Math.floor(raw.providerCircuitOpenMs ?? DEFAULT_PROVIDER_CIRCUIT_OPEN_MS),
     ),
+    runtimeLogFilePath: runtimeLogFilePath || undefined,
+    recentSearchLogLimit: Math.max(
+      1,
+      Math.floor(raw.recentSearchLogLimit ?? DEFAULT_RECENT_SEARCH_LOG_LIMIT),
+    ),
   };
 }
 
@@ -81,6 +93,13 @@ function createSearchRuntimeConfig(
   );
   const networkEnabled =
     enabled && (env.NODE_ENV !== 'test' || allowNetworkInTest);
+  const runtimeLogFilePathEnv = env.COPILOT_CARE_MED_SEARCH_RUNTIME_LOG_FILE?.trim();
+  const runtimeLogFilePath =
+    runtimeLogFilePathEnv && runtimeLogFilePathEnv.length > 0
+      ? path.resolve(runtimeLogFilePathEnv)
+      : env.NODE_ENV === 'test'
+        ? undefined
+        : path.resolve('reports/runtime/medical-search.runtime.jsonl');
 
   return resolveSearchRuntimeConfig({
     enabled,
@@ -134,6 +153,13 @@ function createSearchRuntimeConfig(
       DEFAULT_PROVIDER_CIRCUIT_OPEN_MS,
       1000,
       3_600_000,
+    ),
+    runtimeLogFilePath,
+    recentSearchLogLimit: parsePositiveInt(
+      env.COPILOT_CARE_MED_SEARCH_RECENT_LOG_LIMIT,
+      DEFAULT_RECENT_SEARCH_LOG_LIMIT,
+      1,
+      500,
     ),
   });
 }

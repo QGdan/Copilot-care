@@ -50,6 +50,7 @@ interface RuntimeArchitectureView {
       string,
       Array<{
         provider: string;
+        model?: string;
         llmEnabled: boolean;
       }>
     >;
@@ -474,7 +475,27 @@ export function createTriageRouter(
           cacheMisses: 0,
           fallbackAppliedCount: 0,
           providerStats: [],
+          recentSearches: [],
         },
+      generatedAt: nowIso(),
+    });
+  });
+
+  router.get('/governance/medical-search/logs', (request: Request, response: Response) => {
+    const rawLimit =
+      typeof request.query.limit === 'string'
+        ? Number(request.query.limit)
+        : Number.NaN;
+    const limit = Number.isFinite(rawLimit)
+      ? Math.min(100, Math.max(1, Math.floor(rawLimit)))
+      : 20;
+    const runtime = authoritativeMedicalSearch?.getRuntimeStats?.();
+    const recentSearches = runtime?.recentSearches ?? [];
+    response.status(200).json({
+      enabled: authoritativeMedicalSearch?.isEnabled() ?? false,
+      strictWhitelist: true,
+      total: recentSearches.length,
+      logs: recentSearches.slice(0, limit),
       generatedAt: nowIso(),
     });
   });

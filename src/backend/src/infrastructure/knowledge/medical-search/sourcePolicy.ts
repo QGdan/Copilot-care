@@ -126,6 +126,129 @@ function buildSourceBreakdown(
     });
 }
 
+function normalizeSemanticText(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/source\s*:\s*[^\.\n]+/gi, ' ')
+    .replace(/title\s*:\s*/gi, ' ')
+    .replace(/snippet\s*:\s*/gi, ' ')
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenizeSemanticText(value: string): string[] {
+  return normalizeSemanticText(value)
+    .split(/\s+/)
+    .filter((token) => token.length >= 2)
+    .slice(0, 64);
+}
+
+function jaccardSimilarity(
+  leftTokens: readonly string[],
+  rightTokens: readonly string[],
+): number {
+  if (leftTokens.length === 0 || rightTokens.length === 0) {
+    return 0;
+  }
+  const left = new Set(leftTokens);
+  const right = new Set(rightTokens);
+  let intersection = 0;
+  for (const token of left) {
+    if (right.has(token)) {
+      intersection += 1;
+    }
+  }
+  const union = new Set([...left, ...right]).size;
+  return union > 0 ? intersection / union : 0;
+}
+
+function buildEvidenceSemanticSignature(
+  item: AuthoritativeMedicalEvidence,
+): { normalized: string; tokens: string[] } {
+  const normalized = normalizeSemanticText(`${item.title} ${item.snippet}`);
+  return {
+    normalized,
+    tokens: tokenizeSemanticText(normalized),
+  };
+}
+
+function calculateEvidenceSimilarity(
+  left: AuthoritativeMedicalEvidence,
+  right: AuthoritativeMedicalEvidence,
+  signatureCache: Map<string, { normalized: string; tokens: string[] }>,
+): number {
+  const leftKey = left.url.toLowerCase();
+  const rightKey = right.url.toLowerCase();
+  const leftSig =
+    signatureCache.get(leftKey) ?? buildEvidenceSemanticSignature(left);
+  const rightSig =
+    signatureCache.get(rightKey) ?? buildEvidenceSemanticSignature(right);
+  signatureCache.set(leftKey, leftSig);
+  signatureCache.set(rightKey, rightSig);
+
+  if (
+    leftSig.normalized &&
+    rightSig.normalized &&
+    (
+      leftSig.normalized === rightSig.normalized ||
+      (leftSig.normalized.length >= 36 &&
+        rightSig.normalized.includes(leftSig.normalized)) ||
+      (rightSig.normalized.length >= 36 &&
+        leftSig.normalized.includes(rightSig.normalized))
+    )
+  ) {
+    return 1;
+  }
+
+  const tokenSimilarity = jaccardSimilarity(leftSig.tokens, rightSig.tokens);
+  return tokenSimilarity;
+}
+
+function pickMostDiverseCandidate(input: {
+  queue: AuthoritativeMedicalEvidence[];
+  selected: AuthoritativeMedicalEvidence[];
+  signatureCache: Map<string, { normalized: string; tokens: string[] }>;
+}): AuthoritativeMedicalEvidence | null {
+  const { queue, selected, signatureCache } = input;
+  if (queue.length === 0) {
+    return null;
+  }
+  if (selected.length === 0) {
+    return queue.shift() ?? null;
+  }
+
+  let bestIndex = 0;
+  let bestScore = Number.NEGATIVE_INFINITY;
+
+  for (let index = 0; index < queue.length; index += 1) {
+    const candidate = queue[index];
+    let maxSimilarity = 0;
+    for (const existing of selected) {
+      const similarity = calculateEvidenceSimilarity(
+        candidate,
+        existing,
+        signatureCache,
+      );
+      if (similarity > maxSimilarity) {
+        maxSimilarity = similarity;
+      }
+    }
+    const queryTokenBonus = Math.min(
+      0.12,
+      (candidate.matchedQueryTokens?.length ?? 0) * 0.03,
+    );
+    const score = (1 - maxSimilarity) + queryTokenBonus;
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
+  }
+
+  const [picked] = queue.splice(bestIndex, 1);
+  return picked ?? null;
+}
+
 function selectDiverseEvidence(
   candidates: AuthoritativeMedicalEvidence[],
   limit: number,
@@ -145,6 +268,7 @@ function selectDiverseEvidence(
   const sourceOrder = [...queues.keys()].sort(compareSourceOrder);
   const selected: AuthoritativeMedicalEvidence[] = [];
   const selectedCountBySource = new Map<string, number>();
+  const signatureCache = new Map<string, { normalized: string; tokens: string[] }>();
   const pubMedMaxShare = Math.max(1, Math.ceil(limit * 0.5));
   const firstPubMedCandidate = candidates.find(
     (item) => item.sourceId === PUBMED_SOURCE_ID,
@@ -162,7 +286,11 @@ function selectDiverseEvidence(
       if (sourceId === PUBMED_SOURCE_ID && selectedCount >= pubMedMaxShare) {
         continue;
       }
-      const next = queue.shift();
+      const next = pickMostDiverseCandidate({
+        queue,
+        selected,
+        signatureCache,
+      });
       if (!next) {
         continue;
       }
@@ -182,7 +310,11 @@ function selectDiverseEvidence(
         continue;
       }
       while (queue.length > 0 && selected.length < limit) {
-        const next = queue.shift();
+        const next = pickMostDiverseCandidate({
+          queue,
+          selected,
+          signatureCache,
+        });
         if (!next) {
           break;
         }
@@ -293,6 +425,8 @@ function createEmptySearchResultShape(query: string): {
   generatedAt: string;
   realtimeCount: 0;
   fallbackCount: 0;
+  fallbackReasons: [];
+  missingRequiredSources: [];
 } {
   return {
     query,
@@ -304,6 +438,8 @@ function createEmptySearchResultShape(query: string): {
     generatedAt: new Date().toISOString(),
     realtimeCount: 0,
     fallbackCount: 0,
+    fallbackReasons: [],
+    missingRequiredSources: [],
   };
 }
 

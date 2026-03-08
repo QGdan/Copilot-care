@@ -274,9 +274,57 @@ const HIGH_RISK_COMORBIDITY_TERMS = [
   '短暂性脑缺血',
 ] as const;
 
+const TEXT_NORMALIZATION_RULES: ReadonlyArray<{
+  pattern: RegExp;
+  replacement: string;
+}> = [
+  { pattern: /\u80f8\u75db/gu, replacement: 'chest pain' },
+  { pattern: /\u80f8\u95f7/gu, replacement: 'chest pressure' },
+  { pattern: /\u547c\u5438\u56f0\u96be/gu, replacement: 'shortness of breath' },
+  { pattern: /\u6c14\u4fc3/gu, replacement: 'shortness of breath' },
+  { pattern: /\u6655\u53a5/gu, replacement: 'syncope' },
+  { pattern: /\u5267\u70c8\u5934\u75db/gu, replacement: 'severe headache' },
+  { pattern: /\u795e\u7ecf\u529f\u80fd\u7f3a\u635f/gu, replacement: 'neurological deficit' },
+  { pattern: /\u610f\u8bc6\u6df7\u4e71/gu, replacement: 'confusion' },
+  { pattern: /\u51fa\u51b7\u6c57/gu, replacement: 'cold sweat' },
+  { pattern: /\u53e3\u89d2\u6b6a\u659c/gu, replacement: 'face droop' },
+  { pattern: /\u80a2\u4f53\u65e0\u529b/gu, replacement: 'arm weakness' },
+  { pattern: /\u8a00\u8bed\u4e0d\u6e05/gu, replacement: 'speech difficulty' },
+  { pattern: /\u89c6\u7269\u5f02\u5e38/gu, replacement: 'trouble seeing' },
+  { pattern: /\u6b65\u6001\u4e0d\u7a33/gu, replacement: 'trouble walking' },
+  { pattern: /\u53e3\u6e34/gu, replacement: 'thirst' },
+  { pattern: /\u591a\u5c3f/gu, replacement: 'polyuria' },
+  { pattern: /\u591a\u98df/gu, replacement: 'polyphagia' },
+  { pattern: /\u4f53\u91cd\u4e0b\u964d/gu, replacement: 'weight loss' },
+  { pattern: /\u4e4f\u529b/gu, replacement: 'fatigue' },
+];
+
+function normalizeClinicalText(text: string): string {
+  let normalized = text;
+
+  const negatedSymptomPatterns = [
+    /\b(?:no|without|denies|deny|negative for)\s+(?:chest pain|shortness of breath|syncope|severe headache|confusion|cold sweat)\b/giu,
+    /\u65e0(?:\u660e\u663e)?\u80f8\u75db/gu,
+    /\u65e0(?:\u660e\u663e)?\u547c\u5438\u56f0\u96be/gu,
+    /\u65e0(?:\u660e\u663e)?\u51fa\u51b7\u6c57/gu,
+    /\u5426\u8ba4\u80f8\u75db/gu,
+    /\u5426\u8ba4\u547c\u5438\u56f0\u96be/gu,
+    /\u5426\u8ba4\u51fa\u51b7\u6c57/gu,
+  ];
+
+  for (const pattern of negatedSymptomPatterns) {
+    normalized = normalized.replace(pattern, ' ');
+  }
+
+  for (const rule of TEXT_NORMALIZATION_RULES) {
+    normalized = normalized.replace(rule.pattern, ` ${rule.replacement} `);
+  }
+  return normalized;
+}
+
 function toTextBag(profile: PatientProfile): string {
   const parts = [profile.chiefComplaint ?? '', ...(profile.symptoms ?? [])];
-  return parts.join(' ').toLowerCase();
+  return normalizeClinicalText(parts.join(' ').toLowerCase());
 }
 
 function includesAnyTerm(text: string, terms: readonly string[]): boolean {

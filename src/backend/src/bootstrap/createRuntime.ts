@@ -40,6 +40,7 @@ export type ExpertRuntimeStates = Record<ClinicalExpertKey, ExpertRuntimeState>;
 
 export interface PanelProviderRuntimeState {
   provider: ClinicalLLMProvider;
+  model?: string;
   llmEnabled: boolean;
 }
 
@@ -70,11 +71,11 @@ export interface BackendRuntime {
 
 const PANEL_PROVIDER_DEFAULTS: Record<
   'cardiology' | 'generalPractice' | 'metabolic',
-  ClinicalLLMProvider[]
+  PanelProviderBinding[]
 > = {
-  cardiology: ['deepseek', 'gemini'],
-  generalPractice: ['gemini', 'deepseek'],
-  metabolic: ['gemini', 'deepseek'],
+  cardiology: [{ provider: 'deepseek' }, { provider: 'gemini' }],
+  generalPractice: [{ provider: 'gemini' }, { provider: 'deepseek' }],
+  metabolic: [{ provider: 'gemini' }, { provider: 'deepseek' }],
 };
 
 const PANEL_PROVIDER_ENV_KEYS: Record<
@@ -90,42 +91,92 @@ const PANEL_PROVIDER_CANDIDATES: ReadonlySet<ClinicalLLMProvider> = new Set([
   'deepseek',
   'gemini',
   'kimi',
+  'dashscope',
   'openai',
   'anthropic',
 ]);
 
-function parsePanelProviders(value: string | undefined): ClinicalLLMProvider[] {
+interface PanelProviderBinding {
+  provider: ClinicalLLMProvider;
+  model?: string;
+}
+
+function parsePanelProviderToken(token: string): PanelProviderBinding | null {
+  const trimmed = token.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const separatorIndex = trimmed.indexOf(':');
+  const providerToken =
+    separatorIndex >= 0 ? trimmed.slice(0, separatorIndex) : trimmed;
+  const modelToken =
+    separatorIndex >= 0 ? trimmed.slice(separatorIndex + 1).trim() : '';
+
+  const provider = providerToken.trim().toLowerCase() as ClinicalLLMProvider;
+  if (!PANEL_PROVIDER_CANDIDATES.has(provider)) {
+    return null;
+  }
+
+  return {
+    provider,
+    model: modelToken || undefined,
+  };
+}
+
+function parsePanelProviders(value: string | undefined): PanelProviderBinding[] {
   if (!value) {
     return [];
   }
   return value
     .split(/[,\|>\s]+/)
-    .map((item) => item.trim().toLowerCase() as ClinicalLLMProvider)
-    .filter((item) => PANEL_PROVIDER_CANDIDATES.has(item));
+    .map((item) => parsePanelProviderToken(item))
+    .filter((item): item is PanelProviderBinding => Boolean(item));
 }
 
-function dedupeProviders(providers: ClinicalLLMProvider[]): ClinicalLLMProvider[] {
-  return [...new Set(providers)];
+function dedupeProviders(providers: PanelProviderBinding[]): PanelProviderBinding[] {
+  const deduped: PanelProviderBinding[] = [];
+  const seen = new Set<string>();
+
+  for (const provider of providers) {
+    const key = `${provider.provider}::${(provider.model ?? '').toLowerCase()}`;
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    deduped.push(provider);
+  }
+
+  return deduped;
+}
+
+function resolvePanelProviderBindings(
+  env: NodeJS.ProcessEnv,
+  envKey: string,
+  fallback: PanelProviderBinding[],
+): PanelProviderBinding[] {
+  const parsed = parsePanelProviders(env[envKey]);
+  return dedupeProviders(parsed.length > 0 ? parsed : fallback);
 }
 
 function resolvePanelProviders(
   env: NodeJS.ProcessEnv,
-): Record<'cardiology' | 'generalPractice' | 'metabolic', ClinicalLLMProvider[]> {
+): Record<'cardiology' | 'generalPractice' | 'metabolic', PanelProviderBinding[]> {
   return {
-    cardiology: dedupeProviders(
-      parsePanelProviders(env[PANEL_PROVIDER_ENV_KEYS.cardiology]).length > 0
-        ? parsePanelProviders(env[PANEL_PROVIDER_ENV_KEYS.cardiology])
-        : PANEL_PROVIDER_DEFAULTS.cardiology,
+    cardiology: resolvePanelProviderBindings(
+      env,
+      PANEL_PROVIDER_ENV_KEYS.cardiology,
+      PANEL_PROVIDER_DEFAULTS.cardiology,
     ),
-    generalPractice: dedupeProviders(
-      parsePanelProviders(env[PANEL_PROVIDER_ENV_KEYS.generalPractice]).length > 0
-        ? parsePanelProviders(env[PANEL_PROVIDER_ENV_KEYS.generalPractice])
-        : PANEL_PROVIDER_DEFAULTS.generalPractice,
+    generalPractice: resolvePanelProviderBindings(
+      env,
+      PANEL_PROVIDER_ENV_KEYS.generalPractice,
+      PANEL_PROVIDER_DEFAULTS.generalPractice,
     ),
-    metabolic: dedupeProviders(
-      parsePanelProviders(env[PANEL_PROVIDER_ENV_KEYS.metabolic]).length > 0
-        ? parsePanelProviders(env[PANEL_PROVIDER_ENV_KEYS.metabolic])
-        : PANEL_PROVIDER_DEFAULTS.metabolic,
+    metabolic: resolvePanelProviderBindings(
+      env,
+      PANEL_PROVIDER_ENV_KEYS.metabolic,
+      PANEL_PROVIDER_DEFAULTS.metabolic,
     ),
   };
 }
@@ -183,17 +234,22 @@ class PanelMetabolicAgent extends MetabolicAgent {
 }
 
 function buildPanelProviderStates(
-  providers: ClinicalLLMProvider[],
+  providers: PanelProviderBinding[],
   env: NodeJS.ProcessEnv,
 ): { states: PanelProviderRuntimeState[]; clients: ClinicalLLMClient[] } {
   const states: PanelProviderRuntimeState[] = [];
   const clients: ClinicalLLMClient[] = [];
 
   for (const provider of providers) {
-    const client = createClinicalLLMClientForProvider(provider, env);
+    const client = createClinicalLLMClientForProvider(
+      provider.provider,
+      env,
+      provider.model,
+    );
     const enabled = Boolean(client);
     states.push({
-      provider,
+      provider: provider.provider,
+      model: provider.model,
       llmEnabled: enabled,
     });
     if (client) {

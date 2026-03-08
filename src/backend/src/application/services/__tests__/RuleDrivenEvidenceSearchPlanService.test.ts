@@ -45,14 +45,27 @@ describe('RuleDrivenEvidenceSearchPlanService', () => {
     });
 
     expect(plan.query).toContain('hypertension guideline');
-    expect(plan.requiredSources).toEqual(
-      expect.arrayContaining(['WHO', 'NICE']),
-    );
+    expect(plan.requiredSources).toEqual(['WHO']);
     expect(plan.sourceFilter).toEqual(
       expect.arrayContaining(['WHO', 'NICE', 'CDC_US', 'PUBMED']),
     );
     expect(plan.minEvidenceCount).toBe(2);
     expect(plan.limit).toBeGreaterThanOrEqual(5);
+  });
+
+  it('requires NICE for severe hypertension risk', () => {
+    const service = new RuleDrivenEvidenceSearchPlanService();
+    const plan = service.build({
+      request: createRequest(),
+      risk: createRisk({
+        riskLevel: 'L3',
+        matchedRuleIds: [RULE_IDS.FLOW_CONTROL_SEVERE_HTN_SAME_DAY],
+      }),
+    });
+
+    expect(plan.requiredSources).toEqual(
+      expect.arrayContaining(['WHO', 'NICE']),
+    );
   });
 
   it('builds glucose strategy and requires CDC evidence when glucose rule is matched', () => {

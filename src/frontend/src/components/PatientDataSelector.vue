@@ -9,6 +9,10 @@ interface Props {
 interface Emits {
   (e: 'patient-selected', patientId: string): void;
   (e: 'insights-loaded', insights: string[]): void;
+  (e: 'patient-loaded', payload: {
+    patientId: string;
+    patientData: MCPPatientResponse | null;
+  }): void;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -57,12 +61,19 @@ async function loadPatientData() {
   if (!selectedPatientId.value) {
     patientData.value = null;
     patientInsights.value = [];
+    emit('patient-selected', '');
+    emit('insights-loaded', []);
+    emit('patient-loaded', {
+      patientId: '',
+      patientData: null,
+    });
     return;
   }
 
   loading.value = true;
   error.value = null;
   mcpAvailable.value = false;
+  emit('patient-selected', selectedPatientId.value);
 
   try {
     const [patient, insights] = await Promise.all([
@@ -74,13 +85,20 @@ async function loadPatientData() {
     patientData.value = patient;
     patientInsights.value = insights?.insights || [];
     
-    emit('patient-selected', selectedPatientId.value);
     emit('insights-loaded', patientInsights.value);
+    emit('patient-loaded', {
+      patientId: selectedPatientId.value,
+      patientData: patientData.value,
+    });
   } catch (e) {
     mcpAvailable.value = false;
     error.value = e instanceof Error ? e.message : '加载患者数据失败';
     patientData.value = null;
     patientInsights.value = [];
+    emit('patient-loaded', {
+      patientId: selectedPatientId.value,
+      patientData: null,
+    });
   } finally {
     loading.value = false;
   }
@@ -92,6 +110,10 @@ function clearPatient() {
   patientInsights.value = [];
   emit('patient-selected', '');
   emit('insights-loaded', []);
+  emit('patient-loaded', {
+    patientId: '',
+    patientData: null,
+  });
 }
 
 onMounted(() => {

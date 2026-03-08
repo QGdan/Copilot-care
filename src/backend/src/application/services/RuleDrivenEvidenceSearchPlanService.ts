@@ -110,16 +110,19 @@ export class RuleDrivenEvidenceSearchPlanService {
       strategyNotes.push('未命中特定病种规则，采用通用循证检索策略。');
     }
 
+    const riskNumeric = riskToNumeric(riskLevel);
     const sourceFilter = [...DEFAULT_SOURCE_FILTER] as string[];
     const requiredSources = ['WHO'];
-    if (hasHypertensionRule) {
+    if (
+      hasHypertensionRule &&
+      (riskNumeric >= 3 || matchedRuleIds.has(RULE_IDS.FLOW_CONTROL_SEVERE_HTN_SAME_DAY))
+    ) {
       requiredSources.push('NICE');
     }
     if (hasStrokeRule || hasGlucoseRule) {
       requiredSources.push('CDC_US');
     }
 
-    const riskNumeric = riskToNumeric(riskLevel);
     const limit =
       riskNumeric >= 3 ? 6 : riskNumeric >= 2 ? 5 : riskNumeric >= 1 ? 4 : 3;
     const minEvidenceCount = riskNumeric >= 2 ? 2 : 1;

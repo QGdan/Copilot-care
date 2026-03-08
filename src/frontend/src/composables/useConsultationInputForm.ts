@@ -29,6 +29,15 @@ export interface ConsultationQuickInput {
   medicationHistoryText?: string;
 }
 
+export interface ConsultationPatientDataContext {
+  patientId?: string;
+  age?: number;
+  sex?: string;
+  chiefComplaint?: string;
+  chronicDiseases?: string[];
+  medicationHistory?: string[];
+}
+
 interface ConsultationInputValidationMessages {
   symptomRequired: string;
   ageInvalid: string;
@@ -51,6 +60,10 @@ export interface ConsultationInputFormState {
   setAdvancedInputsVisible: (visible: boolean) => void;
   toggleAdvancedInputs: () => void;
   applyQuickInput: (input: ConsultationQuickInput, disabled?: boolean) => void;
+  applyPatientDataContext: (
+    patientData: ConsultationPatientDataContext | null,
+    selectedPatientId?: string,
+  ) => void;
   buildProfile: () => PatientProfile;
   buildSignals: () => HealthSignal[];
   buildRequestPayload: () => TriageRequest;
@@ -103,6 +116,21 @@ function parseOptionalNumber(value: unknown): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function normalizeSelectedPatientId(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+}
+
+function normalizeSex(
+  value: string | undefined,
+): 'male' | 'female' | 'other' | undefined {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === 'male' || normalized === 'female' || normalized === 'other') {
+    return normalized;
+  }
+  return undefined;
+}
+
 function buildPatientProfile(
   form: ConsultationInputForm,
   options: BuildPatientProfileOptions,
@@ -142,6 +170,7 @@ export function useConsultationInputForm(
     ...options.defaultForm,
   });
   const showAdvancedInputs = ref<boolean>(false);
+  const selectedPatientId = ref<string | undefined>(undefined);
 
   function setAdvancedInputsVisible(visible: boolean): void {
     showAdvancedInputs.value = visible;
@@ -167,9 +196,43 @@ export function useConsultationInputForm(
     form.value.medicationHistoryText = input.medicationHistoryText ?? '';
   }
 
+  function applyPatientDataContext(
+    patientData: ConsultationPatientDataContext | null,
+    explicitSelectedPatientId?: string,
+  ): void {
+    selectedPatientId.value =
+      normalizeSelectedPatientId(explicitSelectedPatientId) ??
+      normalizeSelectedPatientId(patientData?.patientId);
+
+    if (!patientData) {
+      return;
+    }
+
+    const normalizedSex = normalizeSex(patientData.sex);
+    if (typeof patientData.chiefComplaint === 'string') {
+      form.value.symptomText = patientData.chiefComplaint.trim();
+    }
+    if (
+      Number.isFinite(patientData.age) &&
+      typeof patientData.age === 'number' &&
+      patientData.age > 0
+    ) {
+      form.value.age = Math.floor(patientData.age);
+    }
+    if (normalizedSex) {
+      form.value.sex = normalizedSex;
+    }
+    if (Array.isArray(patientData.chronicDiseases)) {
+      form.value.chronicDiseasesText = patientData.chronicDiseases.join(', ');
+    }
+    if (Array.isArray(patientData.medicationHistory)) {
+      form.value.medicationHistoryText = patientData.medicationHistory.join(', ');
+    }
+  }
+
   function buildProfile(): PatientProfile {
     return buildPatientProfile(form.value, {
-      fallbackPatientId: `demo-${Date.now()}`,
+      fallbackPatientId: selectedPatientId.value ?? `demo-${Date.now()}`,
     });
   }
 
@@ -203,9 +266,11 @@ export function useConsultationInputForm(
   }
 
   function buildExportPatientProfile(): PatientProfile {
-    const fallbackPatientId = form.value.age
-      ? `demo-${Date.now()}`
-      : 'demo';
+    const fallbackPatientId = selectedPatientId.value ?? (
+      form.value.age
+        ? `demo-${Date.now()}`
+        : 'demo'
+    );
     return buildPatientProfile(form.value, { fallbackPatientId });
   }
 
@@ -237,6 +302,7 @@ export function useConsultationInputForm(
     setAdvancedInputsVisible,
     toggleAdvancedInputs,
     applyQuickInput,
+    applyPatientDataContext,
     buildProfile,
     buildSignals,
     buildRequestPayload,

@@ -26,6 +26,7 @@ import {
   useConsultationInputForm,
   type ConsultationQuickInput,
 } from '../composables/useConsultationInputForm';
+import type { MCPPatientResponse } from '../services/api';
 import {
   type ConsultationReasoningKind,
   type ConsultationStageRuntimeState,
@@ -211,6 +212,7 @@ const {
   setAdvancedInputsVisible,
   toggleAdvancedInputs,
   applyQuickInput: applyFormQuickInput,
+  applyPatientDataContext,
   buildRequestPayload,
   buildExportPatientProfile,
   validateInput,
@@ -558,6 +560,14 @@ function isFieldRequired(field: string): boolean {
 
 function handlePatientSelected(patientIdValue: string): void {
   patientId.value = patientIdValue;
+  applyPatientDataContext(null, patientIdValue);
+}
+
+function handlePatientDataLoaded(payload: {
+  patientId: string;
+  patientData: MCPPatientResponse | null;
+}): void {
+  applyPatientDataContext(payload.patientData, payload.patientId);
 }
 
 function handleInsightsLoaded(insights: string[]): void {
@@ -683,6 +693,7 @@ watch(isDragging, (dragging) => {
         @toggle-demo-mode="toggleDemoMode"
         @patient-selected="handlePatientSelected"
         @insights-loaded="handleInsightsLoaded"
+        @patient-loaded="handlePatientDataLoaded"
       />
     </div>
 

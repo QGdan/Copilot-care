@@ -16,6 +16,8 @@ export interface SearchRuntimeConfig {
   cacheMaxEntries?: number;
   providerFailureThreshold?: number;
   providerCircuitOpenMs?: number;
+  runtimeLogFilePath?: string;
+  recentSearchLogLimit?: number;
 }
 
 export interface ResolvedSearchRuntimeConfig {
@@ -30,6 +32,8 @@ export interface ResolvedSearchRuntimeConfig {
   cacheMaxEntries: number;
   providerFailureThreshold: number;
   providerCircuitOpenMs: number;
+  runtimeLogFilePath?: string;
+  recentSearchLogLimit: number;
 }
 
 export type HttpGetText = (

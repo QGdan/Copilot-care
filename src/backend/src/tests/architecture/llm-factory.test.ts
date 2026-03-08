@@ -57,6 +57,16 @@ describe('Architecture Smoke - LLM factory', () => {
     expect(typeof client?.generateOpinion).toBe('function');
   });
 
+  it('creates DashScope client when provider and key are provided', () => {
+    const client = createClinicalLLMClient({
+      COPILOT_CARE_LLM_PROVIDER: 'dashscope',
+      DASHSCOPE_API_KEY: 'dashscope-key',
+      DASHSCOPE_LLM_MODEL: 'qwen-plus',
+    });
+    expect(client).not.toBeNull();
+    expect(typeof client?.generateOpinion).toBe('function');
+  });
+
   it('creates separated expert clients by role provider settings', () => {
     const clients = createClinicalExpertLLMClients({
       COPILOT_CARE_CARDIO_PROVIDER: 'deepseek',
@@ -72,6 +82,26 @@ describe('Architecture Smoke - LLM factory', () => {
     expect(clients.generalPractice).not.toBeNull();
     expect(clients.metabolic).not.toBeNull();
     expect(clients.safety).not.toBeNull();
+  });
+
+  it('respects configured auto-chain order when provider is auto', () => {
+    const client = createClinicalLLMClient({
+      COPILOT_CARE_LLM_PROVIDER: 'auto',
+      COPILOT_CARE_LLM_AUTO_CHAIN: 'dashscope,kimi',
+      DASHSCOPE_API_KEY: 'dashscope-key',
+      KIMI_API_KEY: 'kimi-key',
+    });
+    expect(client).not.toBeNull();
+    expect(typeof client?.generateOpinion).toBe('function');
+  });
+
+  it('returns null when auto-chain is pinned to unavailable providers only', () => {
+    const client = createClinicalLLMClient({
+      COPILOT_CARE_LLM_PROVIDER: 'auto',
+      COPILOT_CARE_LLM_AUTO_CHAIN: 'openai',
+      DASHSCOPE_API_KEY: 'dashscope-key',
+    });
+    expect(client).toBeNull();
   });
 
   it('falls back to defaults when expert provider value is invalid', () => {

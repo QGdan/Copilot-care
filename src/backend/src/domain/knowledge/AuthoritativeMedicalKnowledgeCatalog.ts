@@ -58,6 +58,25 @@ export interface AuthoritativeMedicalSearchResult {
   generatedAt: string;
   realtimeCount: number;
   fallbackCount: number;
+  fallbackReasons?: string[];
+  missingRequiredSources?: string[];
+}
+
+export interface AuthoritativeMedicalSearchTraceEntry {
+  traceId: string;
+  generatedAt: string;
+  query: string;
+  limit: number;
+  sourceFilter: string[];
+  requiredSources: string[];
+  fromCache: boolean;
+  resultCount: number;
+  realtimeCount: number;
+  fallbackCount: number;
+  droppedByPolicy: number;
+  usedSources: string[];
+  fallbackReasons: string[];
+  missingRequiredSources: string[];
 }
 
 export interface MedicalSearchProviderRuntimeStats {
@@ -79,6 +98,7 @@ export interface AuthoritativeMedicalSearchRuntimeStats {
   cacheMisses: number;
   fallbackAppliedCount: number;
   providerStats: MedicalSearchProviderRuntimeStats[];
+  recentSearches?: AuthoritativeMedicalSearchTraceEntry[];
 }
 
 export const AUTHORITATIVE_MEDICAL_SOURCES: readonly AuthoritativeMedicalSource[] = [
@@ -97,7 +117,7 @@ export const AUTHORITATIVE_MEDICAL_SOURCES: readonly AuthoritativeMedicalSource[
     region: 'international',
     category: 'guideline',
     homepageUrl: 'https://www.nice.org.uk/guidance',
-    hostRules: ['www.nice.org.uk'],
+    hostRules: ['nice.org.uk', 'www.nice.org.uk', '*.nice.org.uk'],
     description: 'UK evidence-based guideline authority.',
   },
   {
@@ -106,7 +126,7 @@ export const AUTHORITATIVE_MEDICAL_SOURCES: readonly AuthoritativeMedicalSource[
     region: 'international',
     category: 'public_health',
     homepageUrl: 'https://www.who.int/',
-    hostRules: ['www.who.int'],
+    hostRules: ['who.int', 'www.who.int', '*.who.int'],
     description: 'Global public health authority and guidance.',
   },
   {
@@ -115,7 +135,7 @@ export const AUTHORITATIVE_MEDICAL_SOURCES: readonly AuthoritativeMedicalSource[
     region: 'international',
     category: 'public_health',
     homepageUrl: 'https://www.cdc.gov/',
-    hostRules: ['www.cdc.gov'],
+    hostRules: ['cdc.gov', 'www.cdc.gov', '*.cdc.gov'],
     description: 'US Centers for Disease Control and Prevention.',
   },
   {

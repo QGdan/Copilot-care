@@ -67,7 +67,27 @@ function resolveSearchResultUrl(rawHref: string): string | null {
     return null;
   }
 
+  const resolveDuckDuckGoRedirect = (value: string): string | null => {
+    try {
+      const target = new URL(value);
+      if (!/duckduckgo\.com$/i.test(target.hostname)) {
+        return null;
+      }
+      if (!target.pathname.startsWith('/l/')) {
+        return null;
+      }
+      const decoded = target.searchParams.get('uddg');
+      return decoded ? decodeURIComponent(decoded) : null;
+    } catch {
+      return null;
+    }
+  };
+
   if (href.startsWith('http://') || href.startsWith('https://')) {
+    const redirected = resolveDuckDuckGoRedirect(href);
+    if (redirected) {
+      return redirected;
+    }
     return href;
   }
 
@@ -75,7 +95,10 @@ function resolveSearchResultUrl(rawHref: string): string | null {
     try {
       const target = new URL(`https://duckduckgo.com${href}`);
       const decoded = target.searchParams.get('uddg');
-      return decoded ? decodeURIComponent(decoded) : null;
+      if (decoded) {
+        return decodeURIComponent(decoded);
+      }
+      return null;
     } catch {
       return null;
     }
@@ -96,13 +119,29 @@ function extractSearchSnippetNearAnchor(
     return '';
   }
 
-  const windowText = html.slice(anchorIndex, Math.min(html.length, anchorIndex + 1400));
-  const snippetMatch = /class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/[^>]+>/i
-    .exec(windowText);
-  if (!snippetMatch?.[1]) {
-    return '';
+  const windowText = html.slice(
+    anchorIndex,
+    Math.min(html.length, anchorIndex + 1800),
+  );
+  const snippetPatterns: RegExp[] = [
+    /class=(?:"[^"]*result__snippet[^"]*"|'[^']*result__snippet[^']*')[^>]*>([\s\S]*?)<\/[^>]+>/i,
+    /class=(?:"[^"]*result-snippet[^"]*"|'[^']*result-snippet[^']*')[^>]*>([\s\S]*?)<\/[^>]+>/i,
+    /class=(?:"[^"]*\bsnippet\b[^"]*"|'[^']*\bsnippet\b[^']*')[^>]*>([\s\S]*?)<\/[^>]+>/i,
+    /<p[^>]*>([\s\S]*?)<\/p>/i,
+  ];
+
+  for (const pattern of snippetPatterns) {
+    const snippetMatch = pattern.exec(windowText);
+    if (!snippetMatch?.[1]) {
+      continue;
+    }
+    const cleaned = stripHtml(decodeHtmlEntities(snippetMatch[1]));
+    if (cleaned) {
+      return cleaned;
+    }
   }
-  return stripHtml(decodeHtmlEntities(snippetMatch[1]));
+
+  return '';
 }
 
 export {

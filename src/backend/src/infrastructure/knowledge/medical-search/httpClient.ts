@@ -1,3 +1,4 @@
+import http from 'http';
 import https from 'https';
 import {
   HttpGetText,
@@ -12,7 +13,16 @@ const getTextByHttps: HttpGetText = async (
 ): Promise<string> =>
   new Promise((resolve, reject) => {
     let settled = false;
-    const request = https.request(
+    const requestClient = (() => {
+      try {
+        const target = new URL(url);
+        return target.protocol === 'http:' ? http : https;
+      } catch {
+        return https;
+      }
+    })();
+
+    const request = requestClient.request(
       url,
       {
         method: 'GET',

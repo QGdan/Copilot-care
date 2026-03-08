@@ -146,6 +146,7 @@ export interface ExpertArchitectureResponse {
       string,
       Array<{
         provider: string;
+        model?: string;
         llmEnabled: boolean;
       }>
     >;

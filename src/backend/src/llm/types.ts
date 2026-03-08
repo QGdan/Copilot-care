@@ -30,6 +30,7 @@ export type ClinicalLLMProvider =
   | 'deepseek'
   | 'gemini'
   | 'kimi'
+  | 'dashscope'
   | 'openai'
   | 'anthropic'
   | 'deepseek_gemini';

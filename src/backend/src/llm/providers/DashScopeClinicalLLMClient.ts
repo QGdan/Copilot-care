@@ -11,12 +11,12 @@ import {
   buildClinicalUserPrompt,
 } from '../prompts';
 
-interface KimiConfig extends ClinicalLLMProviderConfig {
+interface DashScopeConfig extends ClinicalLLMProviderConfig {
   apiKey: string;
   baseUrl: string;
 }
 
-function extractKimiText(payload: unknown): string {
+function extractDashScopeText(payload: unknown): string {
   if (!payload || typeof payload !== 'object') {
     return '';
   }
@@ -68,10 +68,10 @@ function extractKimiText(payload: unknown): string {
   return '';
 }
 
-export class KimiClinicalLLMClient implements ClinicalLLMClient {
-  private readonly config: KimiConfig;
+export class DashScopeClinicalLLMClient implements ClinicalLLMClient {
+  private readonly config: DashScopeConfig;
 
-  constructor(config: KimiConfig) {
+  constructor(config: DashScopeConfig) {
     this.config = config;
   }
 
@@ -107,6 +107,6 @@ export class KimiClinicalLLMClient implements ClinicalLLMClient {
       },
     });
 
-    return parseLLMJsonText(extractKimiText(payload));
+    return parseLLMJsonText(extractDashScopeText(payload));
   }
 }

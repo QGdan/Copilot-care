@@ -84,6 +84,12 @@ class MedicalSearchResultCache {
       generatedAt: value.generatedAt,
       realtimeCount: value.realtimeCount,
       fallbackCount: value.fallbackCount,
+      fallbackReasons: value.fallbackReasons
+        ? [...value.fallbackReasons]
+        : undefined,
+      missingRequiredSources: value.missingRequiredSources
+        ? [...value.missingRequiredSources]
+        : undefined,
     };
   }
 }

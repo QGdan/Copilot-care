@@ -145,6 +145,25 @@ describe('Architecture Smoke - HTTP integration', () => {
     expect(payload.runtime.providerStats.length).toBeGreaterThan(0);
   });
 
+  it('returns recent retrieval logs for GET /governance/medical-search/logs', async () => {
+    const response = await fetch(`${baseUrl}/governance/medical-search/logs?limit=10`);
+    const payload = await response.json() as {
+      strictWhitelist: boolean;
+      total: number;
+      logs: Array<{
+        traceId: string;
+        query: string;
+        fallbackReasons: string[];
+      }>;
+    };
+
+    expect(response.status).toBe(200);
+    expect(payload.strictWhitelist).toBe(true);
+    expect(payload.total).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(payload.logs)).toBe(true);
+    expect(payload.logs.length).toBeLessThanOrEqual(10);
+  });
+
   it('returns filtered authoritative links for POST /governance/medical-search', async () => {
     const response = await fetch(`${baseUrl}/governance/medical-search`, {
       method: 'POST',

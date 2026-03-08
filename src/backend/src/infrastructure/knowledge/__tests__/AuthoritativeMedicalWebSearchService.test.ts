@@ -262,9 +262,7 @@ describe('AuthoritativeMedicalWebSearchService', () => {
     expect(
       result.results.every((item) => item.snippet.trim().length > 0),
     ).toBe(true);
-    expect(
-      result.results.every((item) => !item.snippet.includes('目录兜底')),
-    ).toBe(true);
+    expect(result.results.every((item) => !item.snippet.includes('catalog_seed'))).toBe(true);
   });
 
   it('does not pad seed fallback when realtime evidence already exists by default', async () => {
@@ -323,6 +321,86 @@ describe('AuthoritativeMedicalWebSearchService', () => {
     expect(result.fallbackCount).toBe(0);
   });
 
+  it('keeps realtime-only output when partial-seed-fill is enabled but live coverage is sufficient', async () => {
+    const httpGetText = jest.fn(async (url: string) => {
+      if (url.includes('duckduckgo.com/html')) {
+        return [
+          '<div class="result">',
+          '<a class="result__a" href="https://www.who.int/news-room/fact-sheets/detail/hypertension">WHO Hypertension Fact Sheet</a>',
+          '<div class="result__snippet">WHO recommends reducing sodium intake and regular blood pressure screening in adults.</div>',
+          '</div>',
+          '<div class="result">',
+          '<a class="result__a" href="https://www.nice.org.uk/guidance/ng136/chapter/Recommendations">NICE Hypertension Guideline</a>',
+          '<div class="result__snippet">NICE recommends structured blood pressure follow-up and risk stratification.</div>',
+          '</div>',
+        ].join('\n');
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: true,
+        allowPartialSeedFill: true,
+      },
+      httpGetText,
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 4,
+      sourceFilter: ['WHO', 'NICE'],
+      requiredSources: ['WHO', 'NICE'],
+    });
+
+    expect(result.realtimeCount).toBe(2);
+    expect(result.fallbackCount).toBe(0);
+    expect(result.usedSources).toEqual(expect.arrayContaining(['WHO', 'NICE']));
+  });
+
+  it('does not force catalog fallback when only required-source coverage is missing', async () => {
+    const httpGetText = jest.fn(async (url: string) => {
+      if (url.includes('duckduckgo.com/html')) {
+        return [
+          '<div class="result">',
+          '<a class="result__a" href="https://www.who.int/news-room/fact-sheets/detail/hypertension">WHO Hypertension Fact Sheet</a>',
+          '<div class="result__snippet">WHO recommends regular blood pressure screening.</div>',
+          '</div>',
+        ].join('\n');
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: true,
+      },
+      httpGetText,
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 4,
+      sourceFilter: ['WHO', 'NICE'],
+      requiredSources: ['WHO', 'NICE'],
+    });
+
+    expect(result.realtimeCount).toBeGreaterThanOrEqual(1);
+    expect(result.fallbackCount).toBe(0);
+    expect(result.fallbackReasons).toEqual([]);
+    expect(result.missingRequiredSources).toEqual(['NICE']);
+  });
+
   it('extracts ddg snippet and renders Chinese evidence summary', async () => {
     const httpGetText = jest.fn(async (url: string) => {
       if (url.includes('duckduckgo.com/html')) {
@@ -356,10 +434,217 @@ describe('AuthoritativeMedicalWebSearchService', () => {
 
     expect(result.results).toHaveLength(1);
     expect(result.results[0]?.sourceId).toBe('WHO');
-    expect(result.results[0]?.snippet).toContain('World Health Organization');
-    expect(result.results[0]?.snippet).toContain('减少钠盐摄入');
+    expect(result.results[0]?.snippet).toContain('\u6765\u6e90\uff1a');
+    expect(result.results[0]?.snippet).toContain('\u51cf\u5c11');
+    expect(/[A-Za-z]{3,}/.test(result.results[0]?.snippet ?? '')).toBe(false);
     expect(result.realtimeCount).toBe(1);
     expect(result.fallbackCount).toBe(0);
+  });
+
+  it('accepts alternate ddg anchor/snippet markup variants', async () => {
+    const httpGetText = jest.fn(async (url: string) => {
+      if (url.includes('duckduckgo.com/html')) {
+        return [
+          '<div class="result">',
+          '<a class="result-link" href="https://www.cdc.gov/high-blood-pressure/about/index.html">CDC Blood Pressure</a>',
+          '<div class="result-snippet">Regular blood pressure screening helps identify silent hypertension.</div>',
+          '</div>',
+        ].join('\n');
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: true,
+      },
+      httpGetText,
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 2,
+      sourceFilter: ['CDC_US'],
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.sourceId).toBe('CDC_US');
+    expect(result.results[0]?.snippet).toContain('\u6765\u6e90\uff1a');
+    expect(/[A-Za-z]{3,}/.test(result.results[0]?.snippet ?? '')).toBe(false);
+    expect(result.realtimeCount).toBe(1);
+    expect(result.fallbackCount).toBe(0);
+  });
+
+  it('resolves full duckduckgo redirect urls to authoritative source urls', async () => {
+    const httpGetText = jest.fn(async (url: string) => {
+      if (url.includes('duckduckgo.com/html')) {
+        return [
+          '<div class="result">',
+          '<a class="result__a" href="https://duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.who.int%2Fnews-room%2Ffact-sheets%2Fdetail%2Fhypertension">WHO Hypertension</a>',
+          '<div class="result__snippet">WHO guidance for blood pressure control.</div>',
+          '</div>',
+        ].join('\n');
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: true,
+      },
+      httpGetText,
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 2,
+      sourceFilter: ['WHO'],
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.sourceId).toBe('WHO');
+    expect(result.results[0]?.snippet).toContain('\u6765\u6e90\uff1a');
+    expect(result.results[0]?.snippet).toContain('\u8bc1\u636e\u8981\u70b9\uff1a');
+    expect(/[A-Za-z]{3,}/.test(result.results[0]?.snippet ?? '')).toBe(false);
+    expect(result.realtimeCount).toBe(1);
+    expect(result.fallbackCount).toBe(0);
+  });
+
+  it('accepts authoritative hosts without www prefix', async () => {
+    const httpGetText = jest.fn(async (url: string) => {
+      if (url.includes('duckduckgo.com/html')) {
+        return [
+          '<div class="result">',
+          '<a class="result__a" href="https://who.int/news-room/fact-sheets/detail/hypertension">WHO Hypertension</a>',
+          '<div class="result__snippet">WHO hypertension guidance.</div>',
+          '</div>',
+          '<div class="result">',
+          '<a class="result__a" href="https://nice.org.uk/guidance/ng136/chapter/Recommendations">NICE Guidance</a>',
+          '<div class="result__snippet">NICE blood pressure recommendations.</div>',
+          '</div>',
+        ].join('\n');
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: true,
+      },
+      httpGetText,
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 3,
+      sourceFilter: ['WHO', 'NICE'],
+      requiredSources: ['WHO', 'NICE'],
+    });
+
+    expect(result.results.length).toBe(2);
+    expect(result.usedSources).toEqual(expect.arrayContaining(['WHO', 'NICE']));
+    expect(result.fallbackCount).toBe(0);
+    expect(result.realtimeCount).toBe(2);
+  });
+
+  it('parses PubMed payload wrapped by code fences', async () => {
+    const httpGetText = jest.fn(async (url: string) => {
+      if (url.includes('esearch.fcgi')) {
+        return [
+          '```json',
+          '{"esearchresult":{"idlist":["71001"]}}',
+          '```',
+        ].join('\n');
+      }
+      if (url.includes('esummary.fcgi')) {
+        return [
+          '```json',
+          '{"result":{"71001":{"title":"PubMed fenced payload","fulljournalname":"PubMed Journal","pubdate":"2026"}}}',
+          '```',
+        ].join('\n');
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: false,
+      },
+      httpGetText,
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 2,
+      sourceFilter: ['PUBMED'],
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.sourceId).toBe('PUBMED');
+    expect(result.realtimeCount).toBe(1);
+    expect(result.fallbackCount).toBe(0);
+  });
+
+  it('probes authoritative seed pages as realtime recovery when providers miss', async () => {
+    const httpGetText = jest.fn(async (url: string) => {
+      if (url.includes('www.who.int')) {
+        return [
+          '<html>',
+          '<head><title>WHO hypertension fact sheet</title><meta name="description" content="Blood pressure control with sodium reduction and regular screening."/></head>',
+          '<body><p>WHO recommends long-term blood pressure monitoring.</p></body>',
+          '</html>',
+        ].join('');
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: false,
+      },
+      httpGetText,
+      {
+        providers: [],
+      },
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 3,
+      sourceFilter: ['WHO'],
+      requiredSources: ['WHO'],
+    });
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.usedSources).toContain('WHO');
+    expect(result.realtimeCount).toBeGreaterThan(0);
+    expect(result.fallbackCount).toBe(0);
+    expect(service.getRuntimeStats().fallbackAppliedCount).toBe(0);
   });
 
   it('reuses cached result for repeated identical query within ttl', async () => {
@@ -412,6 +697,43 @@ describe('AuthoritativeMedicalWebSearchService', () => {
     });
     expect(second).toEqual(first);
     expect(httpGetText).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not cache fallback-heavy results when network mode is enabled', async () => {
+    const httpGetText = jest.fn(async () => {
+      throw new Error('network down');
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: false,
+        cacheTtlMs: 120000,
+        cacheMaxEntries: 16,
+      },
+      httpGetText,
+    );
+
+    const first = await service.search({
+      query: 'hypertension guideline',
+      limit: 3,
+      sourceFilter: ['PUBMED'],
+    });
+    const second = await service.search({
+      query: 'hypertension guideline',
+      limit: 3,
+      sourceFilter: ['PUBMED'],
+    });
+
+    expect(first.fallbackCount).toBeGreaterThan(0);
+    expect(second.fallbackCount).toBeGreaterThan(0);
+    expect(httpGetText).toHaveBeenCalledTimes(2);
+    const runtime = service.getRuntimeStats();
+    expect(runtime.cacheHits).toBe(0);
   });
 
   it('enforces requiredSources coverage when candidates are available', async () => {
@@ -556,4 +878,40 @@ describe('AuthoritativeMedicalWebSearchService', () => {
     expect(runtime.cacheMisses).toBe(2);
     expect(runtime.fallbackAppliedCount).toBeGreaterThanOrEqual(1);
   });
+
+  it('records recent retrieval traces with fallback diagnostics', async () => {
+    const httpGetText = jest.fn(async () => {
+      throw new Error('network down');
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: false,
+        recentSearchLogLimit: 8,
+      },
+      httpGetText,
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 3,
+      sourceFilter: ['PUBMED'],
+      requiredSources: ['PUBMED'],
+    });
+    expect(result.fallbackCount).toBeGreaterThan(0);
+
+    const runtime = service.getRuntimeStats();
+    expect(runtime.recentSearches?.length).toBeGreaterThan(0);
+    expect(runtime.recentSearches?.[0]?.query).toBe('hypertension guideline');
+    expect(runtime.recentSearches?.[0]?.requiredSources).toEqual(['PUBMED']);
+    expect(runtime.recentSearches?.[0]?.fallbackReasons).toEqual(
+      expect.arrayContaining(['no_candidates']),
+    );
+  });
 });
+

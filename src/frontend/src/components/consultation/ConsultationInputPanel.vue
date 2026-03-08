@@ -5,6 +5,7 @@ import type {
   ConsultationInputForm,
   ConsultationQuickInput,
 } from '../../composables/useConsultationInputForm';
+import type { MCPPatientResponse } from '../../services/api';
 import type { RiskSignal } from '../../types/visualization';
 
 interface ChatMessage {
@@ -41,6 +42,10 @@ const emit = defineEmits<{
   (e: 'toggle-demo-mode'): void;
   (e: 'patient-selected', patientId: string): void;
   (e: 'insights-loaded', insights: string[]): void;
+  (e: 'patient-loaded', payload: {
+    patientId: string;
+    patientData: MCPPatientResponse | null;
+  }): void;
 }>();
 </script>
 
@@ -56,6 +61,7 @@ const emit = defineEmits<{
         :disabled="loading"
         @patient-selected="(patientId) => emit('patient-selected', patientId)"
         @insights-loaded="(insights) => emit('insights-loaded', insights)"
+        @patient-loaded="(payload) => emit('patient-loaded', payload)"
       />
 
       <div class="divider"></div>
