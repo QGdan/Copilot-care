@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-02T12:57:18.475Z",
+  "generatedAt": "2026-03-08T15:30:11.817Z",
   "budget": {
     "totalJsMaxBytes": 2600000,
     "totalCssMaxBytes": 150000,
@@ -13,12 +13,12 @@
   },
   "summary": {
     "totalAssets": 24,
-    "totalJsBytes": 1733830,
-    "totalCssBytes": 133496,
+    "totalJsBytes": 1745568,
+    "totalCssBytes": 135070,
     "largestAssetPath": "dist/assets/echarts-charts-Dl6whd7t.js",
     "largestAssetBytes": 476837,
-    "consultationChunkPath": "dist/assets/ConsultationView-DuRm5ygb.js",
-    "consultationChunkBytes": 90843
+    "consultationChunkPath": "dist/assets/ConsultationView-LfG652m9.js",
+    "consultationChunkBytes": 98756
   },
   "assets": [
     {
@@ -27,14 +27,14 @@
       "bytes": 1407
     },
     {
-      "path": "dist/assets/ConsultationView-BbqPykoy.css",
+      "path": "dist/assets/ConsultationView-B9Bu-qYl.css",
       "ext": ".css",
-      "bytes": 38680
+      "bytes": 40254
     },
     {
-      "path": "dist/assets/ConsultationView-DuRm5ygb.js",
+      "path": "dist/assets/ConsultationView-LfG652m9.js",
       "ext": ".js",
-      "bytes": 90843
+      "bytes": 98756
     },
     {
       "path": "dist/assets/echarts-charts-Dl6whd7t.js",
@@ -52,17 +52,17 @@
       "bytes": 12896
     },
     {
-      "path": "dist/assets/FhirExplorerView-BOFPLeu_.js",
-      "ext": ".js",
-      "bytes": 10366
-    },
-    {
       "path": "dist/assets/FhirExplorerView-D25XsSX8.css",
       "ext": ".css",
       "bytes": 7707
     },
     {
-      "path": "dist/assets/GovernanceView-D403FqWc.js",
+      "path": "dist/assets/FhirExplorerView-DBLO6IQU.js",
+      "ext": ".js",
+      "bytes": 10366
+    },
+    {
+      "path": "dist/assets/GovernanceView-Bs3pKYaR.js",
       "ext": ".js",
       "bytes": 73928
     },
@@ -77,6 +77,11 @@
       "bytes": 201041
     },
     {
+      "path": "dist/assets/index-B-TvOfcq.js",
+      "ext": ".js",
+      "bytes": 61609
+    },
+    {
       "path": "dist/assets/index-C0Zqfgkc.js",
       "ext": ".js",
       "bytes": 36615
@@ -87,17 +92,12 @@
       "bytes": 21653
     },
     {
-      "path": "dist/assets/index-DPUjTirT.js",
-      "ext": ".js",
-      "bytes": 61609
-    },
-    {
-      "path": "dist/assets/index.es-DVcX5UgB.js",
+      "path": "dist/assets/index.es-DnJEgUV5.js",
       "ext": ".js",
       "bytes": 159115
     },
     {
-      "path": "dist/assets/PatientDashboardView-Dq03mmIS.js",
+      "path": "dist/assets/PatientDashboardView-CDrgnLjo.js",
       "ext": ".js",
       "bytes": 13115
     },
@@ -107,14 +107,14 @@
       "bytes": 8194
     },
     {
-      "path": "dist/assets/purify.es-Bzr520pe.js",
+      "path": "dist/assets/purify.es-C0_7NiBM.js",
       "ext": ".js",
-      "bytes": 22449
+      "bytes": 22582
     },
     {
-      "path": "dist/assets/reportExport-CEzbSx6T.js",
+      "path": "dist/assets/reportExport-BDBsBvNG.js",
       "ext": ".js",
-      "bytes": 395739
+      "bytes": 398813
     },
     {
       "path": "dist/assets/theme-D0698-ip.js",
@@ -122,7 +122,7 @@
       "bytes": 2261
     },
     {
-      "path": "dist/assets/ThinkingGraph-BtF4t7Ou.js",
+      "path": "dist/assets/ThinkingGraph-BfRKxEQs.js",
       "ext": ".js",
       "bytes": 16336
     },
@@ -132,9 +132,9 @@
       "bytes": 9201
     },
     {
-      "path": "dist/assets/triageApi-OniuZx2u.js",
+      "path": "dist/assets/triageApi-B0Ru5_--.js",
       "ext": ".js",
-      "bytes": 4243
+      "bytes": 4861
     },
     {
       "path": "dist/assets/vue-vendor-D0NjLzHG.js",

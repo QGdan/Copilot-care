@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-03-08T15:27:54.799Z",
-  "mode": "latest",
-  "scope": "production",
+  "generatedAt": "2026-03-08T15:27:54.293Z",
+  "mode": "baseline",
+  "scope": "all",
   "npmAuditExitCode": 0,
   "summary": {
     "info": 0,

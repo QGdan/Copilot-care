@@ -11,6 +11,7 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     port: 5173,
+    strictPort: true,
   },
   build: {
     emptyOutDir: true,
@@ -18,7 +19,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'echarts-core': ['echarts/core'],
           'echarts-charts': ['echarts/charts'],
           'echarts-components': ['echarts/components'],
           'echarts-renderers': ['echarts/renderers'],

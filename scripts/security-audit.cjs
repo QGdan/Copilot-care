@@ -87,6 +87,17 @@ function fail(message) {
   process.exit(1);
 }
 
+function previewText(text, maxLength = 240) {
+  if (!text) {
+    return '';
+  }
+  const singleLine = text.replace(/\s+/g, ' ').trim();
+  if (singleLine.length <= maxLength) {
+    return singleLine;
+  }
+  return `${singleLine.slice(0, maxLength)}...`;
+}
+
 function extractJsonText(rawText) {
   const start = rawText.indexOf('{');
   const end = rawText.lastIndexOf('}');
@@ -105,11 +116,26 @@ function runNpmAudit(omitDev) {
     stdio: 'pipe',
   });
 
-  const output = `${result.stdout || ''}\n${result.stderr || ''}`.trim();
+  if (result.error) {
+    fail(`npm audit command failed to start: ${result.error.message}`);
+  }
+
+  const stdout = typeof result.stdout === 'string' ? result.stdout : '';
+  const stderr = typeof result.stderr === 'string' ? result.stderr : '';
+  const output = `${stdout}\n${stderr}`.trim();
+
+  if (!output) {
+    fail(
+      `npm audit returned empty output (exitCode=${String(result.status)}).`,
+    );
+  }
+
   const jsonText = extractJsonText(output);
 
   if (!jsonText) {
-    fail('npm audit returned no parseable JSON payload.');
+    fail(
+      `npm audit returned no parseable JSON payload (exitCode=${String(result.status)}): ${previewText(output)}`,
+    );
   }
 
   let payload;

@@ -52,7 +52,7 @@ git push origin main
 
 至少确认以下变量：
 
-- `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `KIMI_API_KEY`（按你使用的 provider 填写）
+- `DEEPSEEK_API_KEY` / `GEMINI_API_KEY` / `KIMI_API_KEY` / `DASHSCOPE_API_KEY`（按你使用的 provider 填写）
 - `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`（如果启用对应 provider）
 - `COPILOT_CARE_LLM_PROVIDER`（默认 `auto`）
 - `COPILOT_CARE_CONSENT_TOKEN_ALLOWLIST`（生产环境必须显式提供可用 consent token）
@@ -162,6 +162,25 @@ npm run design:gate
 - `docs/process/todos-workflow.v8_00.json`
 - `reports/todos/workflow-state.json`
 
+## 后续开发工作流（2026-03 建议）
+
+在保持 v8 任务流可追溯的前提下，新增能力建议按下面节奏推进：
+
+1. 任务同步：`npm run design:status && npm run design:next`
+2. 开发前快检：`npm run ci:preflight`
+3. 开发中最小验证（按改动范围择一）：
+   - 前端：`npm run test --workspace=@copilot-care/frontend`
+   - 后端：`npm run test --workspace=@copilot-care/backend`
+   - 全仓：`npm run typecheck`
+4. 提交前统一验证：`npm run ci:verify`
+5. 发版前验证：`npm run health:release`（等价 CI 同款）
+
+失败反馈建议：
+
+- 运行态日志放在 `reports/runtime/*.log`
+- 安全审计报告放在 `reports/security/*.json`
+- 指标与门禁证据放在 `reports/metrics/*.json`
+
 ## 本地运行（前后端）
 
 为避免前端连到旧后端实例，建议使用“同一端口显式绑定”方式启动。
@@ -175,7 +194,7 @@ npm run start --workspace=@copilot-care/backend
 
 # terminal B（前端，PowerShell）
 $env:VITE_API_BASE_URL='http://127.0.0.1:3101'
-npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173
+npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
 ```bash
@@ -185,7 +204,7 @@ npm run start --workspace=@copilot-care/backend
 
 # terminal B（前端，Bash）
 export VITE_API_BASE_URL=http://127.0.0.1:3101
-npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173
+npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
 启动后访问：
@@ -200,6 +219,7 @@ npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173
 
 - 前端代码默认会尝试 `3001/8002`；如果你本机已有旧实例在这些端口，页面可能看不到最新 `ruleGovernance` 与 FHIR 互操作能力；
 - 因此请优先设置 `VITE_API_BASE_URL`，确保前后端严格指向同一后端进程。
+- 前端建议带 `--strictPort` 启动，避免 5173 被占用时自动跳到 5174 导致联调地址漂移。
 
 ### 生产暴露面说明
 
@@ -258,7 +278,7 @@ taskkill /PID <PID> /F
 ```bash
 netstat -ano | findstr :5173
 taskkill /PID <PID> /F
-npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173
+npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173 --strictPort
 ```
 
 3. 依赖或缓存异常（如 Vite/esbuild 进程错误）：
@@ -275,8 +295,10 @@ npm run build --workspace=@copilot-care/frontend
 
 ```bash
 # 全局 provider
-# none | auto | deepseek | gemini | kimi | deepseek_gemini | openai | anthropic
+# none | auto | deepseek | gemini | kimi | dashscope | deepseek_gemini | openai | anthropic
 COPILOT_CARE_LLM_PROVIDER=auto
+# 可选：auto 模式下 provider 回退顺序
+# COPILOT_CARE_LLM_AUTO_CHAIN=dashscope,kimi,deepseek,gemini,openai,anthropic
 COPILOT_CARE_LLM_TIMEOUT_MS=20000
 COPILOT_CARE_LLM_MAX_RETRIES=1
 COPILOT_CARE_LLM_RETRY_DELAY_MS=300
@@ -291,8 +313,14 @@ COPILOT_CARE_SAFETY_PROVIDER=kimi
 DEEPSEEK_API_KEY=...
 GEMINI_API_KEY=...
 KIMI_API_KEY=...
+# DASHSCOPE_API_KEY=...
 # OPENAI_API_KEY=...
 # ANTHROPIC_API_KEY=...
+
+# 可选：同一专科并行多模型（provider 或 provider:model）
+# COPILOT_CARE_CARDIO_PANEL_PROVIDERS=deepseek,gemini,dashscope:qwen-plus,dashscope:qwen-max
+# COPILOT_CARE_GP_PANEL_PROVIDERS=gemini,dashscope:qwen-plus
+# COPILOT_CARE_METABOLIC_PANEL_PROVIDERS=gemini,dashscope:qwen-plus
 ```
 
 可选 base URL：
@@ -302,6 +330,7 @@ KIMI_API_KEY=...
 - `GEMINI_BASE_URL`（默认 `https://generativelanguage.googleapis.com/v1beta`）
 - `DEEPSEEK_BASE_URL`（默认 `https://api.deepseek.com/v1`）
 - `KIMI_BASE_URL`（默认 `https://api.moonshot.cn/v1`）
+- `DASHSCOPE_BASE_URL`（默认 `https://dashscope.aliyuncs.com/compatible-mode/v1`）
 
 可选权威医学联网检索开关：
 
@@ -314,6 +343,8 @@ KIMI_API_KEY=...
 - `COPILOT_CARE_MED_SEARCH_CACHE_MAX_ENTRIES`（默认 `128`；检索结果缓存最大条目数）
 - `COPILOT_CARE_MED_SEARCH_PROVIDER_FAILURE_THRESHOLD`（默认 `3`；单个 provider 连续失败达到阈值后进入熔断）
 - `COPILOT_CARE_MED_SEARCH_PROVIDER_CIRCUIT_OPEN_MS`（默认 `60000`；provider 熔断保持时长，单位毫秒）
+- `COPILOT_CARE_MED_SEARCH_RUNTIME_LOG_FILE`（默认 `reports/runtime/medical-search.runtime.jsonl`；设置后会落盘每次检索诊断日志）
+- `COPILOT_CARE_MED_SEARCH_RECENT_LOG_LIMIT`（默认 `40`；内存中保留最近检索日志条数）
 - `COPILOT_CARE_MED_SEARCH_IN_TRIAGE`（默认跟随 `COPILOT_CARE_MED_SEARCH_ENABLED`；显式设为 `false` 可关闭分诊注入）
 
 ## 架构与可观测接口
@@ -338,11 +369,13 @@ GET /governance/rules/version
 ```bash
 GET /governance/medical-sources
 GET /governance/medical-search/runtime
+GET /governance/medical-search/logs
 POST /governance/medical-search
 ```
 
 `POST /governance/medical-search` 采用多源去偏策略：优先覆盖 `NICE/WHO/CDC/NHC/China CDC` 等公共卫生与指南来源，再补充 `PUBMED` 文献证据，避免单一来源主导结果集。
 返回中新增 `sourceBreakdown`（来源分布统计）与 `strategyVersion`（策略版本），便于联调与审计。
+`GET /governance/medical-search/runtime` 与 `GET /governance/medical-search/logs` 会返回最近检索日志（含 `fallbackReasons` 与 `missingRequiredSources`），用于定位“为何触发兜底/为何缺少必选来源”。
 支持可选请求参数：
 
 - `sourceFilter: string[]`：限制检索来源（仅允许白名单来源 ID）

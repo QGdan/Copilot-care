@@ -39,7 +39,7 @@ vi.mock('html2canvas', () => ({
 
 const StubPatientDataSelector = defineComponent({
   name: 'PatientDataSelector',
-  emits: ['patient-selected', 'insights-loaded'],
+  emits: ['patient-selected', 'insights-loaded', 'patient-loaded'],
   template: '<div data-testid="patient-selector"></div>',
 });
 
@@ -66,6 +66,16 @@ const StubDemoModePanel = defineComponent({
 const StubCoordinatorTaskBoard = defineComponent({
   name: 'CoordinatorTaskBoard',
   template: '<div data-testid="coordinator-task-board"></div>',
+});
+
+const StubThinkingGraph = defineComponent({
+  name: 'ThinkingGraph',
+  template: '<div data-testid="thinking-graph"></div>',
+});
+
+const StubConsultationReasoningCockpitCard = defineComponent({
+  name: 'ConsultationReasoningCockpitCard',
+  template: '<div data-testid="reasoning-cockpit"></div>',
 });
 
 const StubConsultationResultPanel = defineComponent({
@@ -176,6 +186,8 @@ function mountConsultationView() {
         ReasoningTraceTimeline: StubReasoningTraceTimeline,
         DemoModePanel: StubDemoModePanel,
         CoordinatorTaskBoard: StubCoordinatorTaskBoard,
+        ThinkingGraph: StubThinkingGraph,
+        ConsultationReasoningCockpitCard: StubConsultationReasoningCockpitCard,
         ConsultationResultPanel: StubConsultationResultPanel,
       },
     },
@@ -365,6 +377,51 @@ describe('ConsultationView integration smoke', () => {
     expect(payload.symptomText).toBe('胸闷伴头晕，近期血压波动');
     expect(payload.profile?.chiefComplaint).toBe('胸闷伴头晕，近期血压波动');
     expect(wrapper.text()).toContain('会诊完成');
+  });
+
+  it('uses selected patient context when building triage request payload', async () => {
+    orchestrateTriageStreamMock.mockImplementationOnce(async (_payload, options) => {
+      options.onEvent({
+        type: 'final_result',
+        timestamp: new Date().toISOString(),
+        result: createOutputFinalResult(),
+      });
+    });
+
+    const wrapper = mountConsultationView();
+    const selector = wrapper.getComponent(StubPatientDataSelector);
+    selector.vm.$emit('patient-selected', 'patient-777');
+    selector.vm.$emit('patient-loaded', {
+      patientId: 'patient-777',
+      patientData: {
+        patientId: 'patient-777',
+        age: 61,
+        sex: 'female',
+        chiefComplaint: 'headache and dizziness',
+        chronicDiseases: ['Hypertension'],
+        medicationHistory: ['amlodipine'],
+      },
+    });
+    await flushPromises();
+
+    await getSubmitButton(wrapper).trigger('click');
+    await flushPromises();
+
+    expect(orchestrateTriageStreamMock).toHaveBeenCalledTimes(1);
+    const payload = orchestrateTriageStreamMock.mock.calls[0]?.[0] as {
+      symptomText?: string;
+      profile?: {
+        patientId?: string;
+        age?: number;
+        sex?: string;
+        chiefComplaint?: string;
+      };
+    };
+    expect(payload.profile?.patientId).toBe('patient-777');
+    expect(payload.profile?.age).toBe(61);
+    expect(payload.profile?.sex).toBe('female');
+    expect(payload.profile?.chiefComplaint).toBe('headache and dizziness');
+    expect(payload.symptomText).toBe('headache and dizziness');
   });
 
   it('exports consultation report as pdf when exporter succeeds', async () => {

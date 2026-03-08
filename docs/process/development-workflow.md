@@ -1,5 +1,51 @@
 ﻿# Architecture-First Development Workflow (Iteration 1)
 
+## Current Update (2026-03)
+
+This project is now operated in a mixed mode:
+
+- Legacy architecture baseline and gate contracts from Iteration 1 stay enforced.
+- Active delivery uses the v8 TODO manifest plus governance follow-up scripts.
+
+Recommended execution loop per change:
+
+1. Sync task context.
+- `npm run design:status`
+- `npm run design:next`
+
+2. Run preflight before coding.
+- `npm run ci:preflight`
+
+3. Implement the minimum viable change.
+- Keep architecture boundaries (`domain -> application -> infrastructure/interfaces`) intact.
+- Add tests for new public behavior.
+
+4. Run scoped verification.
+- Frontend change: `npm run test --workspace=@copilot-care/frontend`
+- Backend change: `npm run test --workspace=@copilot-care/backend`
+- Shared contract change: `npm run test --workspace=@copilot-care/shared`
+
+5. Run unified verification before merge.
+- `npm run ci:verify`
+
+6. Record evidence.
+- Update `reports/todos/workflow-state.json` evidence paths.
+- Ensure reports are available under `reports/runtime`, `reports/metrics`, `reports/security` if relevant.
+
+Local runtime stability rules:
+
+- Backend fixed port: `APP_PORT=3101`
+- Frontend fixed port: `npm run dev --workspace=@copilot-care/frontend -- --host 127.0.0.1 --port 5173 --strictPort`
+- If `5173` is occupied, free the port first instead of auto-fallback to `5174`.
+
+Failure feedback policy:
+
+- Any gate/test failure should be attached with command, exit code, and log path.
+- Security audit failures must include `reports/security/npm-audit.latest.json` (if generated).
+- Runtime integration failures must include `reports/runtime/*.log`.
+
+The remaining sections in this file document the original Iteration 1 baseline and remain valid as historical constraints.
+
 ## Iteration 1 Scope Freeze
 
 - Goal: close architecture loop and stabilize gates before detail optimization.
@@ -184,3 +230,4 @@ The live consultation stream now follows this fixed loop:
   - MCP endpoint root (`/patient/context` is invoked when enabled)
 - `COPILOT_CARE_MCP_API_KEY`
   - optional MCP auth token
+
