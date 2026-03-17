@@ -1,0 +1,44 @@
+{
+  "generatedAt": "2026-03-15T12:19:58.400Z",
+  "sources": {
+    "baseline": "reports\\metrics\\rag-hybrid.flag-off.online.latest.json",
+    "candidate": "reports\\metrics\\rag-hybrid.flag-on.online.latest.json"
+  },
+  "baseline": {
+    "sampleCount": 30,
+    "top3HitRate": 1,
+    "mrrAt5": 0.9667,
+    "requiredSourceCoverageRate": 0.8667,
+    "redFlagEvidenceRecall": 1,
+    "summaryStructuredRate": 1,
+    "averageLatencyMs": 25424.6877,
+    "realtimeShare": 1,
+    "multiSourceRate": 1
+  },
+  "candidate": {
+    "sampleCount": 30,
+    "top3HitRate": 1,
+    "mrrAt5": 0.9667,
+    "requiredSourceCoverageRate": 0.8667,
+    "redFlagEvidenceRecall": 1,
+    "summaryStructuredRate": 1,
+    "averageLatencyMs": 26026.769,
+    "realtimeShare": 1,
+    "multiSourceRate": 1
+  },
+  "delta": {
+    "top3HitRate": 0,
+    "mrrAt5": 0,
+    "requiredSourceCoverageRate": 0,
+    "redFlagEvidenceRecall": 0,
+    "summaryStructuredRate": 0,
+    "averageLatencyMs": 602.08,
+    "realtimeShare": 0,
+    "multiSourceRate": 0
+  },
+  "verdict": {
+    "score": 0,
+    "latencyTrend": "degraded",
+    "recommendation": "needs_canary"
+  }
+}

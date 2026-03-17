@@ -18,6 +18,7 @@ export interface SearchRuntimeConfig {
   providerCircuitOpenMs?: number;
   runtimeLogFilePath?: string;
   recentSearchLogLimit?: number;
+  hybridRetrievalEnabled?: boolean;
 }
 
 export interface ResolvedSearchRuntimeConfig {
@@ -34,6 +35,7 @@ export interface ResolvedSearchRuntimeConfig {
   providerCircuitOpenMs: number;
   runtimeLogFilePath?: string;
   recentSearchLogLimit: number;
+  hybridRetrievalEnabled: boolean;
 }
 
 export type HttpGetText = (
@@ -67,6 +69,7 @@ export interface SearchCacheEntry {
 
 export interface MedicalSearchProviderContext {
   query: string;
+  retrievalQueries: string[];
   limit: number;
   allowedSources: AuthoritativeMedicalSource[];
   allowedSourceIds: Set<string>;
@@ -101,4 +104,4 @@ export const SOURCE_PRIORITY_ORDER = [
   'NMPA',
   PUBMED_SOURCE_ID,
 ] as const;
-export const SEARCH_STRATEGY_VERSION = 'authority-multisource-v3.0';
+export const SEARCH_STRATEGY_VERSION = 'authority-multisource-v3.2';

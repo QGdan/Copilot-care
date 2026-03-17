@@ -34,6 +34,7 @@
     "security:gate": "node scripts/security-audit.cjs latest --omit-dev --enforce --max-high 0 --max-critical 0",
     "security:secrets": "node scripts/check-secrets-leak.cjs",
     "metrics:m3": "npm run build --workspace=@copilot-care/backend && node scripts/m3-metrics.cjs",
+    "metrics:rag": "npm run build --workspace=@copilot-care/backend && node scripts/rag-offline-eval.cjs",
     "ledger:metrics": "node scripts/metric-ledger.cjs",
     "batch:m5": "npm run build --workspace=@copilot-care/backend && node scripts/m5-batch-replay.cjs",
     "scenarios:replicate": "npm run build --workspace=@copilot-care/backend && node scripts/scenario-replicate.cjs",
@@ -92,6 +93,23 @@
     "governance:auto:status": "node scripts/governance-autopilot.cjs status --manifest=docs/process/todos-workflow.v9_50-governance-autopilot.json",
     "governance:auto:next": "node scripts/governance-autopilot.cjs next --manifest=docs/process/todos-workflow.v9_50-governance-autopilot.json",
     "governance:auto:run": "node scripts/governance-autopilot.cjs run --manifest=docs/process/todos-workflow.v9_50-governance-autopilot.json --report=reports/todos/governance-v950-autopilot.latest.json",
-    "governance:auto:workflow": "npm run governance:auto:sync && npm run governance:auto:status && npm run governance:auto:next"
+    "governance:auto:workflow": "npm run governance:auto:sync && npm run governance:auto:status && npm run governance:auto:next",
+    "gap:sync": "node scripts/gap-remediation-workflow.cjs sync --manifest=docs/process/gap-remediation-workflow.v10_00.json",
+    "gap:status": "node scripts/gap-remediation-workflow.cjs status --manifest=docs/process/gap-remediation-workflow.v10_00.json",
+    "gap:next": "node scripts/gap-remediation-workflow.cjs next --manifest=docs/process/gap-remediation-workflow.v10_00.json",
+    "gap:run": "node scripts/gap-remediation-workflow.cjs run --manifest=docs/process/gap-remediation-workflow.v10_00.json --report=reports/todos/gap-remediation.latest.json",
+    "gap:accept": "node scripts/gap-remediation-workflow.cjs accept --manifest=docs/process/gap-remediation-workflow.v10_00.json --report=reports/todos/gap-remediation.latest.json",
+    "gap:workflow": "npm run gap:sync && npm run gap:status && npm run gap:next",
+    "rag:hybrid:sync": "node scripts/rag-hybrid-workflow.cjs sync",
+    "rag:hybrid:status": "node scripts/rag-hybrid-workflow.cjs status",
+    "rag:hybrid:next": "node scripts/rag-hybrid-workflow.cjs next",
+    "rag:hybrid:run": "node scripts/rag-hybrid-workflow.cjs run --max=1 --retries=2 --no-rollback",
+    "rag:hybrid:accept": "node scripts/rag-hybrid-workflow.cjs accept",
+    "rag:hybrid:workflow": "npm run rag:hybrid:sync && npm run rag:hybrid:status && npm run rag:hybrid:next",
+    "rag:hybrid:audit:offline": "npm run metrics:rag -- --limit=120 --network=false --hybrid=true --timeout-ms=4000 --output=reports/metrics/rag-hybrid.offline.latest.json --report=docs/process/rag-hybrid-offline-report.md",
+    "rag:hybrid:audit:online": "npm run metrics:rag -- --limit=120 --network=true --hybrid=true --timeout-ms=4000 --output=reports/metrics/rag-hybrid.online.latest.json --report=docs/process/rag-hybrid-online-report.md",
+    "rag:hybrid:audit": "node scripts/rag-hybrid-audit.cjs",
+    "rag:hybrid:flag:compare": "node scripts/rag-hybrid-flag-compare.cjs",
+    "dataset:preprocess:chronic": "node scripts/preprocess-chronic-disease-dataset.cjs"
   }
 }

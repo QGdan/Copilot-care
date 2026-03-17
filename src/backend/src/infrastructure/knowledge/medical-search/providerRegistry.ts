@@ -20,7 +20,7 @@ class PubMedMedicalSearchProvider implements MedicalSearchProvider {
     context: MedicalSearchProviderContext,
   ): Promise<MedicalSearchProviderExecutionResult> {
     const results = await searchPubMed({
-      query: context.query,
+      queries: context.retrievalQueries,
       limit: Math.max(
         context.limit,
         Math.min(context.config.pubMedRetMax, context.limit * 2),
@@ -54,7 +54,7 @@ class DuckDuckGoWhitelistMedicalSearchProvider implements MedicalSearchProvider 
       (source) => source.id !== PUBMED_SOURCE_ID,
     );
     const result = await searchWhitelistedDuckDuckGo({
-      query: context.query,
+      queries: context.retrievalQueries,
       limit: Math.max(context.limit * 3, 12),
       sources: allowedWebSources,
       config: context.config,

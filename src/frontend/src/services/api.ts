@@ -204,6 +204,41 @@ export interface MCPPatientSignalsResponse {
   entry: Array<{ resource: unknown }>;
 }
 
+export type PatientCaseStatus =
+  | 'OUTPUT'
+  | 'ESCALATE_TO_OFFLINE'
+  | 'ABSTAIN'
+  | 'ERROR';
+
+export interface PatientCaseRecord {
+  caseId: string;
+  requestId?: string;
+  sessionId?: string;
+  patientId: string;
+  status: PatientCaseStatus;
+  reviewStatus?: 'pending' | 'reviewing' | 'approved' | 'rejected';
+  summary: string;
+  triageLevel?: string;
+  destination?: string;
+  department: string;
+  routeMode?: string;
+  complexityScore?: number;
+  durationMs?: number;
+  errorCode?: string;
+  startedAt: string;
+  endedAt?: string;
+  updatedAt: string;
+  source: 'runtime' | 'review_queue' | 'merged';
+}
+
+export interface PatientCasesResponse {
+  generatedAt: string;
+  patientId: string;
+  total: number;
+  returned: number;
+  cases: PatientCaseRecord[];
+}
+
 export const mcpApi = {
   async getHealth(): Promise<MCPHealthResponse> {
     const response = await apiClient.get<MCPHealthResponse>('/mcp/health');
@@ -237,6 +272,21 @@ export const mcpApi = {
   async getPatientInsights(id: string): Promise<MCPInsightsResponse> {
     const response = await apiClient.get<MCPInsightsResponse>(
       `/mcp/patient/${id}/insights`,
+    );
+    return response.data;
+  },
+};
+
+export const patientApi = {
+  async getCases(
+    id: string,
+    params?: {
+      limit?: number;
+    },
+  ): Promise<PatientCasesResponse> {
+    const response = await apiClient.get<PatientCasesResponse>(
+      `/patients/${id}/cases`,
+      { params },
     );
     return response.data;
   },

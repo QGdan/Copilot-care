@@ -235,10 +235,12 @@ function pickMostDiverseCandidate(input: {
       }
     }
     const queryTokenBonus = Math.min(
-      0.12,
-      (candidate.matchedQueryTokens?.length ?? 0) * 0.03,
+      0.8,
+      (candidate.matchedQueryTokens?.length ?? 0) * 0.2,
     );
-    const score = (1 - maxSimilarity) + queryTokenBonus;
+    const noTokenPenalty =
+      (candidate.matchedQueryTokens?.length ?? 0) === 0 ? 0.5 : 0;
+    const score = (1 - maxSimilarity) + queryTokenBonus - noTokenPenalty;
     if (score > bestScore) {
       bestScore = score;
       bestIndex = index;

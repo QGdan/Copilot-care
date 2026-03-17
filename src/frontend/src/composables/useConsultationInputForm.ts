@@ -31,7 +31,7 @@ export interface ConsultationQuickInput {
 
 export interface ConsultationPatientDataContext {
   patientId?: string;
-  age?: number;
+  age?: number | string;
   sex?: string;
   chiefComplaint?: string;
   chronicDiseases?: string[];
@@ -52,6 +52,10 @@ interface UseConsultationInputFormOptions {
 
 interface BuildPatientProfileOptions {
   fallbackPatientId: string;
+  demographicOverride?: {
+    age?: number;
+    sex?: 'male' | 'female' | 'other';
+  };
 }
 
 export interface ConsultationInputFormState {
@@ -138,11 +142,13 @@ function buildPatientProfile(
   const symptomText = form.symptomText.trim();
   const systolicBP = parseOptionalNumber(form.systolicBPText);
   const diastolicBP = parseOptionalNumber(form.diastolicBPText);
+  const effectiveAge = options.demographicOverride?.age ?? form.age;
+  const effectiveSex = options.demographicOverride?.sex ?? form.sex;
 
   return {
     patientId: options.fallbackPatientId,
-    age: form.age,
-    sex: form.sex,
+    age: effectiveAge,
+    sex: effectiveSex,
     chiefComplaint: symptomText,
     symptoms: parseTagText(symptomText),
     chronicDiseases: parseTagText(form.chronicDiseasesText),
@@ -180,6 +186,14 @@ export function useConsultationInputForm(
     showAdvancedInputs.value = !showAdvancedInputs.value;
   }
 
+  function parsePositiveAge(value: unknown): number | undefined {
+    const parsed = parseOptionalNumber(value);
+    if (typeof parsed !== 'number' || parsed <= 0) {
+      return undefined;
+    }
+    return Math.floor(parsed);
+  }
+
   function applyQuickInput(
     input: ConsultationQuickInput,
     disabled = false,
@@ -205,19 +219,21 @@ export function useConsultationInputForm(
       normalizeSelectedPatientId(patientData?.patientId);
 
     if (!patientData) {
+      if (selectedPatientId.value) {
+        // Prevent stale demographics from a previous patient context.
+        form.value.age = 0;
+        form.value.sex = 'other';
+      }
       return;
     }
 
     const normalizedSex = normalizeSex(patientData.sex);
+    const normalizedAge = parsePositiveAge(patientData.age);
     if (typeof patientData.chiefComplaint === 'string') {
       form.value.symptomText = patientData.chiefComplaint.trim();
     }
-    if (
-      Number.isFinite(patientData.age) &&
-      typeof patientData.age === 'number' &&
-      patientData.age > 0
-    ) {
-      form.value.age = Math.floor(patientData.age);
+    if (typeof normalizedAge === 'number') {
+      form.value.age = normalizedAge;
     }
     if (normalizedSex) {
       form.value.sex = normalizedSex;
@@ -228,6 +244,7 @@ export function useConsultationInputForm(
     if (Array.isArray(patientData.medicationHistory)) {
       form.value.medicationHistoryText = patientData.medicationHistory.join(', ');
     }
+
   }
 
   function buildProfile(): PatientProfile {
@@ -271,7 +288,9 @@ export function useConsultationInputForm(
         ? `demo-${Date.now()}`
         : 'demo'
     );
-    return buildPatientProfile(form.value, { fallbackPatientId });
+    return buildPatientProfile(form.value, {
+      fallbackPatientId,
+    });
   }
 
   function validateInput(): string | null {

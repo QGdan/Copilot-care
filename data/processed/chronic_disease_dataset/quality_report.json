@@ -1,0 +1,34 @@
+{
+  "generatedAt": "2026-03-11T16:27:38.077Z",
+  "source": {
+    "inputDir": "C:\\Users\\郭卓然\\Desktop\\Copilot care\\data\\raw\\chronic_disease_dataset",
+    "csvRowCounts": {
+      "patient": 2200,
+      "visit": 5461,
+      "labResult": 5461,
+      "diagnosis": 5338,
+      "medication": 13512,
+      "followup": 7950
+    }
+  },
+  "output": {
+    "outputDir": "C:\\Users\\郭卓然\\Desktop\\Copilot care\\data\\processed\\chronic_disease_dataset",
+    "triageRequests": 5461,
+    "evaluationCases": 5461,
+    "split": {
+      "train": 3933,
+      "dev": 778,
+      "test": 750
+    }
+  },
+  "dataQuality": {
+    "missingPatientRef": 0,
+    "missingChiefComplaint": 0,
+    "invalidVitalsCount": 0,
+    "missingRates": {
+      "visitChiefComplaint": 0,
+      "visitSystolicBp": 0,
+      "labFastingGlucose": 0
+    }
+  }
+}

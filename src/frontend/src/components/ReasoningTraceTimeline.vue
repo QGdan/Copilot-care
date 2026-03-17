@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue';
-import type { WorkflowStage, AgentOpinion } from '@copilot-care/shared/types';
+import type {
+  AgentOpinion,
+  AuthoritativeSearchDiagnostics,
+  WorkflowStage,
+} from '@copilot-care/shared/types';
 import { useTypewriterManager } from '../composables/useTypewriter';
 import {
   parseMedicalSourceBreakdownMessage,
@@ -27,6 +31,7 @@ interface Props {
   maxItems?: number;
   isRunning?: boolean;
   agentOpinions?: AgentOpinion[];
+  authoritativeSearch?: AuthoritativeSearchDiagnostics | null;
   theme?: 'light' | 'dark';
 }
 
@@ -143,6 +148,76 @@ const stageOrder = computed(() => {
   );
 });
 
+function localizeReasoningMessage(input: string): string {
+  let text = input.trim();
+  if (!text) {
+    return '';
+  }
+
+  const rules: Array<[RegExp, string]> = [
+    [/Authoritative medical search is disabled in triage runtime\.?/giu, '权威医学联网检索未启用，当前分诊流程不接入实时检索。'],
+    [/Authoritative medical search started\.?/giu, '已启动权威医学联网检索。'],
+    [/No authoritative result hit; fallback rule evidence path stays active\.?/giu, '未命中实时权威证据，已保留规则证据兜底路径。'],
+    [/Fallback catalog evidence exists; continue realtime retrieval for final medical judgement\.?/giu, '存在目录兜底证据，建议继续补充实时权威来源后再给出最终结论。'],
+    [/Authoritative medical search unavailable; fallback rule evidence path applied\.?/giu, '权威医学联网检索暂不可用，已切换为规则证据兜底路径。'],
+    [/Evidence completeness gate failed: network search unavailable in high-risk scenario\.?/giu, '证据完整性门禁未通过：高风险场景下实时检索不可用。'],
+  ];
+  for (const [pattern, replacement] of rules) {
+    text = text.replace(pattern, replacement);
+  }
+
+  text = text.replace(
+    /Rule-driven retrieval plan:\s*risk=([^,]+),\s*minEvidence=([^,]+),\s*requiredSources=([^.]+)\.?/iu,
+    '规则驱动检索计划：风险等级=$1，最少证据=$2，必选来源=$3',
+  );
+  text = text.replace(
+    /Need decomposition:\s*(.+)$/iu,
+    '需求拆分：$1',
+  );
+  text = text.replace(
+    /Professional restatement:\s*(.+)$/iu,
+    '专业化重述：$1',
+  );
+  text = text.replace(
+    /Query rewrite:\s*(.+)$/iu,
+    '检索改写：$1',
+  );
+  text = text.replace(
+    /Main-agent skill chain:\s*(.+)$/iu,
+    '主 Agent 技能链：$1',
+  );
+  text = text.replace(
+    /Strategy note:\s*(.+)$/iu,
+    '策略说明：$1',
+  );
+  text = text.replace(
+    /Authoritative search hits:\s*(.+)$/iu,
+    '权威检索命中：$1',
+  );
+  text = text.replace(
+    /Evidence deduplication removed\s*(\d+)\s*near-duplicate result\(s\)\.?/iu,
+    '证据去重：移除 $1 条近重复条目。',
+  );
+  text = text.replace(
+    /Retrieval quality stats:\s*realtime=([^,]+),\s*fallback=([^,]+),\s*droppedByPolicy=([^.]+)\.?/iu,
+    '检索质量统计：实时=$1，兜底=$2，策略过滤丢弃=$3。',
+  );
+  text = text.replace(
+    /Authoritative source breakdown:\s*(.+?)\s*\(strategy:\s*([^)]+)\)\.?/iu,
+    '权威医学来源分布：$1（策略：$2）',
+  );
+  text = text.replace(
+    /Authoritative evidence\s*(\d+)\s*\(([^,]+),\s*([^)]+)\):\s*(.+)$/iu,
+    '权威证据$1（$2，$3）：$4',
+  );
+  text = text.replace(
+    /Evidence completeness gate failed:\s*(.+)$/iu,
+    '证据完整性门禁未通过：$1',
+  );
+
+  return text;
+}
+
 // Agent思考状态
 const thinkingAgents = computed(() => {
   return props.agentOpinions.filter(agent => agent.confidence < 0.9);
@@ -186,7 +261,7 @@ watch(() => displayItems.value, async (newItems, oldItems) => {
   
   for (const item of trulyNewItems) {
     await nextTick();
-    const typewriter = typewriterManager.create(item.id, item.text, {
+    const typewriter = typewriterManager.create(item.id, localizeReasoningMessage(item.text), {
       speed: 25,
       delay: 100,
       cursor: true,
@@ -215,7 +290,7 @@ watch(() => displayItems.value, async (newItems, oldItems) => {
 function getTypewriterText(item: ReasoningItem): string {
   const typewriter = typewriterManager.get(item.id);
   if (!typewriter || completedItems.value.has(item.id)) {
-    return item.text;
+    return localizeReasoningMessage(item.text);
   }
   return typewriter.displayText.value;
 }
@@ -233,7 +308,9 @@ function showCursor(item: ReasoningItem): boolean {
 const sourceBreakdownByReasoningId = computed(() => {
   const map = new Map<string, MedicalSourceBreakdown>();
   for (const item of displayItems.value) {
-    const parsed = parseMedicalSourceBreakdownMessage(item.text);
+    const parsed = parseMedicalSourceBreakdownMessage(
+      localizeReasoningMessage(item.text),
+    );
     if (parsed) {
       map.set(item.id, parsed);
     }
@@ -241,8 +318,49 @@ const sourceBreakdownByReasoningId = computed(() => {
   return map;
 });
 
+const structuredSourceBreakdown = computed<MedicalSourceBreakdown | null>(() => {
+  const payload = props.authoritativeSearch;
+  if (!payload || payload.sourceBreakdown.length === 0) {
+    return null;
+  }
+  return {
+    strategyVersion: payload.strategyVersion,
+    items: payload.sourceBreakdown.map((item) => ({
+      sourceId: item.sourceId,
+      count: item.count,
+    })),
+  };
+});
+
 function getSourceBreakdown(itemId: string): MedicalSourceBreakdown | undefined {
   return sourceBreakdownByReasoningId.value.get(itemId);
+}
+
+const qualityDiagnostics = computed(() => props.authoritativeSearch?.quality ?? null);
+
+const QUALITY_STAGE_LABELS: Record<string, string> = {
+  intent_understanding: '需求理解',
+  retrieval: '检索召回',
+  evidence_selection: '证据筛选',
+  summarization: '证据概述',
+  none: '当前无明显短板',
+};
+
+const qualityMetrics = computed(() => {
+  const quality = qualityDiagnostics.value;
+  if (!quality) {
+    return [];
+  }
+  return [
+    { key: 'intent', label: '需求理解', score: quality.intentUnderstandingScore },
+    { key: 'retrieval', label: '检索召回', score: quality.retrievalCoverageScore },
+    { key: 'selection', label: '证据筛选', score: quality.evidenceSelectionScore },
+    { key: 'summary', label: '概述可读性', score: quality.summarizationReadabilityScore },
+  ];
+});
+
+function formatQualityPercent(score: number): string {
+  return `${Math.round(Math.max(0, Math.min(1, score)) * 100)}%`;
 }
 </script>
 
@@ -292,6 +410,59 @@ function getSourceBreakdown(itemId: string): MedicalSourceBreakdown | undefined 
       >
         {{ config.icon }} {{ config.label }}
       </span>
+    </div>
+
+    <div
+      v-if="structuredSourceBreakdown"
+      class="source-breakdown-card source-breakdown-card--global"
+    >
+      <div class="source-breakdown-head">
+        <strong>权威来源分布（结构化）</strong>
+        <span class="source-breakdown-strategy">
+          {{ structuredSourceBreakdown.strategyVersion }}
+        </span>
+      </div>
+      <div class="source-breakdown-list">
+        <span
+          v-for="entry in structuredSourceBreakdown.items"
+          :key="`global-${entry.sourceId}`"
+          class="source-breakdown-chip"
+        >
+          {{ entry.sourceId }} x {{ entry.count }}
+        </span>
+      </div>
+    </div>
+
+    <div
+      v-if="qualityDiagnostics"
+      class="quality-diagnostics-card"
+    >
+      <div class="source-breakdown-head">
+        <strong>检索链路体检</strong>
+        <span class="source-breakdown-strategy">
+          最弱环节：{{ QUALITY_STAGE_LABELS[qualityDiagnostics.weakestStage] ?? qualityDiagnostics.weakestStage }}
+        </span>
+      </div>
+      <div class="quality-metrics-list">
+        <span
+          v-for="metric in qualityMetrics"
+          :key="metric.key"
+          class="source-breakdown-chip"
+        >
+          {{ metric.label }} {{ formatQualityPercent(metric.score) }}
+        </span>
+      </div>
+      <ul
+        v-if="qualityDiagnostics.optimizationHints.length > 0"
+        class="quality-hints"
+      >
+        <li
+          v-for="(hint, index) in qualityDiagnostics.optimizationHints"
+          :key="`quality-hint-${index}`"
+        >
+          {{ hint }}
+        </li>
+      </ul>
     </div>
 
     <div v-if="displayItems.length === 0" class="empty-state">
@@ -760,6 +931,18 @@ function getSourceBreakdown(itemId: string): MedicalSourceBreakdown | undefined 
   background: rgba(0, 255, 136, 0.06);
 }
 
+.source-breakdown-card--global {
+  margin-bottom: 10px;
+}
+
+.quality-diagnostics-card {
+  margin-bottom: 10px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 200, 255, 0.3);
+  background: rgba(100, 200, 255, 0.08);
+}
+
 .source-breakdown-head {
   display: flex;
   align-items: center;
@@ -788,6 +971,12 @@ function getSourceBreakdown(itemId: string): MedicalSourceBreakdown | undefined 
   gap: 6px;
 }
 
+.quality-metrics-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .source-breakdown-chip {
   font-size: 10px;
   color: #d6ffee;
@@ -795,6 +984,18 @@ function getSourceBreakdown(itemId: string): MedicalSourceBreakdown | undefined 
   border-radius: 999px;
   border: 1px solid rgba(0, 255, 136, 0.3);
   background: rgba(0, 255, 136, 0.12);
+}
+
+.quality-hints {
+  margin: 8px 0 0;
+  padding-left: 16px;
+}
+
+.quality-hints li {
+  font-size: 11px;
+  line-height: 1.5;
+  color: #d9ecff;
+  margin-bottom: 4px;
 }
 
 .item-evidence {

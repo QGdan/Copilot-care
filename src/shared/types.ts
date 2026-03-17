@@ -80,6 +80,23 @@ export type ErrorCode =
   | 'ERR_GUIDELINE_EVIDENCE_MISSING'
   | 'ERR_ADVERSARIAL_PROMPT_DETECTED';
 
+export type TriageBlockingReasonCode =
+  | 'VALIDATION_BLOCKED'
+  | 'EVIDENCE_INTEGRITY_GATE_BLOCKED'
+  | 'RED_FLAG_SHORT_CIRCUIT'
+  | 'SAFETY_GUARD_BLOCKED'
+  | 'RUNTIME_FAILURE_BLOCKED';
+
+export interface TriageBlockingReason {
+  code: TriageBlockingReasonCode;
+  title: string;
+  summary: string;
+  triggerStage: WorkflowStage;
+  severity: 'warning' | 'high' | 'critical';
+  actions: string[];
+  detail?: string;
+}
+
 export type TriageStatus =
   | 'OUTPUT'
   | 'ESCALATE_TO_OFFLINE'
@@ -147,6 +164,151 @@ export interface RuleGovernanceSnapshot {
   evidenceTraceId: string;
 }
 
+export type ReviewCaseStatus =
+  | 'pending'
+  | 'reviewing'
+  | 'approved'
+  | 'rejected';
+
+export type ReviewDecisionOutcome =
+  | 'approve'
+  | 'reject'
+  | 'request_changes';
+
+export interface ReviewDecision {
+  decision: ReviewDecisionOutcome;
+  reviewerId?: string;
+  note?: string;
+  decidedAt: string;
+}
+
+export interface ReviewCase {
+  caseId: string;
+  requestId?: string;
+  sessionId?: string;
+  patientId: string;
+  triggerOutcome: TriageStatus;
+  errorCode?: ErrorCode;
+  summary: string;
+  nextAction?: string;
+  triageLevel?: TriageLevel;
+  destination?: string;
+  auditRef?: string;
+  status: ReviewCaseStatus;
+  createdAt: string;
+  updatedAt: string;
+  decision?: ReviewDecision;
+}
+
+export interface CaseTimelineEvent {
+  eventId: string;
+  caseId: string;
+  kind: 'created' | 'status_changed' | 'decision_recorded';
+  actor: string;
+  detail: string;
+  timestamp: string;
+}
+
+export interface CaseTimeline {
+  caseId: string;
+  patientId: string;
+  events: CaseTimelineEvent[];
+}
+
+export interface RuleVersionBinding {
+  scope: 'global' | 'site_override';
+  catalogVersion: string;
+  synonymSetVersion?: string;
+  routingPolicyVersion?: string;
+  boundAt: string;
+  boundBy?: string;
+}
+
+export type AuditSubscriptionChannel =
+  | 'webhook'
+  | 'email'
+  | 'dashboard';
+
+export interface AuditSubscription {
+  subscriptionId: string;
+  siteId: string;
+  name: string;
+  eventTypes: string[];
+  channel: AuditSubscriptionChannel;
+  endpoint: string;
+  secretRef?: string;
+  enabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SiteGovernancePolicy {
+  siteId: string;
+  displayName: string;
+  thresholds: {
+    fastConsensusMax: number;
+    lightDebateMax: number;
+    deepDebateMin: number;
+  };
+  ruleVersionBinding: RuleVersionBinding;
+  auditSubscriptions: AuditSubscription[];
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export type InteropJobStatus =
+  | 'queued'
+  | 'running'
+  | 'retrying'
+  | 'succeeded'
+  | 'failed';
+
+export interface InteropRetryPolicy {
+  maxRetries: number;
+  retryDelayMs: number;
+  retryableErrorCodes: string[];
+}
+
+export interface InteropJobAttempt {
+  attempt: number;
+  startedAt: string;
+  finishedAt?: string;
+  status: 'succeeded' | 'failed';
+  errorCode?: string;
+  message?: string;
+  retriable?: boolean;
+}
+
+export interface InteropJobResult {
+  generatedAt: string;
+  sessionId: string;
+  triageStatus: TriageStatus;
+  resourceCounts: {
+    patient: number;
+    observation: number;
+    provenance: number;
+  };
+  bundleIdentifier: string;
+}
+
+export interface InteropJob {
+  jobId: string;
+  requestId?: string;
+  patientId: string;
+  status: InteropJobStatus;
+  createdAt: string;
+  updatedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  attempts: number;
+  retryPolicy: InteropRetryPolicy;
+  nextRetryAt?: string;
+  lastErrorCode?: string;
+  lastErrorMessage?: string;
+  history: InteropJobAttempt[];
+  result?: InteropJobResult;
+}
+
 export interface StructuredTriageResult {
   patientId: string;
   triageLevel: TriageLevel;
@@ -183,6 +345,46 @@ export interface ExplainableReport {
   basis: string[];
   actions: string[];
   counterfactual?: string[];
+}
+
+export interface AuthoritativeSearchSourceBreakdownItem {
+  sourceId: string;
+  count: number;
+}
+
+export type AuthoritativeSearchWeakestStage =
+  | 'intent_understanding'
+  | 'retrieval'
+  | 'evidence_selection'
+  | 'summarization'
+  | 'none';
+
+export interface AuthoritativeSearchQualityDiagnostics {
+  intentUnderstandingScore: number;
+  retrievalCoverageScore: number;
+  evidenceSelectionScore: number;
+  summarizationReadabilityScore: number;
+  weakestStage: AuthoritativeSearchWeakestStage;
+  optimizationHints: string[];
+}
+
+export interface AuthoritativeSearchDiagnostics {
+  query: string;
+  queryVariants: string[];
+  strategyVersion: string;
+  usedSources: string[];
+  sourceBreakdown: AuthoritativeSearchSourceBreakdownItem[];
+  realtimeCount: number;
+  fallbackCount: number;
+  droppedByPolicy: number;
+  fallbackReasons?: string[];
+  missingRequiredSources?: string[];
+  requiredSources?: string[];
+  minEvidenceCount?: number;
+  decomposedNeeds?: string[];
+  professionalRestatement?: string;
+  activatedSkills?: string[];
+  quality?: AuthoritativeSearchQualityDiagnostics;
 }
 
 export type WorkflowStage =
@@ -279,10 +481,12 @@ export interface DebateResult {
   routing?: TriageRoutingInfo;
   triageResult?: StructuredTriageResult;
   explainableReport?: ExplainableReport;
+  authoritativeSearch?: AuthoritativeSearchDiagnostics;
   workflowTrace?: WorkflowStageTrace[];
   dissentIndexHistory: number[];
   errorCode?: ErrorCode;
   requiredFields?: string[];
+  blockingReason?: TriageBlockingReason;
   nextAction?: string;
   ruleGovernance?: RuleGovernanceSnapshot;
   notes: string[];
@@ -293,7 +497,9 @@ export interface TriageErrorResponse {
   status: 'ERROR';
   errorCode: ErrorCode;
   notes: string[];
+  authoritativeSearch?: AuthoritativeSearchDiagnostics;
   requiredFields?: string[];
+  blockingReason?: TriageBlockingReason;
   nextAction?: string;
   auditRef?: string;
   ruleGovernance?: RuleGovernanceSnapshot;
@@ -436,6 +642,7 @@ export type TriageStreamEvent =
       errorCode: ErrorCode;
       message: string;
       requiredFields?: string[];
+      blockingReason?: TriageBlockingReason;
       nextAction?: string;
     }
   | {

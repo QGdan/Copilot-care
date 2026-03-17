@@ -1,0 +1,135 @@
+{
+  "version": "v10.00",
+  "name": "gap-remediation-workflow",
+  "createdAt": "2026-03-10",
+  "objective": "针对现阶段基层多智能体辅助诊断系统缺口执行逐项修补，要求每项修补通过自动化验证，失败时自动回退到上一个稳定状态。",
+  "workflow": [
+    {
+      "id": "GAP-P0-001",
+      "title": "生产级分诊与治理接口鉴权门禁",
+      "priority": "P0",
+      "state": "ready",
+      "goal": "在生产环境为 /orchestrate_triage、/governance、/architecture 增加强制鉴权，避免未授权访问。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/access-hardening.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/config/runtimePolicy.ts",
+        "src/backend/src/bootstrap/createBackendApp.ts",
+        "src/backend/src/interfaces/http/createTriageRouter.ts",
+        "src/backend/src/tests/architecture/access-hardening.test.ts"
+      ],
+      "evidence": [
+        "src/backend/src/tests/architecture/access-hardening.test.ts"
+      ]
+    },
+    {
+      "id": "GAP-P0-002",
+      "title": "治理检索防滥用阈值",
+      "priority": "P0",
+      "state": "ready",
+      "dependsOn": [
+        "GAP-P0-001"
+      ],
+      "goal": "限制治理医疗检索 query 长度与来源列表规模，降低滥用和资源耗尽风险。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/http-integration.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/interfaces/http/createTriageRouter.ts",
+        "src/backend/src/tests/architecture/http-integration.test.ts"
+      ],
+      "evidence": [
+        "src/backend/src/tests/architecture/http-integration.test.ts"
+      ]
+    },
+    {
+      "id": "GAP-P0-003",
+      "title": "人工复核队列后端闭环",
+      "priority": "P0",
+      "state": "backlog",
+      "dependsOn": [
+        "GAP-P0-002"
+      ],
+      "goal": "补齐 review queue 查询与决策回写接口，形成人工复核处置闭环。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/governance-review-queue.http.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/interfaces/http/createTriageRouter.ts",
+        "src/shared/types.ts"
+      ],
+      "evidence": [
+        "src/backend/src/tests/architecture/governance-review-queue.http.test.ts"
+      ]
+    },
+    {
+      "id": "GAP-P1-001",
+      "title": "病例纵向时间线查询接口",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "GAP-P0-003"
+      ],
+      "goal": "提供患者病例时间线 API（patients/:id/cases），支撑复诊和随访。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/patient-cases.http.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/interfaces/http/createTriageRouter.ts",
+        "src/shared/types.ts"
+      ],
+      "evidence": [
+        "src/backend/src/tests/architecture/patient-cases.http.test.ts"
+      ]
+    },
+    {
+      "id": "GAP-P1-002",
+      "title": "FHIR 异步回写任务骨架",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "GAP-P1-001"
+      ],
+      "goal": "补齐 interop submit/job 状态查询接口及失败重试语义。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/interop-submit-job.http.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/interfaces/http/createInteropRouter.ts",
+        "src/shared/types.ts"
+      ],
+      "evidence": [
+        "src/backend/src/tests/architecture/interop-submit-job.http.test.ts"
+      ]
+    },
+    {
+      "id": "GAP-P2-001",
+      "title": "多站点策略配置与审计订阅",
+      "priority": "P2",
+      "state": "backlog",
+      "dependsOn": [
+        "GAP-P1-002"
+      ],
+      "goal": "支持站点级规则版本、阈值和审计订阅配置，满足跨机构治理一致性。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/multi-site-policy.http.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/interfaces/http/createTriageRouter.ts",
+        "src/backend/src/infrastructure/governance",
+        "src/shared/types.ts"
+      ],
+      "evidence": [
+        "src/backend/src/tests/architecture/multi-site-policy.http.test.ts"
+      ]
+    }
+  ],
+  "dailyLoop": [
+    "npm run gap:sync",
+    "npm run gap:status",
+    "npm run gap:next",
+    "npm run gap:run -- --max=1 --retries=2",
+    "npm run gap:status"
+  ]
+}

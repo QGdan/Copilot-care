@@ -9,9 +9,17 @@ import {
 import { RunTriageSessionUseCase } from '../application/usecases/RunTriageSessionUseCase';
 import { AuthoritativeMedicalSearchPort } from '../application/ports/AuthoritativeMedicalSearchPort';
 import { DebateEngine } from '../core/DebateEngine';
+import {
+  AUTHORITATIVE_RULE_CATALOG_VERSION,
+  RED_FLAG_SYNONYM_SET_VERSION,
+} from '../domain/rules/AuthoritativeMedicalRuleCatalog';
 import { ComplexityRoutedOrchestrator } from '../infrastructure/orchestration/ComplexityRoutedOrchestrator';
 import { CoordinatorSnapshotService } from '../infrastructure/orchestration/CoordinatorSnapshotService';
 import { GovernanceRuntimeTelemetry } from '../infrastructure/governance/GovernanceRuntimeTelemetry';
+import { GovernanceReviewQueueService } from '../infrastructure/governance/GovernanceReviewQueueService';
+import { createGovernanceReviewQueueStore } from '../infrastructure/governance/GovernanceReviewQueueStore';
+import { SiteGovernancePolicyService } from '../infrastructure/governance/SiteGovernancePolicyService';
+import { createSiteGovernancePolicyStore } from '../infrastructure/governance/SiteGovernancePolicyStore';
 import { createGovernanceRuntimeStateStore } from '../infrastructure/governance/GovernanceRuntimeStateStore';
 import { createAuthoritativeMedicalSearchService } from '../infrastructure/knowledge/AuthoritativeMedicalWebSearchService';
 import { createPatientContextEnricher } from '../infrastructure/mcp/PatientContextEnricher';
@@ -48,6 +56,8 @@ export interface RuntimeArchitectureSnapshot {
   experts: ExpertRuntimeStates;
   routing: {
     policyVersion: string;
+    strictDiagnosisMode: boolean;
+    fallbackCitationMarker: string;
     complexityThresholds: {
       fastConsensusMax: number;
       lightDebateMax: number;
@@ -66,6 +76,8 @@ export interface BackendRuntime {
   architecture: RuntimeArchitectureSnapshot;
   coordinatorSnapshotService: CoordinatorSnapshotService;
   governanceRuntimeTelemetry: GovernanceRuntimeTelemetry;
+  governanceReviewQueueService: GovernanceReviewQueueService;
+  siteGovernancePolicyService: SiteGovernancePolicyService;
   authoritativeMedicalSearch: AuthoritativeMedicalSearchPort;
 }
 
@@ -323,14 +335,23 @@ export function createRuntime(
   const authoritativeMedicalSearch = createAuthoritativeMedicalSearchService(env);
   const idempotencyStore = createTriageIdempotencyStore(env);
   const governanceRuntimeStateStore = createGovernanceRuntimeStateStore(env);
+  const governanceReviewQueueStore = createGovernanceReviewQueueStore(env);
+  const siteGovernancePolicyStore = createSiteGovernancePolicyStore(env);
   const injectAuthoritativeEvidence = parseBooleanFlag(
     env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE,
     authoritativeMedicalSearch.isEnabled(),
+  );
+  const strictDiagnosisMode = parseBooleanFlag(
+    env.COPILOT_CARE_STRICT_DIAGNOSIS_MODE,
+    env.NODE_ENV !== 'test',
   );
   const coordinatorSnapshotService = new CoordinatorSnapshotService(env);
   const governanceRuntimeTelemetry = new GovernanceRuntimeTelemetry(
     80,
     governanceRuntimeStateStore,
+  );
+  const governanceReviewQueueService = new GovernanceReviewQueueService(
+    governanceReviewQueueStore,
   );
   const panelProviders = resolvePanelProviders(env);
   const cardioPanel = buildPanelProviderStates(panelProviders.cardiology, env);
@@ -384,6 +405,7 @@ export function createRuntime(
     fastDepartmentEngines,
     lightDepartmentEngines,
     deepDebateEngine,
+    strictDiagnosisMode,
     patientContextEnricher,
     authoritativeMedicalSearch:
       injectAuthoritativeEvidence ? authoritativeMedicalSearch : undefined,
@@ -424,6 +446,8 @@ export function createRuntime(
     },
     routing: {
       policyVersion: 'v4.30.chapter4',
+      strictDiagnosisMode,
+      fallbackCitationMarker: 'SYSTEM_FALLBACK_OPINION',
       complexityThresholds: {
         fastConsensusMax: 2,
         lightDebateMax: 5,
@@ -437,11 +461,25 @@ export function createRuntime(
     },
   };
 
+  const siteGovernancePolicyService = new SiteGovernancePolicyService({
+    store: siteGovernancePolicyStore,
+    defaultThresholds: architecture.routing.complexityThresholds,
+    defaultRuleVersionBinding: {
+      scope: 'global',
+      catalogVersion: AUTHORITATIVE_RULE_CATALOG_VERSION,
+      synonymSetVersion: RED_FLAG_SYNONYM_SET_VERSION,
+      routingPolicyVersion: architecture.routing.policyVersion,
+      boundBy: 'runtime_default',
+    },
+  });
+
   return {
     triageUseCase,
     architecture,
     coordinatorSnapshotService,
     governanceRuntimeTelemetry,
+    governanceReviewQueueService,
+    siteGovernancePolicyService,
     authoritativeMedicalSearch,
   };
 }

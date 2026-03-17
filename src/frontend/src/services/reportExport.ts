@@ -8,6 +8,8 @@ import type {
 } from '@copilot-care/shared/types';
 import {
   DEPARTMENT_LABELS,
+  formatDestination,
+  formatTriageLevel,
   ROUTE_MODE_LABELS,
 } from '../constants/triageLabels';
 
@@ -338,8 +340,12 @@ function buildReportHtml(data: ReportData): string {
   );
   const notes = normalizeList(data.notes).slice(0, 5);
 
-  const triageLevel = data.triageResult?.triageLevel || '待定';
-  const destination = data.triageResult?.destination || '待定';
+  const triageLevel = data.triageResult?.triageLevel
+    ? formatTriageLevel(data.triageResult.triageLevel)
+    : '待定';
+  const destination = data.triageResult?.destination
+    ? formatDestination(data.triageResult.destination)
+    : '待定';
 
   return `
 <div style="
@@ -383,7 +389,7 @@ function buildReportHtml(data: ReportData): string {
       ? `<section style="margin-bottom: 12px; border: 1px solid #d8e4ef; border-radius: 8px; padding: 10px;">
     <h2 style="margin: 0 0 8px; font-size: 16px; color: #0f3e4b;">分诊结果</h2>
     <ul style="margin: 0; padding-left: 20px;">
-      <li>风险等级：${escapeHtml(triageLevel)}</li>
+      <li>分诊等级：${escapeHtml(triageLevel)}</li>
       <li>建议去向：${escapeHtml(destination)}</li>
     </ul>
   </section>`
@@ -734,8 +740,8 @@ export function generateReportText(data: ReportData): string {
 
   if (data.triageResult) {
     lines.push('\n【分诊结果】');
-    lines.push(`风险等级：${data.triageResult.triageLevel || '待定'}`);
-    lines.push(`建议去向：${data.triageResult.destination || '待定'}`);
+    lines.push(`分诊等级：${formatTriageLevel(data.triageResult.triageLevel || '待定')}`);
+    lines.push(`建议去向：${formatDestination(data.triageResult.destination || '待定')}`);
   }
 
   lines.push('\n【会诊结论】');

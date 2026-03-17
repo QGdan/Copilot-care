@@ -1,0 +1,4135 @@
+{
+  "generatedAt": "2026-03-15T15:05:40.823Z",
+  "sampleCount": 60,
+  "config": {
+    "networkEnabled": true,
+    "limit": 60,
+    "hybridEnabled": true,
+    "timeoutMs": 4000
+  },
+  "metrics": {
+    "top3HitRate": 1,
+    "mrrAt5": 0.9556,
+    "redFlagEvidenceRecall": 1,
+    "summaryStructuredRate": 0.9861,
+    "requiredSourceCoverageRate": 1,
+    "multiSourceRate": 1,
+    "realtimeShare": 0.8917,
+    "needDecompositionRate": 1,
+    "professionalRestatementRate": 1,
+    "skillChainCoverageRate": 1,
+    "hybridStrategyRate": 1,
+    "averageLatencyMs": 14137.6557,
+    "totalRuntimeMs": 848260.06
+  },
+  "thresholds": {
+    "top3HitRateMin": 0.7,
+    "mrrAt5Min": 0.45,
+    "requiredSourceCoverageRateMin": 0.8,
+    "summaryStructuredRateMin": 0.9,
+    "needDecompositionRateMin": 0.95,
+    "professionalRestatementRateMin": 0.95,
+    "skillChainCoverageRateMin": 0.95,
+    "hybridStrategyRateMin": 0.9
+  },
+  "overallPass": true,
+  "breached": [],
+  "diseaseSlices": [
+    {
+      "label": "hypertension+diabetes",
+      "caseCount": 18,
+      "top3HitRate": 1,
+      "mrrAt5": 1
+    },
+    {
+      "label": "hypertension",
+      "caseCount": 17,
+      "top3HitRate": 1,
+      "mrrAt5": 1
+    },
+    {
+      "label": "diabetes",
+      "caseCount": 15,
+      "top3HitRate": 1,
+      "mrrAt5": 0.8222
+    },
+    {
+      "label": "heart-disease",
+      "caseCount": 7,
+      "top3HitRate": 1,
+      "mrrAt5": 1
+    },
+    {
+      "label": "mixed-other",
+      "caseCount": 3,
+      "top3HitRate": 1,
+      "mrrAt5": 1
+    }
+  ],
+  "hardCases": [],
+  "cases": [
+    {
+      "caseId": "eval_3FEE1587101E204A",
+      "requestId": "cds_3FEE1587101E204A",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 0.8333,
+      "requiredSources": [
+        "WHO",
+        "NICE",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "乏力、头晕，检查发现血压血糖高 乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病不伴并发症 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diab",
+      "queryVariants": [
+        "乏力、头晕，检查发现血压血糖高 乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病不伴并发症 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diab",
+        "hypertension guideline blood pressure management",
+        "high blood pressure diagnosis threshold treatment target",
+        "成人 高血压 血压 分层 管理",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取血压阈值、分级标准与心血管风险分层依据。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为乏力、头晕，检查发现血压血糖高、乏力、头晕、检查发现血压血糖高，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病不伴并发症，关键生命体征为血压 219/127 mmHg；重度高血压 急诊评估。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取血压阈值、分级标准与心血管风险分层依据。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、NICE、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "hypertension_guideline_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 15989.12,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_6D2415E91FEDF3D7",
+      "requestId": "cds_6D2415E91FEDF3D7",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "头晕、多饮、多尿2月 头晕、多饮、多尿2月 头晕 多饮 多尿2月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "头晕、多饮、多尿2月 头晕、多饮、多尿2月 头晕 多饮 多尿2月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "头晕、多饮、多尿2月 头晕 多饮 多尿2月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病不伴并发症 血压 165/104 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.2 guideline risk stratification triage threshold follow-up",
+        "头晕、多饮、多尿2月 头晕 多饮 多尿2月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病不伴并发症 血压 165/104 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.2 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为头晕、多饮、多尿2月、头晕、多饮、多尿2月，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病不伴并发症，关键生命体征为血压 165/104 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14208.13,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_998422B0CCA0428B",
+      "requestId": "cds_998422B0CCA0428B",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "头晕、头痛1月余 头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "头晕、头痛1月余 头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 血压 159/97 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.8 guideline risk stratification triage threshold follow-up",
+        "头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 血压 159/97 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为头晕、头痛1月余、头晕、头痛1月余，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 159/97 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 15188.82,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_8A6156A948239D64",
+      "requestId": "cds_8A6156A948239D64",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "反复头晕3个月 反复头晕3个月 反复头晕3个月 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "反复头晕3个月 反复头晕3个月 反复头晕3个月 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "反复头晕3个月 Hypertension 本态性（原发性）高血压 血压 151/98 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.2 guideline risk stratification triage threshold follow-up",
+        "反复头晕3个月 Hypertension 本态性（原发性）高血压 血压 151/98 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.2 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为反复头晕3个月，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 151/98 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 15628.55,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_3F009F1C03BB275D",
+      "requestId": "cds_3F009F1C03BB275D",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "反复头晕3个月 反复头晕3个月 反复头晕3个月 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "反复头晕3个月 反复头晕3个月 反复头晕3个月 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "反复头晕3个月 Hypertension 本态性（原发性）高血压 血压 152/97 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.3 guideline risk stratification triage threshold follow-up",
+        "反复头晕3个月 Hypertension 本态性（原发性）高血压 血压 152/97 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.3 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为反复头晕3个月，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 152/97 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 15786.92,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_45AFD1E12C6BCCA2",
+      "requestId": "cds_45AFD1E12C6BCCA2",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "血压升高伴血糖异常1月 血压升高伴血糖异常1月 血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "血压升高伴血糖异常1月 血压升高伴血糖异常1月 血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 血压 156/93 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 7.3 guideline risk stratification triage threshold follow-up",
+        "血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 血压 156/93 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 7.3 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为血压升高伴血糖异常1月，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病伴周围循环并发症，关键生命体征为血压 156/93 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14361.3,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_039871C7FE492D8C",
+      "requestId": "cds_039871C7FE492D8C",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 0.8333,
+      "requiredSources": [
+        "WHO",
+        "NICE",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "血压升高伴血糖异常1月 血压升高伴血糖异常1月 血压升高伴血糖异常1月 Hypertension Diabetes 高血压性心脏病伴有心脏衰竭 2型糖尿病伴肾并发症 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emerg",
+      "queryVariants": [
+        "血压升高伴血糖异常1月 血压升高伴血糖异常1月 血压升高伴血糖异常1月 Hypertension Diabetes 高血压性心脏病伴有心脏衰竭 2型糖尿病伴肾并发症 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emerg",
+        "hypertension guideline blood pressure management",
+        "high blood pressure diagnosis threshold treatment target",
+        "成人 高血压 血压 分层 管理",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取血压阈值、分级标准与心血管风险分层依据。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为血压升高伴血糖异常1月，慢病背景为Hypertension、Diabetes、高血压性心脏病伴有心脏衰竭、2型糖尿病伴肾并发症，关键生命体征为血压 198/111 mmHg；重度高血压 急诊评估。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取血压阈值、分级标准与心血管风险分层依据。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、NICE、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "hypertension_guideline_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 12474.97,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_63D23119CA512124",
+      "requestId": "cds_63D23119CA512124",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "乏力、头晕，检查发现血压血糖高 乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "乏力、头晕，检查发现血压血糖高 乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 血压 148/95 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.8 guideline risk stratification triage threshold follow-up",
+        "乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 血压 148/95 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为乏力、头晕，检查发现血压血糖高、乏力、头晕、检查发现血压血糖高，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病伴周围循环并发症，关键生命体征为血压 148/95 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 13560.42,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_06B942B376B684F6",
+      "requestId": "cds_06B942B376B684F6",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "体检发现心电图异常 体检发现心电图异常 体检发现心电图异常 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 心力衰竭 未特指 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现心电图异常 体检发现心电图异常 体检发现心电图异常 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 心力衰竭 未特指 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现心电图异常 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 血压 158/93 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 14.8 hyperglycemia diagnostic threshold 高血糖 诊断阈值 guideline risk stratification triage threshold follow-up",
+        "体检发现心电图异常 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 血压 158/93 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 14.8 hyperglycemia diagnostic threshold 高血糖 诊断阈值 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现心电图异常，慢病背景为Hypertension、Diabetes、Heart Disease、本态性（原发性）高血压，关键生命体征为血压 158/93 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 13781.93,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_CEB8E0121F9715A7",
+      "requestId": "cds_CEB8E0121F9715A7",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.6667,
+      "query": "夜间阵发性呼吸困难1周 夜间阵发性呼吸困难1周 夜间阵发性呼吸困难1周 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴眼并发症 稳定型心绞痛 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management dia",
+      "queryVariants": [
+        "夜间阵发性呼吸困难1周 夜间阵发性呼吸困难1周 夜间阵发性呼吸困难1周 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴眼并发症 稳定型心绞痛 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management dia",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为夜间阵发性呼吸困难1周，慢病背景为Hypertension、Diabetes、Heart Disease、本态性（原发性）高血压，关键生命体征为血压 177/109 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 13830.43,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_ABFE346822F3DA14",
+      "requestId": "cds_ABFE346822F3DA14",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "活动后心悸、气短2周 活动后心悸、气短2周 活动后心悸 气短2周 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴肾并发症 陈旧性心肌梗死 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "活动后心悸、气短2周 活动后心悸、气短2周 活动后心悸 气短2周 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴肾并发症 陈旧性心肌梗死 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "活动后心悸、气短2周 活动后心悸 气短2周 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 血压 142/99 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.7 guideline risk stratification triage threshold follow-up",
+        "活动后心悸、气短2周 活动后心悸 气短2周 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 血压 142/99 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.7 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为活动后心悸、气短2周、活动后心悸、气短2周，慢病背景为Hypertension、Diabetes、Heart Disease、本态性（原发性）高血压，关键生命体征为血压 142/99 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14884.02,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_C9C7906D82F519C9",
+      "requestId": "cds_C9C7906D82F519C9",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "体检发现血糖升高1周 体检发现血糖升高1周 体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现血糖升高1周 体检发现血糖升高1周 体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 血压 139/87 mmHg 随机血糖 4.7 guideline risk stratification triage threshold follow-up",
+        "体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 血压 139/87 mmHg 随机血糖 4.7 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现血糖升高1周，慢病背景为Diabetes、2型糖尿病伴肾并发症，关键生命体征为血压 139/87 mmHg；随机血糖 4.7。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 15458.93,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_79F967F0B7E6C578",
+      "requestId": "cds_79F967F0B7E6C578",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病伴神经并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病伴神经并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病伴神经并发症 血压 129/81 mmHg 随机血糖 11.6 hyperglycemia diagnostic threshold 高血糖 诊断阈值 guideline risk stratification triage threshold follow-up",
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病伴神经并发症 血压 129/81 mmHg 随机血糖 11.6 hyperglycemia diagnostic threshold 高血糖 诊断阈值 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为反复皮肤瘙痒，检查发现血糖高、反复皮肤瘙痒、检查发现血糖高，慢病背景为Diabetes、2型糖尿病伴神经并发症，关键生命体征为血压 129/81 mmHg；随机血糖 11.6。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 17390.32,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_4EA33B5DE5BF3E57",
+      "requestId": "cds_4EA33B5DE5BF3E57",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "活动后心悸、气短2周 活动后心悸、气短2周 活动后心悸 气短2周 Heart Disease 心力衰竭，未特指 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "活动后心悸、气短2周 活动后心悸、气短2周 活动后心悸 气短2周 Heart Disease 心力衰竭，未特指 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "活动后心悸、气短2周 活动后心悸 气短2周 Heart Disease 心力衰竭，未特指 血压 125/80 mmHg 随机血糖 4.3 guideline risk stratification triage threshold follow-up",
+        "活动后心悸、气短2周 活动后心悸 气短2周 Heart Disease 心力衰竭，未特指 血压 125/80 mmHg 随机血糖 4.3 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为活动后心悸、气短2周、活动后心悸、气短2周，慢病背景为Heart Disease、心力衰竭，未特指，关键生命体征为血压 125/80 mmHg；随机血糖 4.3。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 16758.88,
+      "diseaseSlice": "heart-disease"
+    },
+    {
+      "caseId": "eval_8EB2E729D5918469",
+      "requestId": "cds_8EB2E729D5918469",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "活动后心悸、气短2周 活动后心悸、气短2周 活动后心悸 气短2周 Heart Disease 充血性心力衰竭 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "活动后心悸、气短2周 活动后心悸、气短2周 活动后心悸 气短2周 Heart Disease 充血性心力衰竭 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "活动后心悸、气短2周 活动后心悸 气短2周 Heart Disease 充血性心力衰竭 血压 119/77 mmHg 随机血糖 6.2 guideline risk stratification triage threshold follow-up",
+        "活动后心悸、气短2周 活动后心悸 气短2周 Heart Disease 充血性心力衰竭 血压 119/77 mmHg 随机血糖 6.2 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为活动后心悸、气短2周、活动后心悸、气短2周，慢病背景为Heart Disease、充血性心力衰竭，关键生命体征为血压 119/77 mmHg；随机血糖 6.2。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 10767.78,
+      "diseaseSlice": "heart-disease"
+    },
+    {
+      "caseId": "eval_B8D2CB0472F134CF",
+      "requestId": "cds_B8D2CB0472F134CF",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "体检发现心电图异常 体检发现心电图异常 体检发现心电图异常 Heart Disease 心力衰竭，未特指 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现心电图异常 体检发现心电图异常 体检发现心电图异常 Heart Disease 心力衰竭，未特指 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现心电图异常 Heart Disease 心力衰竭，未特指 血压 134/86 mmHg 随机血糖 5.2 guideline risk stratification triage threshold follow-up",
+        "体检发现心电图异常 Heart Disease 心力衰竭，未特指 血压 134/86 mmHg 随机血糖 5.2 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现心电图异常，慢病背景为Heart Disease、心力衰竭，未特指，关键生命体征为血压 134/86 mmHg；随机血糖 5.2。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 11332.67,
+      "diseaseSlice": "heart-disease"
+    },
+    {
+      "caseId": "eval_15307B8E52801572",
+      "requestId": "cds_15307B8E52801572",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Heart Disease 心房颤动和心房扑动 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Heart Disease 心房颤动和心房扑动 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸痛反复发作1个月，慢病背景为Heart Disease、心房颤动和心房扑动，关键生命体征为血压 138/88 mmHg；随机血糖 6.3。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 16178.27,
+      "diseaseSlice": "heart-disease"
+    },
+    {
+      "caseId": "eval_12D295042CC22979",
+      "requestId": "cds_12D295042CC22979",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 0.8333,
+      "requiredSources": [
+        "WHO",
+        "NICE",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "无明显不适，体检发现血压高 无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 高血压性心脏病，无心脏衰竭 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency threshold",
+      "queryVariants": [
+        "无明显不适，体检发现血压高 无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 高血压性心脏病，无心脏衰竭 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency threshold",
+        "hypertension guideline blood pressure management",
+        "high blood pressure diagnosis threshold treatment target",
+        "成人 高血压 血压 分层 管理",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取血压阈值、分级标准与心血管风险分层依据。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为无明显不适，体检发现血压高、无明显不适、体检发现血压高，慢病背景为Hypertension、高血压性心脏病，无心脏衰竭，关键生命体征为血压 185/120 mmHg；重度高血压 急诊评估。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取血压阈值、分级标准与心血管风险分层依据。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、NICE、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "hypertension_guideline_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 11332.03,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_90EF899746C4C311",
+      "requestId": "cds_90EF899746C4C311",
+      "riskLevel": "L3",
+      "firstRelevantRank": 2,
+      "hitAt3": true,
+      "mrrAt5": 0.5,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "口干、乏力1个月 口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴神经并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "口干、乏力1个月 口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴神经并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴神经并发症 血压 135/86 mmHg 随机血糖 5.7 guideline risk stratification triage threshold follow-up",
+        "口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴神经并发症 血压 135/86 mmHg 随机血糖 5.7 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为口干、乏力1个月、口干、乏力1个月，慢病背景为Diabetes、2型糖尿病伴神经并发症，关键生命体征为血压 135/86 mmHg；随机血糖 5.7。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 11762.12,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_E54EC127259CB7A1",
+      "requestId": "cds_E54EC127259CB7A1",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病伴神经并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病伴神经并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病伴神经并发症 血压 135/86 mmHg 随机血糖 13.9 hyperglycemia diagnostic threshold 高血糖 诊断阈值 guideline risk stratification triage threshold follow-up",
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病伴神经并发症 血压 135/86 mmHg 随机血糖 13.9 hyperglycemia diagnostic threshold 高血糖 诊断阈值 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为反复皮肤瘙痒，检查发现血糖高、反复皮肤瘙痒、检查发现血糖高，慢病背景为Diabetes、2型糖尿病伴神经并发症，关键生命体征为血压 135/86 mmHg；随机血糖 13.9。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 10766.72,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_B2A8FD8046424885",
+      "requestId": "cds_B2A8FD8046424885",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "体检发现血糖升高1周 体检发现血糖升高1周 体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现血糖升高1周 体检发现血糖升高1周 体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 血压 138/88 mmHg 随机血糖 4.8 guideline risk stratification triage threshold follow-up",
+        "体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 血压 138/88 mmHg 随机血糖 4.8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现血糖升高1周，慢病背景为Diabetes、2型糖尿病伴肾并发症，关键生命体征为血压 138/88 mmHg；随机血糖 4.8。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 16325.43,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_5B41148E3104CBA2",
+      "requestId": "cds_5B41148E3104CBA2",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "视物模糊伴血糖升高3周 视物模糊伴血糖升高3周 视物模糊伴血糖升高3周 Diabetes 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "视物模糊伴血糖升高3周 视物模糊伴血糖升高3周 视物模糊伴血糖升高3周 Diabetes 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "视物模糊伴血糖升高3周 Diabetes 2型糖尿病伴肾并发症 血压 139/88 mmHg 随机血糖 5 guideline risk stratification triage threshold follow-up",
+        "视物模糊伴血糖升高3周 Diabetes 2型糖尿病伴肾并发症 血压 139/88 mmHg 随机血糖 5 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为视物模糊伴血糖升高3周，慢病背景为Diabetes、2型糖尿病伴肾并发症，关键生命体征为血压 139/88 mmHg；随机血糖 5。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14085.65,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_059699749BF649C0",
+      "requestId": "cds_059699749BF649C0",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴眼并发症 急性心肌梗死 未特指 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabe",
+      "queryVariants": [
+        "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴眼并发症 急性心肌梗死 未特指 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabe",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸痛反复发作1个月，慢病背景为Hypertension、Diabetes、Heart Disease、本态性（原发性）高血压，关键生命体征为血压 149/90 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 15530.62,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_EAE3CE519CFC2709",
+      "requestId": "cds_EAE3CE519CFC2709",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴肾并发症 充血性心力衰竭 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes",
+      "queryVariants": [
+        "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴肾并发症 充血性心力衰竭 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸痛反复发作1个月，慢病背景为Hypertension、Diabetes、Heart Disease、本态性（原发性）高血压，关键生命体征为血压 164/103 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14156.24,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_26A1A94FF8751FA2",
+      "requestId": "cds_26A1A94FF8751FA2",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸闷、胸痛1月，加重3天 胸闷、胸痛1月，加重3天 胸闷 胸痛1月 加重3天 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴肾并发症 充血性心力衰竭 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management",
+      "queryVariants": [
+        "胸闷、胸痛1月，加重3天 胸闷、胸痛1月，加重3天 胸闷 胸痛1月 加重3天 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴肾并发症 充血性心力衰竭 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸闷、胸痛1月，加重3天、胸闷、胸痛1月、加重3天，慢病背景为Hypertension、Diabetes、Heart Disease、本态性（原发性）高血压，关键生命体征为血压 176/102 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14684.57,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_84805BCBB3718A96",
+      "requestId": "cds_84805BCBB3718A96",
+      "riskLevel": "L3",
+      "firstRelevantRank": 2,
+      "hitAt3": true,
+      "mrrAt5": 0.5,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "口干、乏力1个月 口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "口干、乏力1个月 口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病不伴并发症 血压 137/86 mmHg 随机血糖 5.6 guideline risk stratification triage threshold follow-up",
+        "口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病不伴并发症 血压 137/86 mmHg 随机血糖 5.6 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为口干、乏力1个月、口干、乏力1个月，慢病背景为Diabetes、2型糖尿病不伴并发症，关键生命体征为血压 137/86 mmHg；随机血糖 5.6。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 12050.25,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_172E91BA1C8553F3",
+      "requestId": "cds_172E91BA1C8553F3",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病不伴并发症 血压 123/77 mmHg 随机血糖 6.7 guideline risk stratification triage threshold follow-up",
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病不伴并发症 血压 123/77 mmHg 随机血糖 6.7 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为反复皮肤瘙痒，检查发现血糖高、反复皮肤瘙痒、检查发现血糖高，慢病背景为Diabetes、2型糖尿病不伴并发症，关键生命体征为血压 123/77 mmHg；随机血糖 6.7。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 15415.66,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_5C5A2F10FC42A9CE",
+      "requestId": "cds_5C5A2F10FC42A9CE",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病不伴并发症 血压 139/87 mmHg 随机血糖 10.5 guideline risk stratification triage threshold follow-up",
+        "反复皮肤瘙痒，检查发现血糖高 反复皮肤瘙痒 检查发现血糖高 Diabetes 2型糖尿病不伴并发症 血压 139/87 mmHg 随机血糖 10.5 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为反复皮肤瘙痒，检查发现血糖高、反复皮肤瘙痒、检查发现血糖高，慢病背景为Diabetes、2型糖尿病不伴并发症，关键生命体征为血压 139/87 mmHg；随机血糖 10.5。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 16367.67,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_29836417BA66E254",
+      "requestId": "cds_29836417BA66E254",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "体检发现血糖升高1周 体检发现血糖升高1周 体检发现血糖升高1周 Diabetes 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现血糖升高1周 体检发现血糖升高1周 体检发现血糖升高1周 Diabetes 2型糖尿病不伴并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现血糖升高1周 Diabetes 2型糖尿病不伴并发症 血压 139/87 mmHg 随机血糖 8 guideline risk stratification triage threshold follow-up",
+        "体检发现血糖升高1周 Diabetes 2型糖尿病不伴并发症 血压 139/87 mmHg 随机血糖 8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现血糖升高1周，慢病背景为Diabetes、2型糖尿病不伴并发症，关键生命体征为血压 139/87 mmHg；随机血糖 8。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14973.92,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_CF124FCE87CD87EE",
+      "requestId": "cds_CF124FCE87CD87EE",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 0.8333,
+      "requiredSources": [
+        "WHO",
+        "NICE",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "体检发现血压、血糖均升高 体检发现血压、血糖均升高 体检发现血压 血糖均升高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emer",
+      "queryVariants": [
+        "体检发现血压、血糖均升高 体检发现血压、血糖均升高 体检发现血压 血糖均升高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emer",
+        "hypertension guideline blood pressure management",
+        "high blood pressure diagnosis threshold treatment target",
+        "成人 高血压 血压 分层 管理",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取血压阈值、分级标准与心血管风险分层依据。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现血压、血糖均升高、体检发现血压、血糖均升高，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病伴眼并发症，关键生命体征为血压 192/130 mmHg；重度高血压 急诊评估。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取血压阈值、分级标准与心血管风险分层依据。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、NICE、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "hypertension_guideline_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 12040.47,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_6ABEAC2111F5E6FE",
+      "requestId": "cds_6ABEAC2111F5E6FE",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸闷、胸痛1月，加重3天 胸闷、胸痛1月，加重3天 胸闷 胸痛1月 加重3天 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴眼并发症 心力衰竭 未特指 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose managemen",
+      "queryVariants": [
+        "胸闷、胸痛1月，加重3天 胸闷、胸痛1月，加重3天 胸闷 胸痛1月 加重3天 Hypertension Diabetes Heart Disease 本态性（原发性）高血压 2型糖尿病伴眼并发症 心力衰竭 未特指 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose managemen",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸闷、胸痛1月，加重3天、胸闷、胸痛1月、加重3天，慢病背景为Hypertension、Diabetes、Heart Disease、本态性（原发性）高血压，关键生命体征为血压 143/97 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 12667.77,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_ACDFA865543C4EBE",
+      "requestId": "cds_ACDFA865543C4EBE",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "血压升高伴血糖异常1月 血压升高伴血糖异常1月 血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "血压升高伴血糖异常1月 血压升高伴血糖异常1月 血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 血压 154/93 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.5 guideline risk stratification triage threshold follow-up",
+        "血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 血压 154/93 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.5 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为血压升高伴血糖异常1月，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病伴眼并发症，关键生命体征为血压 154/93 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 12564.03,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_2D916F2693AF65F1",
+      "requestId": "cds_2D916F2693AF65F1",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "乏力、头晕，检查发现血压血糖高 乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "乏力、头晕，检查发现血压血糖高 乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 血压 144/95 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 7.6 guideline risk stratification triage threshold follow-up",
+        "乏力、头晕，检查发现血压血糖高 乏力 头晕 检查发现血压血糖高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴眼并发症 血压 144/95 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 7.6 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为乏力、头晕，检查发现血压血糖高、乏力、头晕、检查发现血压血糖高，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病伴眼并发症，关键生命体征为血压 144/95 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14313.61,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_9BF1BF05AFF312A1",
+      "requestId": "cds_9BF1BF05AFF312A1",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "血压升高伴血糖异常1月 血压升高伴血糖异常1月 血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "血压升高伴血糖异常1月 血压升高伴血糖异常1月 血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 血压 145/96 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 15.6 hyperglycemia diagnostic threshold 高血糖 诊断阈值 guideline risk stratification triage threshold follow-up",
+        "血压升高伴血糖异常1月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 血压 145/96 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 15.6 hyperglycemia diagnostic threshold 高血糖 诊断阈值 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为血压升高伴血糖异常1月，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病伴周围循环并发症，关键生命体征为血压 145/96 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 11419.18,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_559FB058ABAB1E12",
+      "requestId": "cds_559FB058ABAB1E12",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "体检发现血压、血糖均升高 体检发现血压、血糖均升高 体检发现血压 血糖均升高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现血压、血糖均升高 体检发现血压、血糖均升高 体检发现血压 血糖均升高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现血压、血糖均升高 体检发现血压 血糖均升高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 血压 156/91 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 7.6 guideline risk stratification triage threshold follow-up",
+        "体检发现血压、血糖均升高 体检发现血压 血糖均升高 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴周围循环并发症 血压 156/91 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 7.6 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现血压、血糖均升高、体检发现血压、血糖均升高，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病伴周围循环并发症，关键生命体征为血压 156/91 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14847.97,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_FA7E2AF0BD1F8663",
+      "requestId": "cds_FA7E2AF0BD1F8663",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 0.8333,
+      "requiredSources": [
+        "WHO",
+        "NICE",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "反复头晕3个月 反复头晕3个月 反复头晕3个月 Hypertension 高血压性心脏病，无心脏衰竭 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈",
+      "queryVariants": [
+        "反复头晕3个月 反复头晕3个月 反复头晕3个月 Hypertension 高血压性心脏病，无心脏衰竭 hypertension guideline blood pressure management high blood pressure diagnosis threshold treatment target 成人 高血压 血压 分层 管理 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈",
+        "hypertension guideline blood pressure management",
+        "high blood pressure diagnosis threshold treatment target",
+        "成人 高血压 血压 分层 管理",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取血压阈值、分级标准与心血管风险分层依据。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为反复头晕3个月，慢病背景为Hypertension、高血压性心脏病，无心脏衰竭，关键生命体征为血压 182/122 mmHg；重度高血压 急诊评估。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取血压阈值、分级标准与心血管风险分层依据。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、NICE、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "hypertension_guideline_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14062.64,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_C0D56D81D5F8C31C",
+      "requestId": "cds_C0D56D81D5F8C31C",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+      "queryVariants": [
+        "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸闷、心悸伴血压升高2周、胸闷、心悸伴血压升高2周，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 153/94 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14614.23,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_8223C6940785E8AF",
+      "requestId": "cds_8223C6940785E8AF",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+      "queryVariants": [
+        "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸闷、心悸伴血压升高2周、胸闷、心悸伴血压升高2周，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 160/103 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 12544.58,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_E42C51D98664DC10",
+      "requestId": "cds_E42C51D98664DC10",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+      "queryVariants": [
+        "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸闷、心悸伴血压升高2周、胸闷、心悸伴血压升高2周，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 165/108 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 0.17,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_E3DCDFCAC3C6EA6D",
+      "requestId": "cds_E3DCDFCAC3C6EA6D",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+      "queryVariants": [
+        "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸闷、心悸伴血压升高2周、胸闷、心悸伴血压升高2周，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 152/90 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 0.09,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_120F7373ADC78970",
+      "requestId": "cds_120F7373ADC78970",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "反复头晕3个月 反复头晕3个月 反复头晕3个月 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "反复头晕3个月 反复头晕3个月 反复头晕3个月 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "反复头晕3个月 Hypertension 本态性（原发性）高血压 血压 161/108 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.5 guideline risk stratification triage threshold follow-up",
+        "反复头晕3个月 Hypertension 本态性（原发性）高血压 血压 161/108 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.5 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为反复头晕3个月，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 161/108 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 15283.31,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_896A877252CAC679",
+      "requestId": "cds_896A877252CAC679",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "体检发现血压升高1周 体检发现血压升高1周 体检发现血压升高1周 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现血压升高1周 体检发现血压升高1周 体检发现血压升高1周 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现血压升高1周 Hypertension 本态性（原发性）高血压 血压 158/99 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.6 guideline risk stratification triage threshold follow-up",
+        "体检发现血压升高1周 Hypertension 本态性（原发性）高血压 血压 158/99 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.6 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现血压升高1周，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 158/99 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 13469.61,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_F75EB9F54ACA2996",
+      "requestId": "cds_F75EB9F54ACA2996",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": true,
+      "redFlagHit": true,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+      "queryVariants": [
+        "胸闷、心悸伴血压升高2周 胸闷、心悸伴血压升高2周 胸闷 心悸伴血压升高2周 Hypertension 本态性（原发性）高血压 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸闷、心悸伴血压升高2周、胸闷、心悸伴血压升高2周，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 148/90 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 0.26,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_308B8CD106594D69",
+      "requestId": "cds_308B8CD106594D69",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "常规复查 常规复查 常规复查 Chronic Disease Followup diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "常规复查 常规复查 常规复查 Chronic Disease Followup diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "常规复查 Chronic Disease Followup 血压 139/88 mmHg 随机血糖 4.8 guideline risk stratification triage threshold follow-up",
+        "常规复查 Chronic Disease Followup 血压 139/88 mmHg 随机血糖 4.8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为常规复查，慢病背景为Chronic Disease Followup，关键生命体征为血压 139/88 mmHg；随机血糖 4.8。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14156.8,
+      "diseaseSlice": "mixed-other"
+    },
+    {
+      "caseId": "eval_62186BD74F22585C",
+      "requestId": "cds_62186BD74F22585C",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "乏力、疲倦 乏力、疲倦 乏力 疲倦 Chronic Disease Followup diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "乏力、疲倦 乏力、疲倦 乏力 疲倦 Chronic Disease Followup diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "乏力、疲倦 乏力 疲倦 Chronic Disease Followup 血压 125/79 mmHg 随机血糖 4.7 guideline risk stratification triage threshold follow-up",
+        "乏力、疲倦 乏力 疲倦 Chronic Disease Followup 血压 125/79 mmHg 随机血糖 4.7 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为乏力、疲倦、乏力、疲倦，慢病背景为Chronic Disease Followup，关键生命体征为血压 125/79 mmHg；随机血糖 4.7。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 21164.66,
+      "diseaseSlice": "mixed-other"
+    },
+    {
+      "caseId": "eval_4B099101FEA082FA",
+      "requestId": "cds_4B099101FEA082FA",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "健康体检 健康体检 健康体检 Chronic Disease Followup diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "健康体检 健康体检 健康体检 Chronic Disease Followup diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "健康体检 Chronic Disease Followup 血压 125/79 mmHg 随机血糖 6.3 guideline risk stratification triage threshold follow-up",
+        "健康体检 Chronic Disease Followup 血压 125/79 mmHg 随机血糖 6.3 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为健康体检，慢病背景为Chronic Disease Followup，关键生命体征为血压 125/79 mmHg；随机血糖 6.3。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14746.86,
+      "diseaseSlice": "mixed-other"
+    },
+    {
+      "caseId": "eval_4CDCA64DB8C86AA7",
+      "requestId": "cds_4CDCA64DB8C86AA7",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "体检发现血压升高1周 体检发现血压升高1周 体检发现血压升高1周 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现血压升高1周 体检发现血压升高1周 体检发现血压升高1周 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现血压升高1周 Hypertension 本态性（原发性）高血压 血压 152/90 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.9 guideline risk stratification triage threshold follow-up",
+        "体检发现血压升高1周 Hypertension 本态性（原发性）高血压 血压 152/90 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.9 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现血压升高1周，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 152/90 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 18819.26,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_AA3C006DFCB3D896",
+      "requestId": "cds_AA3C006DFCB3D896",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "头晕、头痛1月余 头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "头晕、头痛1月余 头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 血压 167/106 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.1 guideline risk stratification triage threshold follow-up",
+        "头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 血压 167/106 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 4.1 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为头晕、头痛1月余、头晕、头痛1月余，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 167/106 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14727.19,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_9B62C1494575EAD9",
+      "requestId": "cds_9B62C1494575EAD9",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "无明显不适，体检发现血压高 无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "无明显不适，体检发现血压高 无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 本态性（原发性）高血压 血压 159/94 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.8 guideline risk stratification triage threshold follow-up",
+        "无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 本态性（原发性）高血压 血压 159/94 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为无明显不适，体检发现血压高、无明显不适、体检发现血压高，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 159/94 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 17204.47,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_C67B8A4D3471BE8C",
+      "requestId": "cds_C67B8A4D3471BE8C",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 2
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.8333,
+      "query": "头晕、头痛1月余 头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "头晕、头痛1月余 头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 血压 154/92 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.3 guideline risk stratification triage threshold follow-up",
+        "头晕、头痛1月余 头晕 头痛1月余 Hypertension 本态性（原发性）高血压 血压 154/92 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.3 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为头晕、头痛1月余、头晕、头痛1月余，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 154/92 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 16482.45,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_B518E83846173961",
+      "requestId": "cds_B518E83846173961",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE",
+        "CDC_CN"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_CN",
+          "count": 1
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.5,
+      "query": "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Heart Disease 急性心肌梗死，未特指 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Heart Disease 急性心肌梗死，未特指 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸痛反复发作1个月，慢病背景为Heart Disease、急性心肌梗死，未特指，关键生命体征为血压 135/84 mmHg；随机血糖 5.6。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 11118.11,
+      "diseaseSlice": "heart-disease"
+    },
+    {
+      "caseId": "eval_324D6C176843D93F",
+      "requestId": "cds_324D6C176843D93F",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸闷、胸痛1月，加重3天 胸闷、胸痛1月，加重3天 胸闷 胸痛1月 加重3天 Heart Disease 稳定型心绞痛 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断",
+      "queryVariants": [
+        "胸闷、胸痛1月，加重3天 胸闷、胸痛1月，加重3天 胸闷 胸痛1月 加重3天 Heart Disease 稳定型心绞痛 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸闷、胸痛1月，加重3天、胸闷、胸痛1月、加重3天，慢病背景为Heart Disease、稳定型心绞痛，关键生命体征为血压 135/84 mmHg；随机血糖 4.9。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14366.95,
+      "diseaseSlice": "heart-disease"
+    },
+    {
+      "caseId": "eval_D48198A3D0AD5284",
+      "requestId": "cds_D48198A3D0AD5284",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Heart Disease 稳定型心绞痛 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "胸痛反复发作1个月 胸痛反复发作1个月 胸痛反复发作1个月 Heart Disease 稳定型心绞痛 stroke warning signs emergency triage guideline FAST stroke signs facial droop arm weakness speech 卒中 预警 症状 急诊 处置 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "stroke warning signs emergency triage guideline",
+        "FAST stroke signs facial droop arm weakness speech",
+        "卒中 预警 症状 急诊 处置",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "识别卒中/急症红旗信号与急诊上转时效要求。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为胸痛反复发作1个月，慢病背景为Heart Disease、稳定型心绞痛，关键生命体征为血压 135/84 mmHg；随机血糖 5.8。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；识别卒中/急症红旗信号与急诊上转时效要求。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "stroke_red_flag_focus",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14663.04,
+      "diseaseSlice": "heart-disease"
+    },
+    {
+      "caseId": "eval_11ED14A055B41BB3",
+      "requestId": "cds_11ED14A055B41BB3",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "无明显不适，体检发现血压高 无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "无明显不适，体检发现血压高 无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 本态性（原发性）高血压 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 本态性（原发性）高血压 血压 153/98 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.7 guideline risk stratification triage threshold follow-up",
+        "无明显不适，体检发现血压高 无明显不适 体检发现血压高 Hypertension 本态性（原发性）高血压 血压 153/98 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 5.7 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为无明显不适，体检发现血压高、无明显不适、体检发现血压高，慢病背景为Hypertension、本态性（原发性）高血压，关键生命体征为血压 153/98 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 19723.19,
+      "diseaseSlice": "hypertension"
+    },
+    {
+      "caseId": "eval_52C690D51DAEF5CB",
+      "requestId": "cds_52C690D51DAEF5CB",
+      "riskLevel": "L3",
+      "firstRelevantRank": 2,
+      "hitAt3": true,
+      "mrrAt5": 0.5,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "口干、乏力1个月 口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "口干、乏力1个月 口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴眼并发症 血压 120/75 mmHg 随机血糖 8.8 guideline risk stratification triage threshold follow-up",
+        "口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴眼并发症 血压 120/75 mmHg 随机血糖 8.8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为口干、乏力1个月、口干、乏力1个月，慢病背景为Diabetes、2型糖尿病伴眼并发症，关键生命体征为血压 120/75 mmHg；随机血糖 8.8。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 21111.34,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_DEA1203E9E90FA4F",
+      "requestId": "cds_DEA1203E9E90FA4F",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 4
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "体检发现血糖升高1周 体检发现血糖升高1周 体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "体检发现血糖升高1周 体检发现血糖升高1周 体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 血压 119/75 mmHg 随机血糖 7.8 guideline risk stratification triage threshold follow-up",
+        "体检发现血糖升高1周 Diabetes 2型糖尿病伴肾并发症 血压 119/75 mmHg 随机血糖 7.8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为体检发现血糖升高1周，慢病背景为Diabetes、2型糖尿病伴肾并发症，关键生命体征为血压 119/75 mmHg；随机血糖 7.8。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 20795.44,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_19D6E96909E6B296",
+      "requestId": "cds_19D6E96909E6B296",
+      "riskLevel": "L3",
+      "firstRelevantRank": 3,
+      "hitAt3": true,
+      "mrrAt5": 0.3333,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "多饮、多尿、体重下降2月 多饮、多尿、体重下降2月 多饮 多尿 体重下降2月 Diabetes 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "多饮、多尿、体重下降2月 多饮、多尿、体重下降2月 多饮 多尿 体重下降2月 Diabetes 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "多饮、多尿、体重下降2月 多饮 多尿 体重下降2月 Diabetes 2型糖尿病伴眼并发症 血压 128/80 mmHg 随机血糖 6.3 guideline risk stratification triage threshold follow-up",
+        "多饮、多尿、体重下降2月 多饮 多尿 体重下降2月 Diabetes 2型糖尿病伴眼并发症 血压 128/80 mmHg 随机血糖 6.3 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为多饮、多尿、体重下降2月、多饮、多尿、体重下降2月，慢病背景为Diabetes、2型糖尿病伴眼并发症，关键生命体征为血压 128/80 mmHg；随机血糖 6.3。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 13632.26,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_3A99F5C96BFDEF5A",
+      "requestId": "cds_3A99F5C96BFDEF5A",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE",
+        "CDC_CN"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "CDC_CN",
+          "count": 1
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.5,
+      "query": "头晕、多饮、多尿2月 头晕、多饮、多尿2月 头晕 多饮 多尿2月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "头晕、多饮、多尿2月 头晕、多饮、多尿2月 头晕 多饮 多尿2月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴肾并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "头晕、多饮、多尿2月 头晕 多饮 多尿2月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴肾并发症 血压 163/100 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.1 guideline risk stratification triage threshold follow-up",
+        "头晕、多饮、多尿2月 头晕 多饮 多尿2月 Hypertension Diabetes 本态性（原发性）高血压 2型糖尿病伴肾并发症 血压 163/100 mmHg stage-2 hypertension risk stratification 高血压 分级 风险分层 随机血糖 6.1 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为头晕、多饮、多尿2月、头晕、多饮、多尿2月，慢病背景为Hypertension、Diabetes、本态性（原发性）高血压、2型糖尿病伴肾并发症，关键生命体征为血压 163/100 mmHg；高血压 分级 风险分层。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 13401.15,
+      "diseaseSlice": "hypertension+diabetes"
+    },
+    {
+      "caseId": "eval_51172CBE7CC41B0C",
+      "requestId": "cds_51172CBE7CC41B0C",
+      "riskLevel": "L3",
+      "firstRelevantRank": 1,
+      "hitAt3": true,
+      "mrrAt5": 1,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED",
+        "NICE",
+        "NHC_CN"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "CDC_US",
+          "count": 2
+        },
+        {
+          "sourceId": "NICE",
+          "count": 1
+        },
+        {
+          "sourceId": "WHO",
+          "count": 1
+        },
+        {
+          "sourceId": "NHC_CN",
+          "count": 1
+        },
+        {
+          "sourceId": "PUBMED",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 0.6667,
+      "query": "视物模糊伴血糖升高3周 视物模糊伴血糖升高3周 视物模糊伴血糖升高3周 Diabetes 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "视物模糊伴血糖升高3周 视物模糊伴血糖升高3周 视物模糊伴血糖升高3周 Diabetes 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "视物模糊伴血糖升高3周 Diabetes 2型糖尿病伴眼并发症 血压 133/84 mmHg 随机血糖 7.9 guideline risk stratification triage threshold follow-up",
+        "视物模糊伴血糖升高3周 Diabetes 2型糖尿病伴眼并发症 血压 133/84 mmHg 随机血糖 7.9 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为视物模糊伴血糖升高3周，慢病背景为Diabetes、2型糖尿病伴眼并发症，关键生命体征为血压 133/84 mmHg；随机血糖 7.9。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 14456.17,
+      "diseaseSlice": "diabetes"
+    },
+    {
+      "caseId": "eval_86C50DFB59A371F1",
+      "requestId": "cds_86C50DFB59A371F1",
+      "riskLevel": "L3",
+      "firstRelevantRank": 2,
+      "hitAt3": true,
+      "mrrAt5": 0.5,
+      "redFlagExpected": false,
+      "redFlagHit": false,
+      "summaryStructuredRate": 1,
+      "requiredSources": [
+        "WHO",
+        "CDC_US"
+      ],
+      "requiredSourceCovered": true,
+      "usedSources": [
+        "WHO",
+        "CDC_US",
+        "PUBMED"
+      ],
+      "sourceBreakdown": [
+        {
+          "sourceId": "PUBMED",
+          "count": 3
+        },
+        {
+          "sourceId": "WHO",
+          "count": 2
+        },
+        {
+          "sourceId": "CDC_US",
+          "count": 1
+        }
+      ],
+      "resultCount": 6,
+      "realtimeShare": 1,
+      "query": "口干、乏力1个月 口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+      "queryVariants": [
+        "口干、乏力1个月 口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴眼并发症 diabetes hyperglycemia hypoglycemia diagnosis guideline blood glucose management diabetes emergency thresholds 糖尿病 高血糖 低血糖 诊断 阈值",
+        "diabetes hyperglycemia hypoglycemia diagnosis guideline",
+        "blood glucose management diabetes emergency thresholds",
+        "糖尿病 高血糖 低血糖 诊断 阈值",
+        "口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴眼并发症 血压 139/89 mmHg 随机血糖 6.8 guideline risk stratification triage threshold follow-up",
+        "口干、乏力1个月 口干 乏力1个月 Diabetes 2型糖尿病伴眼并发症 血压 139/89 mmHg 随机血糖 6.8 指南 风险分层 分诊 阈值 随访"
+      ],
+      "decomposedNeeds": [
+        "拆解主诉与伴随症状，识别当前场景的核心临床问题。",
+        "提取高低血糖诊断边界与急性风险处理证据。",
+        "补充高风险患者的复评频率与跨科会诊触发条件。",
+        "输出可执行建议时需给出对应证据出处与适用条件。"
+      ],
+      "professionalRestatement": "临床检索任务重述：患者主诉与症状为口干、乏力1个月、口干、乏力1个月，慢病背景为Diabetes、2型糖尿病伴眼并发症，关键生命体征为血压 139/89 mmHg；随机血糖 6.8。请围绕拆解主诉与伴随症状，识别当前场景的核心临床问题。；提取高低血糖诊断边界与急性风险处理证据。；补充高风险患者的复评频率与跨科会诊触发条件。；输出可执行建议时需给出对应证据出处与适用条件。进行权威证据检索，优先输出WHO、CDC_US来源中的诊断阈值、风险分层、处置时效与随访频率。",
+      "activatedSkills": [
+        "need_decomposition",
+        "professional_restatement",
+        "query_rewrite",
+        "network_authority_recall",
+        "hybrid_retrieval_fusion",
+        "local_vector_recall",
+        "glucose_threshold_focus",
+        "evidence_completeness_gate"
+      ],
+      "strategyVersion": "authority-multisource-v3.1+hybrid-v1",
+      "latencyMs": 24829.74,
+      "diseaseSlice": "diabetes"
+    }
+  ]
+}

@@ -235,6 +235,44 @@ describe('Architecture Smoke - HTTP integration', () => {
     expect(payload.message).toContain('subset');
   });
 
+  it('returns 400 when medical search query exceeds length limit', async () => {
+    const response = await fetch(`${baseUrl}/governance/medical-search`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        query: 'a'.repeat(241),
+        limit: 4,
+      }),
+    });
+    const payload = await response.json() as {
+      error?: string;
+      message?: string;
+    };
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toBe('invalid_query');
+    expect(payload.message).toContain('<= 240');
+  });
+
+  it('returns 400 when medical source list exceeds safety cap', async () => {
+    const response = await fetch(`${baseUrl}/governance/medical-search`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        query: 'hypertension guideline',
+        sourceFilter: ['S1', 'S2', 'S3', 'S4', 'S5', 'S6', 'S7', 'S8', 'S9'],
+      }),
+    });
+    const payload = await response.json() as {
+      error?: string;
+      message?: string;
+    };
+
+    expect(response.status).toBe(400);
+    expect(payload.error).toBe('invalid_source_constraints');
+    expect(payload.message).toContain('cannot exceed 8');
+  });
+
   it('returns 400 for POST /orchestrate_triage when profile is missing', async () => {
     const response = await fetch(`${baseUrl}/orchestrate_triage`, {
       method: 'POST',
@@ -618,12 +656,18 @@ describe('Architecture Smoke - HTTP integration', () => {
     const payload = await response.json() as {
       errorCode: string;
       requiredFields?: string[];
+      blockingReason?: {
+        code?: string;
+        triggerStage?: string;
+      };
       nextAction?: string;
     };
 
     expect(response.status).toBe(400);
     expect(payload.errorCode).toBe('ERR_MISSING_REQUIRED_DATA');
     expect(payload.requiredFields).toEqual(expect.arrayContaining(['consentToken']));
+    expect(payload.blockingReason?.code).toBe('VALIDATION_BLOCKED');
+    expect(payload.blockingReason?.triggerStage).toBe('INFO_GATHER');
     expect(typeof payload.nextAction).toBe('string');
     expect((payload.nextAction ?? '').length).toBeGreaterThan(0);
   });
@@ -746,6 +790,10 @@ describe('Architecture Smoke - HTTP integration', () => {
       .map((line) => JSON.parse(line) as {
         type: string;
         requiredFields?: string[];
+        blockingReason?: {
+          code?: string;
+          triggerStage?: string;
+        };
         nextAction?: string;
         snapshot?: {
           tasks: unknown[];
@@ -790,6 +838,8 @@ describe('Architecture Smoke - HTTP integration', () => {
     expect(typeof clarification?.nextAction).toBe('string');
     expect((clarification?.nextAction ?? '').length).toBeGreaterThan(0);
     expect(errorEvent).toBeDefined();
+    expect(errorEvent?.blockingReason?.code).toBe('VALIDATION_BLOCKED');
+    expect(errorEvent?.blockingReason?.triggerStage).toBe('INFO_GATHER');
     expect(typeof errorEvent?.nextAction).toBe('string');
     expect((errorEvent?.nextAction ?? '').length).toBeGreaterThan(0);
     expect(reviewTask).toBeDefined();

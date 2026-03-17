@@ -80,6 +80,7 @@ function resolveSearchRuntimeConfig(
       1,
       Math.floor(raw.recentSearchLogLimit ?? DEFAULT_RECENT_SEARCH_LOG_LIMIT),
     ),
+    hybridRetrievalEnabled: raw.hybridRetrievalEnabled === true,
   };
 }
 
@@ -160,6 +161,10 @@ function createSearchRuntimeConfig(
       DEFAULT_RECENT_SEARCH_LOG_LIMIT,
       1,
       500,
+    ),
+    hybridRetrievalEnabled: parseBoolean(
+      env.COPILOT_CARE_MED_SEARCH_HYBRID_RETRIEVER_ENABLED,
+      true,
     ),
   });
 }

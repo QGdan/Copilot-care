@@ -33,7 +33,7 @@ function buildBasicSafetyDecision(
     return {
       layer: 'BASIC_SAFETY',
       status: 'escalated',
-      summary: 'Emergency boundary hit; offline escalation path enforced.',
+      summary: '触发急症边界，已强制切换线下上转路径。',
       matchedRuleIds: input.risk.matchedRuleIds.filter((ruleId) =>
         ruleId.startsWith('RULE-BS-'),
       ),
@@ -43,7 +43,7 @@ function buildBasicSafetyDecision(
   return {
     layer: 'BASIC_SAFETY',
     status: 'pass',
-    summary: 'No emergency short-circuit boundary triggered.',
+    summary: '未触发急症短路边界。',
     matchedRuleIds: input.risk.matchedRuleIds.filter((ruleId) =>
       ruleId.startsWith('RULE-BS-'),
     ),
@@ -62,7 +62,7 @@ function buildFlowControlDecision(
       layer: 'FLOW_CONTROL',
       status: 'fail',
       summary:
-        `Input gate blocked: ${input.errorCode}.` +
+        `输入门禁阻断：${input.errorCode}。` +
         (input.requiredFields?.length
           ? ` requiredFields=${input.requiredFields.join(',')}`
           : ''),
@@ -75,7 +75,7 @@ function buildFlowControlDecision(
   return {
     layer: 'FLOW_CONTROL',
     status: 'pass',
-    summary: 'Consent and minimum-information gates passed.',
+    summary: '同意授权与最小信息门禁已通过。',
     matchedRuleIds: input.risk.matchedRuleIds.filter((ruleId) =>
       ruleId.startsWith('RULE-FC-'),
     ),
@@ -94,7 +94,7 @@ function buildIntelligentCollabDecision(
       layer: 'INTELLIGENT_COLLABORATION',
       status: 'warn',
       summary:
-        'Model-level confidence or conflict guard triggered abstain fallback.',
+        '模型置信度/冲突守护触发，已进入 ABSTAIN 兜底。',
       matchedRuleIds: input.routing?.matchedRuleIds ?? [],
     };
   }
@@ -102,7 +102,7 @@ function buildIntelligentCollabDecision(
   return {
     layer: 'INTELLIGENT_COLLABORATION',
     status: 'pass',
-    summary: `Routing decision=${input.routing?.routeMode ?? 'N/A'}.`,
+    summary: `路由决策=${input.routing?.routeMode ?? 'N/A'}。`,
     matchedRuleIds: input.routing?.matchedRuleIds ?? [],
   };
 }
@@ -112,7 +112,7 @@ function buildOperationsDecision(): GovernanceLayerDecision {
     layer: 'OPERATIONS',
     status: 'pass',
     summary:
-      'Runtime telemetry linked with release gates (gate:metrics / gate:all).',
+      '运行时遥测已关联发布门禁（gate:metrics / gate:all）。',
     matchedRuleIds: [RULE_IDS.OPERATIONS_GOVERNANCE_RELEASE_LINK],
   };
 }
@@ -159,13 +159,13 @@ export function buildValidationErrorGovernanceSnapshot(input: {
       {
         layer: 'BASIC_SAFETY',
         status: 'pass',
-        summary: 'No emergency boundary evaluated due intake failure.',
+        summary: '因入参校验失败，未进入急症边界评估。',
       },
       {
         layer: 'FLOW_CONTROL',
         status: 'fail',
         summary:
-          `Validation blocked with ${input.errorCode}.` +
+          `校验阻断：${input.errorCode}。` +
           (input.requiredFields?.length
             ? ` requiredFields=${input.requiredFields.join(',')}`
             : ''),
@@ -174,13 +174,13 @@ export function buildValidationErrorGovernanceSnapshot(input: {
       {
         layer: 'INTELLIGENT_COLLABORATION',
         status: 'blocked',
-        summary: 'Routing/debate skipped due validation failure.',
+        summary: '因校验失败，路由与辩论阶段已跳过。',
       },
       {
         layer: 'OPERATIONS',
         status: 'pass',
         summary:
-          'Validation outcome remains auditable and linked to release evidence gates.',
+          '校验结果已纳入审计链路并关联发布证据门禁。',
         matchedRuleIds: [RULE_IDS.OPERATIONS_GOVERNANCE_RELEASE_LINK],
       },
     ],

@@ -1,0 +1,339 @@
+{
+  "version": "v1.00",
+  "name": "rag-hybrid-workflow",
+  "createdAt": "2026-03-14",
+  "objective": "以可回滚、可审计、可量化的方式将当前权威检索 RAG 演进为混合架构（向量库 + 词法 + 实时检索），并通过自动化门禁逐步验收。",
+  "workflow": [
+    {
+      "id": "RAG-HY-P0-001",
+      "title": "固化当前 RAG 质量基线（offline）",
+      "priority": "P0",
+      "state": "ready",
+      "goal": "建立可重复离线评测基线，作为后续转型非回归对照。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/medicalSearchEvaluation.test.ts src/infrastructure/knowledge/__tests__/AuthoritativeMedicalWebSearchService.test.ts",
+        "npm run metrics:rag -- --limit=120 --network=false --hybrid=true --timeout-ms=4000 --output=reports/metrics/rag-hybrid.offline.latest.json --report=docs/process/rag-hybrid-offline-report.md"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/infrastructure/knowledge/medical-search",
+        "src/backend/src/infrastructure/knowledge/__tests__",
+        "scripts/rag-offline-eval.cjs",
+        "reports/metrics/rag-hybrid.offline.latest.json",
+        "docs/process/rag-hybrid-offline-report.md"
+      ],
+      "evidence": [
+        "reports/metrics/rag-hybrid.offline.latest.json",
+        "docs/process/rag-hybrid-offline-report.md"
+      ]
+    },
+    {
+      "id": "RAG-HY-P0-002",
+      "title": "固化当前 RAG 质量基线（online）",
+      "priority": "P0",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P0-001"
+      ],
+      "goal": "建立在线评测基线并输出审计报告，识别转型重点风险项。",
+      "verify": [
+        "npm run metrics:rag -- --limit=120 --network=true --hybrid=true --timeout-ms=4000 --output=reports/metrics/rag-hybrid.online.latest.json --report=docs/process/rag-hybrid-online-report.md",
+        "node scripts/rag-hybrid-audit.cjs --offline=reports/metrics/rag-hybrid.offline.latest.json --online=reports/metrics/rag-hybrid.online.latest.json --output=reports/metrics/rag-hybrid-audit.latest.json --report=docs/process/rag-hybrid-audit-report.md"
+      ],
+      "rollbackPaths": [
+        "reports/metrics/rag-hybrid.online.latest.json",
+        "docs/process/rag-hybrid-online-report.md",
+        "reports/metrics/rag-hybrid-audit.latest.json",
+        "docs/process/rag-hybrid-audit-report.md"
+      ],
+      "evidence": [
+        "reports/metrics/rag-hybrid.online.latest.json",
+        "docs/process/rag-hybrid-online-report.md",
+        "reports/metrics/rag-hybrid-audit.latest.json",
+        "docs/process/rag-hybrid-audit-report.md"
+      ]
+    },
+    {
+      "id": "RAG-HY-P0-003",
+      "title": "冻结混合架构 ADR 与转型蓝图",
+      "priority": "P0",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P0-001"
+      ],
+      "goal": "明确目标架构、演进路径、风险与回滚边界，避免边做边漂移。",
+      "verify": [
+        "if (-not (Test-Path 'docs/adr/0012-hybrid-rag-architecture-transition.md')) { throw 'missing ADR 0012' }",
+        "if (-not (Test-Path 'docs/process/rag-hybrid-transformation-plan.v1_00.md')) { throw 'missing transformation plan' }",
+        "npm run check:encoding"
+      ],
+      "rollbackPaths": [
+        "docs/adr/0012-hybrid-rag-architecture-transition.md",
+        "docs/process/rag-hybrid-transformation-plan.v1_00.md",
+        "docs/process/rag-hybrid-workflow.v1_00.json"
+      ],
+      "evidence": [
+        "docs/adr/0012-hybrid-rag-architecture-transition.md",
+        "docs/process/rag-hybrid-transformation-plan.v1_00.md"
+      ]
+    },
+    {
+      "id": "RAG-HY-P1-001",
+      "title": "权威文档采集与标准化入库适配层",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P0-003"
+      ],
+      "goal": "引入离线采集链路，支持权威文档标准化与可追溯版本管理。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/hybridRagIngestionAdapter.test.ts",
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/hybridRagCorpusVersioning.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/infrastructure/knowledge/hybrid-indexing",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagIngestionAdapter.test.ts",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagCorpusVersioning.test.ts"
+      ],
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagIngestionAdapter.test.ts",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagCorpusVersioning.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P1-002",
+      "title": "分块策略与元数据标准",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P1-001"
+      ],
+      "goal": "建立面向医疗证据的 chunk 规范（来源、时效、规则标签、红旗标签）。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/hybridRagChunking.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/infrastructure/knowledge/hybrid-indexing",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagChunking.test.ts"
+      ],
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagChunking.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P1-003",
+      "title": "Embedding 与向量存储端口层",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P1-002"
+      ],
+      "goal": "实现可替换 embedding/vector store 端口，支持本地与云环境。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/hybridRagVectorStore.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/application/ports",
+        "src/backend/src/infrastructure/knowledge/hybrid-vector",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagVectorStore.test.ts"
+      ],
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagVectorStore.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P1-004",
+      "title": "词法索引（BM25）适配器",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P1-002"
+      ],
+      "goal": "补充 BM25 召回通道，提高关键术语、阈值文本命中稳定性。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/hybridRagLexicalIndex.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/infrastructure/knowledge/hybrid-lexical",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagLexicalIndex.test.ts"
+      ],
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagLexicalIndex.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P2-001",
+      "title": "Hybrid Retriever（向量+词法+在线）",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P1-003",
+        "RAG-HY-P1-004"
+      ],
+      "goal": "实现多通道召回并统一到证据候选池。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/hybridRagRetriever.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/infrastructure/knowledge/medical-search/service.ts",
+        "src/backend/src/infrastructure/knowledge/medical-search/providerRegistry.ts",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagRetriever.test.ts"
+      ],
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagRetriever.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P2-002",
+      "title": "融合重排层（RRF + 语义重排）",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P2-001"
+      ],
+      "goal": "优化候选排序，降低误排和重复证据干扰。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/hybridRagReranker.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/infrastructure/knowledge/medical-search/providers.ts",
+        "src/backend/src/infrastructure/knowledge/medical-search/sourcePolicy.ts",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagReranker.test.ts"
+      ],
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagReranker.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P2-003",
+      "title": "证据治理约束（来源覆盖/红旗优先）",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P2-002"
+      ],
+      "goal": "保证高风险场景下证据来源完整性与红旗召回一致性。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/orchestration/__tests__/ComplexityRoutedOrchestrator.evidenceGate.test.ts",
+        "npm run test --workspace=@copilot-care/backend -- src/infrastructure/knowledge/__tests__/sourcePolicy.selection.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/infrastructure/knowledge/medical-search/sourcePolicy.ts",
+        "src/backend/src/infrastructure/orchestration/AuthoritativeEvidenceCollector.ts",
+        "src/backend/src/infrastructure/orchestration/ComplexityRoutedOrchestrator.ts"
+      ],
+      "evidence": [
+        "src/backend/src/infrastructure/orchestration/__tests__/ComplexityRoutedOrchestrator.evidenceGate.test.ts",
+        "src/backend/src/infrastructure/knowledge/__tests__/sourcePolicy.selection.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P2-004",
+      "title": "Feature Flag 灰度接入会诊链路",
+      "priority": "P1",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P2-003"
+      ],
+      "goal": "通过 feature flag 控制混合检索上线范围，确保可回滚。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/http-integration.test.ts",
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/routed-orchestration.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/bootstrap/createRuntime.ts",
+        "src/backend/src/infrastructure/orchestration/ComplexityRoutedOrchestrator.ts",
+        "src/backend/src/interfaces/http/createTriageRouter.ts"
+      ],
+      "evidence": [
+        "src/backend/src/tests/architecture/http-integration.test.ts",
+        "src/backend/src/tests/architecture/routed-orchestration.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P3-001",
+      "title": "性能优化与缓存策略收敛",
+      "priority": "P2",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P2-004"
+      ],
+      "goal": "收敛在线时延并降低 provider 波动对用户体验的影响。",
+      "verify": [
+        "npm run metrics:rag -- --limit=120 --network=true --hybrid=true --timeout-ms=4000 --output=reports/metrics/rag-hybrid.online.latest.json --report=docs/process/rag-hybrid-online-report.md",
+        "npm run perf:profile"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/infrastructure/knowledge/medical-search/config.ts",
+        "src/backend/src/infrastructure/knowledge/medical-search/cache.ts",
+        "src/backend/src/infrastructure/knowledge/medical-search/circuitBreaker.ts",
+        "reports/metrics/performance-profile.latest.json"
+      ],
+      "evidence": [
+        "docs/process/rag-hybrid-online-report.md",
+        "reports/metrics/performance-profile.latest.json"
+      ]
+    },
+    {
+      "id": "RAG-HY-P3-002",
+      "title": "治理可观测看板与运行日志增强",
+      "priority": "P2",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P2-004"
+      ],
+      "goal": "补齐混合检索的 runtime 统计、trace、错误归因与治理接口。",
+      "verify": [
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/http-integration.test.ts",
+        "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/runtime-panel-providers.test.ts"
+      ],
+      "rollbackPaths": [
+        "src/backend/src/interfaces/http/createTriageRouter.ts",
+        "src/backend/src/infrastructure/knowledge/medical-search/service.ts",
+        "src/backend/src/infrastructure/knowledge/medical-search/types.ts"
+      ],
+      "evidence": [
+        "src/backend/src/tests/architecture/http-integration.test.ts",
+        "src/backend/src/tests/architecture/runtime-panel-providers.test.ts"
+      ]
+    },
+    {
+      "id": "RAG-HY-P3-003",
+      "title": "发布前审效门禁（自动阻断）",
+      "priority": "P0",
+      "state": "backlog",
+      "dependsOn": [
+        "RAG-HY-P3-001",
+        "RAG-HY-P3-002"
+      ],
+      "goal": "将混合 RAG 的质量、覆盖与时延指标纳入自动化发布门禁。",
+      "verify": [
+        "npm run rag:hybrid:audit:offline",
+        "npm run rag:hybrid:audit:online",
+        "npm run rag:hybrid:audit -- --enforce=true"
+      ],
+      "rollbackPaths": [
+        "scripts/rag-hybrid-audit.cjs",
+        "scripts/rag-offline-eval.cjs",
+        "package.json",
+        "reports/metrics/rag-hybrid-audit.latest.json",
+        "docs/process/rag-hybrid-audit-report.md"
+      ],
+      "evidence": [
+        "reports/metrics/rag-hybrid-audit.latest.json",
+        "docs/process/rag-hybrid-audit-report.md"
+      ]
+    }
+  ],
+  "dailyLoop": [
+    "npm run rag:hybrid:sync",
+    "npm run rag:hybrid:status",
+    "npm run rag:hybrid:next",
+    "npm run rag:hybrid:run -- --max=1 --retries=2",
+    "npm run rag:hybrid:status"
+  ],
+  "auditLoop": [
+    "npm run rag:hybrid:audit:offline",
+    "npm run rag:hybrid:audit:online",
+    "npm run rag:hybrid:audit -- --enforce=true"
+  ]
+}

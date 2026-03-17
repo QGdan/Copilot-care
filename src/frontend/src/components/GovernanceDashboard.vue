@@ -235,7 +235,7 @@ const AGENT_NODE_BASE: Array<{
 }> = [
   {
     id: 'AG-ROUTER',
-    agent: 'Router Agent',
+    agent: '路由 Agent',
     domain: '复杂度路由',
     stage: 'ROUTING',
     keyEvidence: '病例结构完整度 + 风险阈值信号',
@@ -243,7 +243,7 @@ const AGENT_NODE_BASE: Array<{
   },
   {
     id: 'AG-CARDIO',
-    agent: 'Cardio Agent',
+    agent: '心血管 Agent',
     domain: '心血管风险',
     stage: 'DEBATE',
     keyEvidence: '血压波动窗口 + 既往史匹配',
@@ -251,7 +251,7 @@ const AGENT_NODE_BASE: Array<{
   },
   {
     id: 'AG-META',
-    agent: 'Metabolic Agent',
+    agent: '代谢 Agent',
     domain: '代谢评估',
     stage: 'CONSENSUS',
     keyEvidence: '代谢随访曲线 + 药物依从性',
@@ -259,7 +259,7 @@ const AGENT_NODE_BASE: Array<{
   },
   {
     id: 'AG-SAFETY',
-    agent: 'Safety Guard',
+    agent: '安全 Agent',
     domain: '安全约束',
     stage: 'REVIEW',
     keyEvidence: '阻断规则 + 复核意见一致性',
@@ -279,28 +279,28 @@ const ROUTING_FACTOR_BASE: Array<{
     factor: '红旗风险密度',
     stage: 'RISK_ASSESS',
     threshold: '>= 1 个严重风险',
-    evidence: 'riskTriggers + 命中安全规则',
+    evidence: '红旗触发项 + 安全规则命中',
   },
   {
     id: 'RF-002',
     factor: '多 Agent 分歧跨度',
     stage: 'CONSENSUS',
     threshold: '>= 18%',
-    evidence: 'agent confidence spread',
+    evidence: '多 Agent 置信度分布差异',
   },
   {
     id: 'RF-003',
     factor: '复核队列负载',
     stage: 'REVIEW',
     threshold: '>= 3 项',
-    evidence: 'pending + reviewing',
+    evidence: '待复核数量 + 复核中数量',
   },
   {
     id: 'RF-004',
     factor: '闭环完成抵扣',
     stage: 'OUTPUT',
     threshold: '>= 75%',
-    evidence: 'governanceScore',
+    evidence: '治理闭环评分',
   },
 ];
 
@@ -402,7 +402,7 @@ const runtimeStageRuntime = computed<Record<WorkflowStage, StageRuntimeState> | 
     const runtime = props.runtimeStageRuntime?.[stage];
     acc[stage] = {
       status: runtime?.status ?? 'pending',
-      message: runtime?.message?.trim() || `${stage} waiting`,
+      message: runtime?.message?.trim() || `${STAGE_LABELS[stage]}等待中`,
     };
     return acc;
   }, {} as Record<WorkflowStage, StageRuntimeState>);
@@ -1608,7 +1608,7 @@ onBeforeUnmount(() => {
         <div class="panel-head">
           <h3>规则目录与指南证据</h3>
           <span class="replay-chip">
-            Catalog {{ displayRuleCatalogVersion }} / Synonym {{ displayRuleSynonymVersion }}
+            目录 {{ displayRuleCatalogVersion }} / 同义词集 {{ displayRuleSynonymVersion }}
           </span>
         </div>
         <div class="rule-layer-grid" data-testid="rule-layer-grid">
@@ -1624,7 +1624,7 @@ onBeforeUnmount(() => {
             <h4>{{ layer.title }}</h4>
             <p>{{ layer.summary }}</p>
             <small>
-              Refs: {{
+              参考实现：{{
                 layer.implementationRefs.length > 0
                   ? layer.implementationRefs.join(', ')
                   : '--'
@@ -1650,7 +1650,7 @@ onBeforeUnmount(() => {
           >
             <strong>{{ guideline.id }} · {{ guideline.title }}</strong>
             <span>{{ guideline.publisher }}</span>
-            <small>Published {{ guideline.publishedOn }}</small>
+            <small>发布时间 {{ guideline.publishedOn }}</small>
           </a>
           <article
             v-if="displayGuidelineReferences.length === 0"

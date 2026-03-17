@@ -1,11 +1,13 @@
 ﻿import { ref } from 'vue';
 import type {
   AgentOpinion,
+  AuthoritativeSearchDiagnostics,
   DebateRound,
   ExplainableReport,
   OrchestrationSnapshot,
   RuleGovernanceSnapshot,
   StructuredTriageResult,
+  TriageBlockingReason,
   TriageRoutingInfo,
   TriageStreamStageStatus,
   WorkflowStage,
@@ -59,6 +61,7 @@ export function useConsultationStreamState(
   const requiredFields = ref<string[]>([]);
   const nextAction = ref('');
   const systemError = ref('');
+  const blockingReason = ref<TriageBlockingReason | null>(null);
 
   const stageRuntime = ref<Record<WorkflowStage, StageRuntimeState>>(
     options.createInitialStageRuntime(),
@@ -71,6 +74,7 @@ export function useConsultationStreamState(
   const routeInfo = ref<TriageRoutingInfo | null>(null);
   const routingPreview = ref<RoutingPreviewState>({});
   const explainableReport = ref<ExplainableReport | null>(null);
+  const authoritativeSearch = ref<AuthoritativeSearchDiagnostics | null>(null);
   const resultNotes = ref<string[]>([]);
   const orchestrationSnapshot = ref<OrchestrationSnapshot | null>(null);
 
@@ -188,6 +192,7 @@ export function useConsultationStreamState(
     requiredFields.value = [];
     nextAction.value = '';
     systemError.value = '';
+    blockingReason.value = null;
 
     stageRuntime.value = options.createInitialStageRuntime();
     reasoningItems.value = [];
@@ -198,6 +203,7 @@ export function useConsultationStreamState(
     routeInfo.value = null;
     routingPreview.value = {};
     explainableReport.value = null;
+    authoritativeSearch.value = null;
     resultNotes.value = [];
     orchestrationSnapshot.value = null;
 
@@ -212,6 +218,7 @@ export function useConsultationStreamState(
     requiredFields,
     nextAction,
     systemError,
+    blockingReason,
     stageRuntime,
     reasoningItems,
     rounds,
@@ -221,6 +228,7 @@ export function useConsultationStreamState(
     routeInfo,
     routingPreview,
     explainableReport,
+    authoritativeSearch,
     resultNotes,
     orchestrationSnapshot,
     captureRoutingFromText,

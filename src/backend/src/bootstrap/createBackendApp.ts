@@ -17,6 +17,7 @@ const STATIC_FALLBACK_BLOCKLIST_PREFIXES = [
   '/orchestrate_triage',
   '/governance',
   '/architecture',
+  '/patients',
   '/fhir',
   '/interop',
   '/mcp',
@@ -90,7 +91,10 @@ export function createBackendApp(
       runtime.architecture,
       runtime.coordinatorSnapshotService,
       runtime.governanceRuntimeTelemetry,
+      runtime.governanceReviewQueueService,
+      runtime.siteGovernancePolicyService,
       runtime.authoritativeMedicalSearch,
+      env,
     ),
   );
 

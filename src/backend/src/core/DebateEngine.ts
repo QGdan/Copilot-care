@@ -60,7 +60,7 @@ export class DebateEngine {
     return Math.min(max, Math.max(min, value));
   }
 
-  private calculateDisagreement(opinions: AgentOpinion[]): number {
+  private calculateRiskDisagreement(opinions: AgentOpinion[]): number {
     if (opinions.length === 0) {
       return 0;
     }
@@ -72,6 +72,92 @@ export class DebateEngine {
     const stdDev = Math.sqrt(variance);
 
     return this.normalize(stdDev / 1.5, 0, 1);
+  }
+
+  private calculateConfidenceDisagreement(opinions: AgentOpinion[]): number {
+    if (opinions.length === 0) {
+      return 0;
+    }
+
+    const values = opinions.map((opinion) =>
+      this.normalize(opinion.confidence, 0, 1),
+    );
+    const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const variance =
+      values.reduce((sum, value) => sum + (value - mean) ** 2, 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+
+    return this.normalize(stdDev / 0.35, 0, 1);
+  }
+
+  private tokenizeActions(actions: string[]): Set<string> {
+    return new Set(
+      actions
+        .join(' ')
+        .toLowerCase()
+        .replace(/[，。；:：,./\\\-_\s()（）[\]【】]/g, ' ')
+        .split(/\s+/)
+        .filter((token) => token.length >= 2),
+    );
+  }
+
+  private calculateActionDisagreement(opinions: AgentOpinion[]): number {
+    if (opinions.length <= 1) {
+      return 0;
+    }
+
+    const actionSets = opinions.map((opinion) => this.tokenizeActions(opinion.actions));
+    let totalDistance = 0;
+    let pairCount = 0;
+
+    for (let left = 0; left < actionSets.length; left += 1) {
+      for (let right = left + 1; right < actionSets.length; right += 1) {
+        const leftSet = actionSets[left];
+        const rightSet = actionSets[right];
+        const union = new Set([...leftSet, ...rightSet]);
+        if (union.size === 0) {
+          pairCount += 1;
+          continue;
+        }
+        let intersectionSize = 0;
+        for (const token of leftSet) {
+          if (rightSet.has(token)) {
+            intersectionSize += 1;
+          }
+        }
+        const jaccardSimilarity = intersectionSize / union.size;
+        totalDistance += 1 - jaccardSimilarity;
+        pairCount += 1;
+      }
+    }
+
+    if (pairCount === 0) {
+      return 0;
+    }
+    return this.normalize(totalDistance / pairCount, 0, 1);
+  }
+
+  private calculateDisagreement(opinions: AgentOpinion[]): {
+    risk: number;
+    confidence: number;
+    action: number;
+    score: number;
+  } {
+    const risk = this.calculateRiskDisagreement(opinions);
+    const confidence = this.calculateConfidenceDisagreement(opinions);
+    const action = this.calculateActionDisagreement(opinions);
+    const score = this.normalize(
+      0.75 * risk + 0.15 * confidence + 0.1 * action,
+      0,
+      1,
+    );
+
+    return {
+      risk,
+      confidence,
+      action,
+      score,
+    };
   }
 
   private calculateClinicalSignificance(opinions: AgentOpinion[]): number {
@@ -113,17 +199,28 @@ export class DebateEngine {
   private calculateDissent(opinions: AgentOpinion[]): {
     index: number;
     disagreement: number;
+    riskDisagreement: number;
+    confidenceDisagreement: number;
+    actionDisagreement: number;
     clinicalSignificance: number;
   } {
-    const disagreement = this.calculateDisagreement(opinions);
+    const disagreementBreakdown = this.calculateDisagreement(opinions);
     const clinicalSignificance = this.calculateClinicalSignificance(opinions);
+    const disagreement = disagreementBreakdown.score;
     const index = this.normalize(
       this.alpha * disagreement + this.beta * clinicalSignificance,
       0,
       1,
     );
 
-    return { index, disagreement, clinicalSignificance };
+    return {
+      index,
+      disagreement,
+      riskDisagreement: disagreementBreakdown.risk,
+      confidenceDisagreement: disagreementBreakdown.confidence,
+      actionDisagreement: disagreementBreakdown.action,
+      clinicalSignificance,
+    };
   }
 
   private getBand(dissentIndex: number): DissentThresholdBand {
@@ -284,7 +381,7 @@ export class DebateEngine {
           sessionId,
           'DI_CALCULATION',
           'ROUND_COMPLETED',
-          `Round ${round}: DI=${dissent.index.toFixed(3)}, disagreement=${dissent.disagreement.toFixed(3)}, clinical=${dissent.clinicalSignificance.toFixed(3)}.`,
+          `Round ${round}: DI=${dissent.index.toFixed(3)}, disagreement=${dissent.disagreement.toFixed(3)} (risk=${dissent.riskDisagreement.toFixed(3)}, confidence=${dissent.confidenceDisagreement.toFixed(3)}, action=${dissent.actionDisagreement.toFixed(3)}), clinical=${dissent.clinicalSignificance.toFixed(3)}.`,
           [
             {
               referenceType: 'rule',

@@ -1,0 +1,131 @@
+{
+  "version": "v10.00",
+  "createdAt": "2026-03-14T15:31:04.658Z",
+  "updatedAt": "2026-03-14T18:42:21.872Z",
+  "tasks": {
+    "RAG-HY-P0-001": {
+      "state": "done",
+      "updatedAt": "2026-03-14T15:44:46.110Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "reports/metrics/rag-hybrid.offline.latest.json",
+        "docs/process/rag-hybrid-offline-report.md"
+      ]
+    },
+    "RAG-HY-P0-002": {
+      "state": "done",
+      "updatedAt": "2026-03-14T16:45:43.885Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "reports/metrics/rag-hybrid.online.latest.json",
+        "docs/process/rag-hybrid-online-report.md",
+        "reports/metrics/rag-hybrid-audit.latest.json",
+        "docs/process/rag-hybrid-audit-report.md"
+      ]
+    },
+    "RAG-HY-P0-003": {
+      "state": "done",
+      "updatedAt": "2026-03-14T16:09:26.688Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "docs/adr/0012-hybrid-rag-architecture-transition.md",
+        "docs/process/rag-hybrid-transformation-plan.v1_00.md"
+      ]
+    },
+    "RAG-HY-P1-001": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:03:08.861Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagIngestionAdapter.test.ts",
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagCorpusVersioning.test.ts"
+      ]
+    },
+    "RAG-HY-P1-002": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:09:21.168Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagChunking.test.ts"
+      ]
+    },
+    "RAG-HY-P1-003": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:17:35.950Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagVectorStore.test.ts"
+      ]
+    },
+    "RAG-HY-P1-004": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:22:24.855Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagLexicalIndex.test.ts"
+      ]
+    },
+    "RAG-HY-P2-001": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:27:34.302Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagRetriever.test.ts"
+      ]
+    },
+    "RAG-HY-P2-002": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:31:39.460Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/infrastructure/knowledge/__tests__/hybridRagReranker.test.ts"
+      ]
+    },
+    "RAG-HY-P2-003": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:33:03.929Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/infrastructure/orchestration/__tests__/ComplexityRoutedOrchestrator.evidenceGate.test.ts",
+        "src/backend/src/infrastructure/knowledge/__tests__/sourcePolicy.selection.test.ts"
+      ]
+    },
+    "RAG-HY-P2-004": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:34:02.237Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/tests/architecture/http-integration.test.ts",
+        "src/backend/src/tests/architecture/routed-orchestration.test.ts"
+      ]
+    },
+    "RAG-HY-P3-001": {
+      "state": "done",
+      "updatedAt": "2026-03-14T18:14:46.026Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "docs/process/rag-hybrid-online-report.md",
+        "reports/metrics/performance-profile.latest.json"
+      ]
+    },
+    "RAG-HY-P3-002": {
+      "state": "done",
+      "updatedAt": "2026-03-14T17:36:35.008Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/tests/architecture/http-integration.test.ts",
+        "src/backend/src/tests/architecture/runtime-panel-providers.test.ts"
+      ]
+    },
+    "RAG-HY-P3-003": {
+      "state": "done",
+      "updatedAt": "2026-03-14T18:42:21.872Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "reports/metrics/rag-hybrid-audit.latest.json",
+        "docs/process/rag-hybrid-audit-report.md"
+      ]
+    }
+  },
+  "lastManifest": "docs\\process\\rag-hybrid-workflow.v1_00.json"
+}

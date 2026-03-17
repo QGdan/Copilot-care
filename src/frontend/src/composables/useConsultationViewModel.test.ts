@@ -87,6 +87,19 @@ function createViewModelState() {
     complexityScore?: number;
   }>({});
   const resultNotes = ref<string[]>([]);
+  const blockingReason = ref<{
+    code: 'VALIDATION_BLOCKED'
+    | 'EVIDENCE_INTEGRITY_GATE_BLOCKED'
+    | 'RED_FLAG_SHORT_CIRCUIT'
+    | 'SAFETY_GUARD_BLOCKED'
+    | 'RUNTIME_FAILURE_BLOCKED';
+    title: string;
+    summary: string;
+    triggerStage: WorkflowStage;
+    severity: 'warning' | 'high' | 'critical';
+    actions: string[];
+    detail?: string;
+  } | null>(null);
   const orchestrationSnapshot = ref<{
     coordinator: string;
     phase: 'assignment' | 'analysis' | 'execution' | 'synthesis' | 'complete';
@@ -116,6 +129,7 @@ function createViewModelState() {
     routeInfo,
     routingPreview,
     resultNotes,
+    blockingReason,
     orchestrationSnapshot,
   });
 
@@ -125,6 +139,7 @@ function createViewModelState() {
     routeInfo,
     routingPreview,
     resultNotes,
+    blockingReason,
     orchestrationSnapshot,
     model,
   };
@@ -146,6 +161,24 @@ describe('useConsultationViewModel', () => {
     expect(state.model.isSafetyBlocked.value).toBe(true);
     expect(state.model.riskSignal.value).toBe('critical');
     expect(state.model.sceneLevel.value).toBe('critical');
+  });
+
+  it('prioritizes structured blocking reason over note pattern', () => {
+    const state = createViewModelState();
+
+    state.status.value = 'ERROR';
+    state.blockingReason.value = {
+      code: 'EVIDENCE_INTEGRITY_GATE_BLOCKED',
+      title: '证据完整性门禁阻断自动输出',
+      summary: '高风险场景未达到权威证据完整性要求。',
+      triggerStage: 'REVIEW',
+      severity: 'high',
+      actions: ['进入人工复核'],
+    };
+
+    expect(state.model.safetyBlockNote.value).toBe('高风险场景未达到权威证据完整性要求。');
+    expect(state.model.isSafetyBlocked.value).toBe(true);
+    expect(state.model.riskSignal.value).toBe('critical');
   });
 
   it('sorts coordinator tasks and resolves active task hint', () => {

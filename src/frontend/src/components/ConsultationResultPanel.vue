@@ -6,12 +6,16 @@ import type {
   ExplainableReport,
   RuleGovernanceSnapshot,
   StructuredTriageResult,
+  TriageBlockingReason,
   TriageRoutingInfo,
 } from '@copilot-care/shared/types';
 import {
   formatCollaboration,
+  formatClinicalGrade,
+  formatDestination,
   formatDepartment,
   formatRouteMode,
+  formatTriageLevel,
 } from '../constants/triageLabels';
 
 interface Props {
@@ -21,6 +25,7 @@ interface Props {
   explainableReport: ExplainableReport | null;
   finalConsensus: AgentOpinion | null;
   resultNotes: string[];
+  blockingReason: TriageBlockingReason | null;
   isSafetyBlocked: boolean;
   safetyBlockNote: string;
   canExportReport: boolean;
@@ -68,10 +73,46 @@ const TIER_B_TOKENS = [
   'BMJ',
 ];
 
+const STRUCTURED_EVIDENCE_LABEL_PATTERN =
+  '(?:来源|证据要点|临床解读|建议动作|适用提示|核心知识|多\\s*agent共识证据)';
+const ACRONYM_CHAIN_DETECT_PATTERN = /\b(?:[A-Z]{2,8}\s*[/\\|]\s*){3,}[A-Z]{2,8}\b/;
+const ACRONYM_CHAIN_REPLACE_PATTERN = /\b(?:[A-Z]{2,8}\s*[/\\|]\s*){3,}[A-Z]{2,8}\b/g;
+const STRUCTURED_LABEL_DUPLICATE_PATTERN = new RegExp(
+  `((?:${STRUCTURED_EVIDENCE_LABEL_PATTERN}))\\s*[：:]\\s*\\1\\s*[：:]\\s*`,
+  'giu',
+);
+
 const props = defineProps<Props>();
 const emit = defineEmits<{
   export: [];
 }>();
+
+function formatBlockingStage(stage: TriageBlockingReason['triggerStage']): string {
+  const labels: Record<TriageBlockingReason['triggerStage'], string> = {
+    START: '启动',
+    INFO_GATHER: '信息采集',
+    RISK_ASSESS: '风险评估',
+    ROUTING: '复杂度分流',
+    DEBATE: '协同会诊',
+    CONSENSUS: '共识收敛',
+    REVIEW: '安全复核',
+    OUTPUT: '输出结论',
+    ESCALATION: '线下上转',
+  };
+  return labels[stage] ?? stage;
+}
+
+function formatBlockingSeverity(
+  severity: TriageBlockingReason['severity'],
+): string {
+  if (severity === 'critical') {
+    return '高危';
+  }
+  if (severity === 'high') {
+    return '高';
+  }
+  return '中';
+}
 
 function handleExport(): void {
   emit('export');
@@ -101,6 +142,10 @@ function normalizeSourceText(item: ExplainableEvidenceCard): string {
     extractHost(item.url) ?? '',
   ];
   return parts.join(' ').toUpperCase();
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function normalizeMedicalExpression(text: string): string {
@@ -141,24 +186,162 @@ function normalizeMedicalExpression(text: string): string {
   dictionary.forEach(([pattern, replacement]) => {
     normalized = normalized.replace(pattern, replacement);
   });
-  return normalized.replace(/\s+/g, ' ').trim();
+  return normalized
+    .replace(ACRONYM_CHAIN_REPLACE_PATTERN, ' ')
+    .replace(/([\\/]\s*){2,}/g, ' ')
+    .replace(/[_*#~]{2,}/g, ' ')
+    .replace(/(\s*[|｜]\s*){2,}/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function sanitizeEvidenceText(text: string): string {
+  return normalizeMedicalExpression(text)
+    .replace(STRUCTURED_LABEL_DUPLICATE_PATTERN, '$1：')
+    .replace(ACRONYM_CHAIN_REPLACE_PATTERN, ' ')
+    .replace(/([\\/]\s*){2,}/g, ' ')
+    .replace(/([;；]\s*){2,}/g, '；')
+    .replace(/([。?!！]){2,}/g, '。')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function stripLeadingEvidenceLabels(text: string): string {
+  const prefixPattern = new RegExp(
+    `^(?:${STRUCTURED_EVIDENCE_LABEL_PATTERN})\\s*[：:]\\s*`,
+    'iu',
+  );
+  let normalized = sanitizeEvidenceText(text);
+  let previous = '';
+  while (normalized && normalized !== previous) {
+    previous = normalized;
+    normalized = normalized.replace(prefixPattern, '').trim();
+  }
+  return normalized;
+}
+
+function extractStructuredSegment(text: string, label: string): string {
+  const normalized = sanitizeEvidenceText(text);
+  if (!normalized) {
+    return '';
+  }
+  const pattern = new RegExp(
+    `${escapeRegExp(label)}\\s*[：:]\\s*([\\s\\S]*?)(?=(?:${STRUCTURED_EVIDENCE_LABEL_PATTERN})\\s*[：:]|$)`,
+    'iu',
+  );
+  const matched = normalized.match(pattern);
+  if (!matched || typeof matched[1] !== 'string') {
+    return '';
+  }
+  return stripLeadingEvidenceLabels(matched[1]);
+}
+
+function toCanonicalEvidenceText(text: string): string {
+  return stripLeadingEvidenceLabels(text)
+    .toLowerCase()
+    .replace(/[，。；:：./\\\-_\s()（）[\]【】"'`]/g, '')
+    .trim();
+}
+
+function toBigramSet(text: string): Set<string> {
+  const normalized = toCanonicalEvidenceText(text);
+  const grams = new Set<string>();
+  if (!normalized) {
+    return grams;
+  }
+  if (normalized.length < 2) {
+    grams.add(normalized);
+    return grams;
+  }
+  for (let index = 0; index < normalized.length - 1; index += 1) {
+    grams.add(normalized.slice(index, index + 2));
+  }
+  return grams;
+}
+
+function diceSimilarity(left: string, right: string): number {
+  const leftSet = toBigramSet(left);
+  const rightSet = toBigramSet(right);
+  if (leftSet.size === 0 || rightSet.size === 0) {
+    return 0;
+  }
+  let intersection = 0;
+  for (const token of leftSet) {
+    if (rightSet.has(token)) {
+      intersection += 1;
+    }
+  }
+  return (2 * intersection) / (leftSet.size + rightSet.size);
+}
+
+function isNearDuplicateSentence(
+  candidate: string,
+  existingSentences: readonly string[],
+): boolean {
+  const candidateCanonical = toCanonicalEvidenceText(candidate);
+  if (!candidateCanonical) {
+    return true;
+  }
+  for (const existing of existingSentences) {
+    const existingCanonical = toCanonicalEvidenceText(existing);
+    if (!existingCanonical) {
+      continue;
+    }
+    if (candidateCanonical === existingCanonical) {
+      return true;
+    }
+    const shorter =
+      candidateCanonical.length <= existingCanonical.length
+        ? candidateCanonical
+        : existingCanonical;
+    const longer =
+      candidateCanonical.length > existingCanonical.length
+        ? candidateCanonical
+        : existingCanonical;
+    if (shorter.length >= 12 && longer.includes(shorter)) {
+      return true;
+    }
+    if (diceSimilarity(candidateCanonical, existingCanonical) >= 0.88) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function splitCandidateSentences(text: string): string[] {
-  const normalized = text
-    .replace(/\s+/g, ' ')
+  const normalized = sanitizeEvidenceText(text)
     .replace(/[;；]+/g, '。')
+    .replace(/[|｜]+/g, '。')
     .trim();
   if (!normalized) {
     return [];
   }
 
   const candidates = normalized
-    .split(/[。.!?]/)
+    .split(/[。?!！]/)
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
 
   return candidates.length > 0 ? candidates : [normalized];
+}
+
+function isLikelyNoisySentence(sentence: string): boolean {
+  if (!sentence.trim()) {
+    return true;
+  }
+  if (/([\\/]\s*){2,}/.test(sentence)) {
+    return true;
+  }
+  if (/^[\d\s\-_/.,，；:：]+$/.test(sentence)) {
+    return true;
+  }
+  const alnumAndCjk = sentence.replace(/[^\u4e00-\u9fffA-Za-z0-9]/g, '');
+  return alnumAndCjk.length < 6;
+}
+
+function hasClinicalSignal(sentence: string): boolean {
+  return /(mmhg|mg\/dl|%|风险|建议|应当|推荐|阈值|目标|收缩压|舒张压|血压|高血压|指南|证据|复测|复查|随访|转诊|评估|症状|心血管|monitor|follow-up|referral)/i
+    .test(sentence);
 }
 
 function scoreMedicalSentence(sentence: string): number {
@@ -166,11 +349,11 @@ function scoreMedicalSentence(sentence: string): number {
   if (/\d/.test(sentence)) {
     score += 3;
   }
-  if (
-    /(mmhg|mg\/dl|%|风险|建议|应当|推荐|阈值|目标|收缩压|舒张压|血压|高血压|指南|证据)/i
-      .test(sentence)
-  ) {
-    score += 3;
+  if (hasClinicalSignal(sentence)) {
+    score += 4;
+  }
+  if (/(19|20)\d{2}/.test(sentence)) {
+    score += 1;
   }
   if (sentence.length >= 16 && sentence.length <= 140) {
     score += 2;
@@ -179,20 +362,40 @@ function scoreMedicalSentence(sentence: string): number {
 }
 
 function extractEvidenceKeyPoint(item: ExplainableEvidenceCard): string {
-  const primaryText = normalizeMedicalExpression(item.summary || '');
-  const fallbackText = normalizeMedicalExpression(item.title || '');
-  const combinedText = primaryText || fallbackText;
+  const primaryText = sanitizeEvidenceText(item.summary || '');
+  const fallbackText = sanitizeEvidenceText(item.title || '');
+  const structuredPoint =
+    extractStructuredSegment(primaryText, '证据要点')
+    || extractStructuredSegment(primaryText, '核心知识');
+  const combinedText = [structuredPoint, primaryText, fallbackText]
+    .filter(Boolean)
+    .join('。');
 
   if (!combinedText) {
     return '暂无可用证据正文，建议补充权威来源后再进行临床判断。';
   }
 
-  const candidates = splitCandidateSentences(combinedText);
-  if (candidates.length === 0) {
-    return combinedText;
+  const seen = new Set<string>();
+  const candidates = splitCandidateSentences(combinedText).filter((candidate) => {
+    const normalized = toCanonicalEvidenceText(candidate);
+    if (!normalized || seen.has(normalized)) {
+      return false;
+    }
+    seen.add(normalized);
+    return true;
+  });
+
+  const filteredCandidates = candidates.filter(
+    (sentence) => !isLikelyNoisySentence(sentence),
+  );
+  const candidatePool =
+    filteredCandidates.length > 0 ? filteredCandidates : candidates;
+
+  if (candidatePool.length === 0) {
+    return fallbackText || primaryText;
   }
 
-  const ranked = candidates
+  const ranked = candidatePool
     .map((sentence, index) => ({
       sentence,
       index,
@@ -201,16 +404,34 @@ function extractEvidenceKeyPoint(item: ExplainableEvidenceCard): string {
     .sort((a, b) => b.score - a.score || a.index - b.index);
 
   const selected = ranked
-    .slice(0, 2)
+    .filter((itemRow) => itemRow.score >= 4)
+    .slice(0, 3)
     .sort((a, b) => a.index - b.index)
     .map((itemRow) => itemRow.sentence);
 
-  const keyPoint = selected.join('；').trim();
+  const conciseSentences: string[] = [];
+  for (const sentence of selected) {
+    if (isNearDuplicateSentence(sentence, conciseSentences)) {
+      continue;
+    }
+    conciseSentences.push(sentence);
+    if (conciseSentences.length >= 2) {
+      break;
+    }
+  }
+  const keyPoint = conciseSentences
+    .join('；')
+    .trim()
+    .replace(/([\\/]\s*){2,}/g, ' ');
   if (keyPoint.length > 0) {
-    return keyPoint;
+    return stripLeadingEvidenceLabels(keyPoint);
   }
 
-  return combinedText;
+  if (fallbackText && !isLikelyNoisySentence(fallbackText)) {
+    return stripLeadingEvidenceLabels(fallbackText);
+  }
+
+  return `来源：${resolveSourceNameToChinese(item)}；建议结合生命体征与红旗症状进行复核。`;
 }
 
 function resolveSourceNameToChinese(item: ExplainableEvidenceCard): string {
@@ -300,13 +521,35 @@ function resolveAuthorityTier(item: ExplainableEvidenceCard): {
 }
 
 function buildDisplayTitle(item: ExplainableEvidenceCard): string {
-  const normalizedTitle = normalizeMedicalExpression(item.title || '');
-  if (normalizedTitle && hasChinese(normalizedTitle)) {
+  const normalizedTitle = sanitizeEvidenceText(item.title || '');
+  const hasAcronymRun = ACRONYM_CHAIN_DETECT_PATTERN.test(item.title || '');
+  if (
+    normalizedTitle
+    && hasChinese(normalizedTitle)
+    && normalizedTitle.length <= 64
+    && !hasAcronymRun
+  ) {
     return normalizedTitle;
   }
 
-  const sourceName = resolveSourceNameToChinese(item);
-  return `来自${sourceName}的医学证据`;
+  const bag = sanitizeEvidenceText(`${item.title || ''} ${item.summary || ''}`).toLowerCase();
+  const yearMatch = `${item.title || ''} ${item.publishedOn || ''}`.match(/\b(19|20)\d{2}\b/);
+  const topic = /(高血压|血压|收缩压|舒张压|hypertension|blood pressure)/i.test(bag)
+    ? '高血压'
+    : /(卒中|中风|stroke|fast)/i.test(bag)
+      ? '卒中风险'
+      : /(糖尿病|血糖|glucose|hba1c|diabetes)/i.test(bag)
+        ? '糖代谢'
+        : '临床';
+  const evidenceType = /(指南|guideline|consensus|recommendation)/i.test(
+    `${item.category || ''} ${item.title || ''}`,
+  )
+    ? '指南证据'
+    : '权威证据';
+  if (yearMatch && typeof yearMatch[0] === 'string') {
+    return `${yearMatch[0]}年${topic}${evidenceType}`;
+  }
+  return `${topic}${evidenceType}`;
 }
 
 function buildChineseKnowledgePoint(item: ExplainableEvidenceCard): string {
@@ -327,25 +570,115 @@ function formatEvidenceMeta(item: ExplainableEvidenceCard): string {
 }
 
 function buildClinicalSummary(item: ExplainableEvidenceCard): string {
-  const point = buildChineseKnowledgePoint(item);
+  const point = stripLeadingEvidenceLabels(buildChineseKnowledgePoint(item));
   const usage = item.category === 'guideline_rule'
     ? '建议优先用于分诊与风险分层。'
     : item.category === 'model_citation'
       ? '仅作模型补充参考，需用权威来源复核。'
       : '建议结合生命体征、既往史和红旗症状联合判断。';
 
-  return `证据要点：${point} 适用提示：${usage}`;
+  return `证据要点：${point || '建议补充关键体征后再判断。'} 适用提示：${usage}`;
 }
 
 function buildConsensusEvidenceBrief(item: ExplainableEvidenceCard): string {
   const source = resolveSourceNameToChinese(item);
-  const point = buildChineseKnowledgePoint(item);
-  return `多Agent共识证据：${source}；核心知识：${point}`;
+  const point = stripLeadingEvidenceLabels(buildChineseKnowledgePoint(item));
+  return `多Agent共识证据：${source}；核心知识：${point || '需补充关键证据要点。'}`;
+}
+
+function authorityTierRank(tier: AuthorityTier): number {
+  if (tier === 'A') {
+    return 3;
+  }
+  if (tier === 'B') {
+    return 2;
+  }
+  return 1;
+}
+
+function extractEvidenceYear(value: string): number {
+  const matched = value.match(/\b(19|20)\d{2}\b/);
+  if (!matched || typeof matched[0] !== 'string') {
+    return 0;
+  }
+  return Number.parseInt(matched[0], 10);
+}
+
+function inferTopicSignature(value: string): string {
+  const bag = sanitizeEvidenceText(value).toLowerCase();
+  if (/(高血压|血压|hypertension|blood pressure)/i.test(bag)) {
+    return 'blood_pressure';
+  }
+  if (/(卒中|中风|stroke|fast)/i.test(bag)) {
+    return 'stroke';
+  }
+  if (/(糖尿病|血糖|glucose|hba1c|diabetes)/i.test(bag)) {
+    return 'glucose';
+  }
+  if (/(心衰|heart failure)/i.test(bag)) {
+    return 'heart_failure';
+  }
+  return '';
+}
+
+function isNearDuplicateEvidenceCard(
+  left: DisplayEvidenceCard,
+  right: DisplayEvidenceCard,
+): boolean {
+  const sourceMatched = normalizeSourceText(left) === normalizeSourceText(right);
+  const leftCore = `${left.displayTitle} ${left.clinicalSummary}`;
+  const rightCore = `${right.displayTitle} ${right.clinicalSummary}`;
+  const similarity = diceSimilarity(leftCore, rightCore);
+  const leftPoint =
+    extractStructuredSegment(left.clinicalSummary, '证据要点')
+    || left.clinicalSummary;
+  const rightPoint =
+    extractStructuredSegment(right.clinicalSummary, '证据要点')
+    || right.clinicalSummary;
+  const pointSimilarity = diceSimilarity(leftPoint, rightPoint);
+  if (sourceMatched && similarity >= 0.72) {
+    return true;
+  }
+  if (sourceMatched && pointSimilarity >= 0.62) {
+    return true;
+  }
+  if (sourceMatched) {
+    const leftTopic = inferTopicSignature(`${left.displayTitle} ${left.clinicalSummary}`);
+    const rightTopic = inferTopicSignature(`${right.displayTitle} ${right.clinicalSummary}`);
+    if (leftTopic && leftTopic === rightTopic) {
+      return true;
+    }
+  }
+  if (!sourceMatched && similarity >= 0.92) {
+    return true;
+  }
+  const leftCanonical = toCanonicalEvidenceText(leftCore);
+  const rightCanonical = toCanonicalEvidenceText(rightCore);
+  const shorter = leftCanonical.length <= rightCanonical.length ? leftCanonical : rightCanonical;
+  const longer = leftCanonical.length > rightCanonical.length ? leftCanonical : rightCanonical;
+  return sourceMatched && shorter.length >= 16 && longer.includes(shorter);
+}
+
+function shouldReplaceDuplicateCard(
+  current: DisplayEvidenceCard,
+  candidate: DisplayEvidenceCard,
+): boolean {
+  const currentTier = authorityTierRank(current.authorityTier);
+  const candidateTier = authorityTierRank(candidate.authorityTier);
+  if (candidateTier !== currentTier) {
+    return candidateTier > currentTier;
+  }
+  const currentYear = extractEvidenceYear(`${current.publishedOn ?? ''}`);
+  const candidateYear = extractEvidenceYear(`${candidate.publishedOn ?? ''}`);
+  if (candidateYear !== currentYear) {
+    return candidateYear > currentYear;
+  }
+  return candidate.clinicalSummary.length > current.clinicalSummary.length;
 }
 
 const displayEvidenceCards = computed<DisplayEvidenceCard[]>(() => {
   const cards = props.explainableReport?.evidenceCards ?? [];
-  return cards.slice(0, 6).map((card) => {
+  const prepared = cards.slice(0, 12).map((card) => {
     const authority = resolveAuthorityTier(card);
     return {
       ...card,
@@ -358,6 +691,21 @@ const displayEvidenceCards = computed<DisplayEvidenceCard[]>(() => {
       consensusEvidenceBrief: buildConsensusEvidenceBrief(card),
     };
   });
+  const selected: DisplayEvidenceCard[] = [];
+  for (const candidate of prepared) {
+    const duplicateIndex = selected.findIndex((existing) =>
+      isNearDuplicateEvidenceCard(existing, candidate),
+    );
+    if (duplicateIndex < 0) {
+      selected.push(candidate);
+    } else if (shouldReplaceDuplicateCard(selected[duplicateIndex], candidate)) {
+      selected[duplicateIndex] = candidate;
+    }
+    if (selected.length >= 6) {
+      break;
+    }
+  }
+  return selected.slice(0, 6);
 });
 </script>
 
@@ -387,10 +735,10 @@ const displayEvidenceCards = computed<DisplayEvidenceCard[]>(() => {
       <article v-if="props.triageResult" class="summary-card">
         <h4>分诊结果</h4>
         <p>
-          {{ props.triageResult.triageLevel }} /
-          {{ props.triageResult.destination }}
+          {{ formatTriageLevel(props.triageResult.triageLevel) }} /
+          {{ formatDestination(props.triageResult.destination) }}
         </p>
-        <small>随访周期 {{ props.triageResult.followupDays }} 天</small>
+        <small>{{ formatClinicalGrade(props.triageResult.triageLevel, props.routeInfo?.department) }} · 随访周期 {{ props.triageResult.followupDays }} 天</small>
       </article>
     </div>
     <article v-if="props.finalConsensus" class="consensus-card">
@@ -430,7 +778,30 @@ const displayEvidenceCards = computed<DisplayEvidenceCard[]>(() => {
         </li>
       </ul>
     </article>
-    <div v-if="props.isSafetyBlocked" class="safety-block-alert">
+    <div
+      v-if="props.blockingReason"
+      class="safety-block-alert"
+      data-testid="result-blocking-reason"
+    >
+      <strong>{{ props.blockingReason.title }}</strong>
+      <p>{{ props.blockingReason.summary }}</p>
+      <small class="blocking-meta">
+        阶段：{{ formatBlockingStage(props.blockingReason.triggerStage) }} ·
+        严重度：{{ formatBlockingSeverity(props.blockingReason.severity) }}
+      </small>
+      <ul
+        v-if="props.blockingReason.actions.length > 0"
+        class="blocking-actions"
+      >
+        <li
+          v-for="(action, index) in props.blockingReason.actions"
+          :key="`blocking-action-${index}`"
+        >
+          {{ action }}
+        </li>
+      </ul>
+    </div>
+    <div v-else-if="props.isSafetyBlocked" class="safety-block-alert">
       <strong>安全审校已阻断线上建议</strong>
       <p>{{ props.safetyBlockNote || '检测到潜在不安全输出，已切换为线下上转路径。' }}</p>
     </div>
@@ -658,6 +1029,20 @@ const displayEvidenceCards = computed<DisplayEvidenceCard[]>(() => {
   line-height: 1.45;
 }
 
+.blocking-meta {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: #864332;
+}
+
+.blocking-actions {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #8f3d24;
+  font-size: 12px;
+}
+
 .reasoning-list {
   margin: 8px 0 0;
   padding-left: 18px;
@@ -685,3 +1070,5 @@ const displayEvidenceCards = computed<DisplayEvidenceCard[]>(() => {
   }
 }
 </style>
+
+

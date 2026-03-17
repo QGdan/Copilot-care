@@ -43,6 +43,54 @@ describe('AuthoritativeMedicalWebSearchService', () => {
     expect(result.strategyVersion).toContain('authority-multisource-v');
   });
 
+  it('uses query variants to recover evidence when the primary query under-recalls', async () => {
+    const httpGetText = jest.fn(async (url: string) => {
+      const decodedUrl = decodeURIComponent(url);
+      if (decodedUrl.includes('duckduckgo.com/html') && decodedUrl.includes('hypertension guideline')) {
+        return '';
+      }
+      if (
+        decodedUrl.includes('duckduckgo.com/html') &&
+        decodedUrl.includes('high blood pressure diagnosis threshold')
+      ) {
+        return [
+          '<div class="result">',
+          '<a class="result__a" href="https://www.who.int/news-room/fact-sheets/detail/hypertension">WHO Hypertension Fact Sheet</a>',
+          '<div class="result__snippet">WHO recommends reducing sodium intake and regular blood pressure screening.</div>',
+          '</div>',
+        ].join('\n');
+      }
+      throw new Error(`unexpected url: ${url}`);
+    });
+
+    const service = new AuthoritativeMedicalWebSearchService(
+      {
+        enabled: true,
+        networkEnabled: true,
+        timeoutMs: 2000,
+        maxResults: 8,
+        pubMedRetMax: 6,
+        duckDuckGoEnabled: true,
+      },
+      httpGetText,
+    );
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      queryVariants: [
+        'hypertension guideline',
+        'high blood pressure diagnosis threshold',
+      ],
+      limit: 2,
+      sourceFilter: ['WHO'],
+    });
+
+    expect(result.results).toHaveLength(1);
+    expect(result.results[0]?.sourceId).toBe('WHO');
+    expect(result.realtimeCount).toBe(1);
+    expect(result.fallbackCount).toBe(0);
+  });
+
   it('respects disabled toggle and does not run search', async () => {
     const service = createAuthoritativeMedicalSearchService({
       NODE_ENV: 'test',
@@ -262,6 +310,14 @@ describe('AuthoritativeMedicalWebSearchService', () => {
     expect(
       result.results.every((item) => item.snippet.trim().length > 0),
     ).toBe(true);
+    expect(
+      result.results.every(
+        (item) =>
+          item.snippet.includes('证据要点：') &&
+          item.snippet.includes('临床解读：') &&
+          item.snippet.includes('建议动作：'),
+      ),
+    ).toBe(true);
     expect(result.results.every((item) => !item.snippet.includes('catalog_seed'))).toBe(true);
   });
 
@@ -435,7 +491,7 @@ describe('AuthoritativeMedicalWebSearchService', () => {
     expect(result.results).toHaveLength(1);
     expect(result.results[0]?.sourceId).toBe('WHO');
     expect(result.results[0]?.snippet).toContain('\u6765\u6e90\uff1a');
-    expect(result.results[0]?.snippet).toContain('\u51cf\u5c11');
+    expect(result.results[0]?.snippet).toMatch(/\u51cf\u5c11|\u9650\u76d0/);
     expect(/[A-Za-z]{3,}/.test(result.results[0]?.snippet ?? '')).toBe(false);
     expect(result.realtimeCount).toBe(1);
     expect(result.fallbackCount).toBe(0);
@@ -688,7 +744,7 @@ describe('AuthoritativeMedicalWebSearchService', () => {
       sourceFilter: ['PUBMED'],
     });
     expect(first.results.length).toBeGreaterThan(0);
-    expect(httpGetText).toHaveBeenCalledTimes(2);
+    expect(httpGetText).toHaveBeenCalledTimes(3);
 
     const second = await service.search({
       query: 'hypertension guideline',
@@ -696,7 +752,7 @@ describe('AuthoritativeMedicalWebSearchService', () => {
       sourceFilter: ['PUBMED'],
     });
     expect(second).toEqual(first);
-    expect(httpGetText).toHaveBeenCalledTimes(2);
+    expect(httpGetText).toHaveBeenCalledTimes(3);
   });
 
   it('does not cache fallback-heavy results when network mode is enabled', async () => {
@@ -911,6 +967,31 @@ describe('AuthoritativeMedicalWebSearchService', () => {
     expect(runtime.recentSearches?.[0]?.requiredSources).toEqual(['PUBMED']);
     expect(runtime.recentSearches?.[0]?.fallbackReasons).toEqual(
       expect.arrayContaining(['no_candidates']),
+    );
+  });
+
+  it('enables hybrid retrieval fusion behind feature flag', async () => {
+    const service = new AuthoritativeMedicalWebSearchService({
+      enabled: true,
+      networkEnabled: false,
+      timeoutMs: 2000,
+      maxResults: 8,
+      pubMedRetMax: 6,
+      duckDuckGoEnabled: true,
+      hybridRetrievalEnabled: true,
+    });
+
+    const result = await service.search({
+      query: 'hypertension guideline',
+      limit: 4,
+      sourceFilter: ['WHO', 'CDC_US', 'PUBMED'],
+      requiredSources: ['WHO', 'CDC_US'],
+    });
+
+    expect(result.results.length).toBeGreaterThan(0);
+    expect(result.strategyVersion).toContain('+hybrid-v1');
+    expect(result.results.every((item) => isAuthoritativeMedicalUrl(item.url))).toBe(
+      true,
     );
   });
 });

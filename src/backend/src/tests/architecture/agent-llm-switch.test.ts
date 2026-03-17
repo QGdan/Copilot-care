@@ -63,6 +63,7 @@ describe('Architecture Smoke - agent llm switch', () => {
     );
 
     expect(opinion.riskLevel).toBe('L1');
-    expect(opinion.reasoning).toContain('波动性血压');
+    expect(opinion.reasoning).toContain('Fallback general-practice heuristic');
+    expect(opinion.citations).toContain('SYSTEM_FALLBACK_OPINION');
   });
 });

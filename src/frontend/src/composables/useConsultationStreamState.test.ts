@@ -27,6 +27,7 @@ describe('useConsultationStreamState', () => {
     expect(state.systemError.value).toBe('');
     expect(state.rounds.value).toEqual([]);
     expect(state.routeInfo.value).toBeNull();
+    expect(state.authoritativeSearch.value).toBeNull();
     expect(state.orchestrationSnapshot.value).toBeNull();
     expect(state.stageRuntime.value.START.status).toBe('pending');
   });
@@ -121,6 +122,16 @@ describe('useConsultationStreamState', () => {
     state.nextAction.value = 'Add medication history before rerun.';
     state.systemError.value = 'ERR_REQUIRED_FIELDS';
     state.resultNotes.value = ['缺失关键信息'];
+    state.authoritativeSearch.value = {
+      query: 'hypertension',
+      queryVariants: ['hypertension'],
+      strategyVersion: 'authority-multisource-v3.1+hybrid-v1',
+      usedSources: ['WHO'],
+      sourceBreakdown: [{ sourceId: 'WHO', count: 1 }],
+      realtimeCount: 1,
+      fallbackCount: 0,
+      droppedByPolicy: 0,
+    };
     state.routingPreview.value = { routeMode: 'DEEP_DEBATE' };
     state.stageRuntime.value.OUTPUT = {
       status: 'done',
@@ -136,6 +147,7 @@ describe('useConsultationStreamState', () => {
     expect(state.nextAction.value).toBe('');
     expect(state.systemError.value).toBe('');
     expect(state.resultNotes.value).toEqual([]);
+    expect(state.authoritativeSearch.value).toBeNull();
     expect(state.routingPreview.value).toEqual({});
     expect(state.stageRuntime.value.OUTPUT.status).toBe('pending');
     expect(state.reasoningItems.value).toEqual([]);

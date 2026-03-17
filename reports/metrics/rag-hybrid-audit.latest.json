@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-03-15T15:07:31.781Z",
+  "offline": {
+    "top3HitRate": 0.9917,
+    "mrrAt5": 0.9917,
+    "requiredSourceCoverageRate": 1,
+    "redFlagEvidenceRecall": 1,
+    "summaryStructuredRate": 1,
+    "needDecompositionRate": 1,
+    "professionalRestatementRate": 1,
+    "skillChainCoverageRate": 1,
+    "hybridStrategyRate": 1,
+    "averageLatencyMs": 3.82,
+    "sampleCount": 120
+  },
+  "online": {
+    "top3HitRate": 1,
+    "mrrAt5": 0.9556,
+    "requiredSourceCoverageRate": 1,
+    "redFlagEvidenceRecall": 1,
+    "summaryStructuredRate": 0.9861,
+    "needDecompositionRate": 1,
+    "professionalRestatementRate": 1,
+    "skillChainCoverageRate": 1,
+    "hybridStrategyRate": 1,
+    "averageLatencyMs": 14137.66,
+    "sampleCount": 60
+  },
+  "sources": {
+    "offline": "reports\\metrics\\rag-hybrid.offline.latest.json",
+    "online": "reports\\metrics\\rag-hybrid.online.latest.json"
+  },
+  "thresholds": {
+    "offlineTop3HitRateMin": 0.98,
+    "offlineMrrAt5Min": 0.95,
+    "offlineSummaryStructuredRateMin": 0.95,
+    "offlineNeedDecompositionRateMin": 0.95,
+    "offlineProfessionalRestatementRateMin": 0.95,
+    "offlineSkillChainCoverageRateMin": 0.95,
+    "onlineTop3HitRateMin": 0.98,
+    "onlineMrrAt5Min": 0.9,
+    "onlineRequiredSourceCoverageRateMin": 0.85,
+    "onlineRedFlagEvidenceRecallMin": 0.93,
+    "onlineSummaryStructuredRateMin": 0.95,
+    "onlineNeedDecompositionRateMin": 0.95,
+    "onlineProfessionalRestatementRateMin": 0.95,
+    "onlineSkillChainCoverageRateMin": 0.95,
+    "onlineHybridStrategyRateMin": 0.9,
+    "onlineAverageLatencyMsMax": 20000
+  },
+  "overallPass": true,
+  "breaches": []
+}

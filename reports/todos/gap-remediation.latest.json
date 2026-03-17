@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-03-10T14:56:43.816Z",
+  "manifestPath": "docs\\process\\gap-remediation-workflow.v10_00.json",
+  "mode": "accept",
+  "taskId": "GAP-P2-001",
+  "options": {
+    "retries": 2,
+    "rollbackOnFailure": true
+  },
+  "result": {
+    "id": "GAP-P2-001",
+    "title": "多站点策略配置与审计订阅",
+    "success": true,
+    "checks": [
+      {
+        "command": "npm run test --workspace=@copilot-care/backend -- src/tests/architecture/multi-site-policy.http.test.ts",
+        "success": true,
+        "status": 0,
+        "durationMs": 5681,
+        "error": null,
+        "attempt": 1
+      }
+    ],
+    "rollback": null
+  }
+}

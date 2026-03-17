@@ -156,6 +156,45 @@ function mergeProfile(
   };
 }
 
+function protectDemographicConsistency(input: {
+  localProfile: PatientProfile;
+  remotePatch: Partial<PatientProfile>;
+}): {
+  patch: Partial<PatientProfile>;
+  conflictInsights: string[];
+} {
+  const patch: Partial<PatientProfile> = { ...input.remotePatch };
+  const conflictInsights: string[] = [];
+
+  const localAge = toOptionalNumber(input.localProfile.age);
+  const remoteAge = toOptionalNumber(patch.age);
+  if (
+    typeof localAge === 'number'
+    && typeof remoteAge === 'number'
+    && Math.abs(localAge - remoteAge) >= 2
+  ) {
+    delete patch.age;
+    conflictInsights.push(
+      `MCP人口学冲突：云端年龄(${remoteAge})与请求年龄(${localAge})不一致，已保留请求值。`,
+    );
+  }
+
+  const localSex = input.localProfile.sex;
+  const remoteSex = patch.sex;
+  if (
+    (localSex === 'male' || localSex === 'female' || localSex === 'other')
+    && (remoteSex === 'male' || remoteSex === 'female' || remoteSex === 'other')
+    && localSex !== remoteSex
+  ) {
+    delete patch.sex;
+    conflictInsights.push(
+      `MCP人口学冲突：云端性别(${remoteSex})与请求性别(${localSex})不一致，已保留请求值。`,
+    );
+  }
+
+  return { patch, conflictInsights };
+}
+
 function sanitizeProfilePatch(raw: unknown): Partial<PatientProfile> {
   if (!raw || typeof raw !== 'object') {
     return {};
@@ -258,10 +297,20 @@ class HttpPatientContextEnricher implements PatientContextEnricher {
           ? (payload as Record<string, unknown>)
           : {};
       const profilePatch = sanitizeProfilePatch(candidate.profilePatch);
+      const consistencyGuard = protectDemographicConsistency({
+        localProfile: input.profile,
+        remotePatch: profilePatch,
+      });
       const remoteSignals = sanitizeSignals(candidate.signals);
       const insights = toStringArray(candidate.insights).slice(0, 8);
-      const mergedProfile = mergeProfile(input.profile, profilePatch);
+      const mergedProfile = mergeProfile(input.profile, consistencyGuard.patch);
       const mergedSignals = [...(input.signals ?? []), ...remoteSignals];
+      for (const detail of consistencyGuard.conflictInsights) {
+        if (insights.length >= 8) {
+          break;
+        }
+        insights.push(detail);
+      }
 
       if (insights.length === 0) {
         insights.push('已接入MCP患者云端数据并完成上下文融合。');

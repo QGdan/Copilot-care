@@ -10,6 +10,10 @@ import type {
   TriageStreamEvent,
   WorkflowStage,
 } from '@copilot-care/shared/types';
+import {
+  formatDestination,
+  formatTriageLevel,
+} from '../constants/triageLabels';
 
 const configuredBaseURLRaw = import.meta.env.VITE_API_BASE_URL;
 const configuredBaseURL =
@@ -137,6 +141,8 @@ export interface ExpertArchitectureResponse {
   experts: Record<string, ExpertArchitectureItem>;
   routing?: {
     policyVersion: string;
+    strictDiagnosisMode?: boolean;
+    fallbackCitationMarker?: string;
     complexityThresholds: {
       fastConsensusMax: number;
       lightDebateMax: number;
@@ -404,7 +410,7 @@ function buildFallbackSummary(
   const conclusion = payload.explainableReport?.conclusion ?? '';
   const normalizedConclusion = normalizeSummaryTextForCompare(conclusion);
   const triageLine = payload.triageResult
-    ? `分诊：${payload.triageResult.triageLevel} / 去向：${payload.triageResult.destination}`
+    ? `分诊：${formatTriageLevel(payload.triageResult.triageLevel)} / 去向：${formatDestination(payload.triageResult.destination)}`
     : '';
   const actionLine = actions.length > 0 ? `建议：${actions.join('；')}` : '';
 
@@ -502,6 +508,7 @@ function emitFallbackEvents(
       errorCode: payload.errorCode,
       message: payload.notes.join('；') || '请求失败',
       requiredFields: payload.requiredFields,
+      blockingReason: payload.blockingReason,
       nextAction: payload.nextAction,
     });
     onEvent({

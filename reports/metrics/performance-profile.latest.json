@@ -1,92 +1,92 @@
 {
-  "profiledAt": "2026-02-22T07:17:17.862Z",
-  "totalProfileTimeMs": 41,
+  "profiledAt": "2026-03-14T18:14:45.963Z",
+  "totalProfileTimeMs": 42,
   "memory": {
     "before": {
       "heapUsedMB": 4,
       "heapTotalMB": 6,
-      "rssMB": 41,
+      "rssMB": 45,
       "externalMB": 1
     },
     "after": {
       "heapUsedMB": 5,
       "heapTotalMB": 7,
-      "rssMB": 44,
+      "rssMB": 47,
       "externalMB": 1
     },
     "delta": {
       "heapUsedMB": 1,
-      "rssMB": 3
+      "rssMB": 2
     }
   },
   "summary": {
     "siteCount": 3,
     "totalSamples": 360,
     "totalFileSizeKB": 284,
-    "avgLoadTimeMs": 1.16,
-    "avgParseTimeMs": 0.63
+    "avgLoadTimeMs": 3.06,
+    "avgParseTimeMs": 0.49
   },
   "loadMetrics": [
     {
       "filePath": "reports\\scenarios\\replicated\\site-alpha.json",
       "fileSizeKB": 95,
       "sampleCount": 120,
-      "loadTimeMs": 1.52
+      "loadTimeMs": 4.85
     },
     {
       "filePath": "reports\\scenarios\\replicated\\site-beta.json",
       "fileSizeKB": 94,
       "sampleCount": 120,
-      "loadTimeMs": 1.23
+      "loadTimeMs": 2.45
     },
     {
       "filePath": "reports\\scenarios\\replicated\\site-gamma.json",
       "fileSizeKB": 95,
       "sampleCount": 120,
-      "loadTimeMs": 0.73
+      "loadTimeMs": 1.88
     }
   ],
   "parseMetrics": [
     {
       "file": "site-alpha.json",
-      "minMs": 0.7,
-      "maxMs": 2.13,
-      "avgMs": 0.96,
-      "p95Ms": 2.13
+      "minMs": 0.32,
+      "maxMs": 2.28,
+      "avgMs": 0.59,
+      "p95Ms": 2.28
     },
     {
       "file": "site-beta.json",
-      "minMs": 0.31,
-      "maxMs": 0.73,
-      "avgMs": 0.49,
-      "p95Ms": 0.73
+      "minMs": 0.3,
+      "maxMs": 0.69,
+      "avgMs": 0.48,
+      "p95Ms": 0.69
     },
     {
       "file": "site-gamma.json",
-      "minMs": 0.31,
-      "maxMs": 0.72,
-      "avgMs": 0.44,
-      "p95Ms": 0.72
+      "minMs": 0.3,
+      "maxMs": 0.56,
+      "avgMs": 0.41,
+      "p95Ms": 0.56
     }
   ],
   "readMetrics": [
     {
       "file": "site-alpha.json",
-      "minMs": 0.3,
-      "maxMs": 1.37,
-      "avgMs": 0.6
+      "minMs": 0.19,
+      "maxMs": 1.05,
+      "avgMs": 0.39
     },
     {
       "file": "site-beta.json",
       "minMs": 0.22,
-      "maxMs": 0.54,
-      "avgMs": 0.3
+      "maxMs": 0.59,
+      "avgMs": 0.43
     },
     {
       "file": "site-gamma.json",
-      "minMs": 0.2,
-      "maxMs": 0.74,
-      "avgMs": 0.36
+      "minMs": 0.33,
+      "maxMs": 0.67,
+      "avgMs": 0.43
     }
   ],
   "thresholds": {

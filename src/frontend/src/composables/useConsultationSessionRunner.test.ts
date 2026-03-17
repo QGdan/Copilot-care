@@ -362,7 +362,7 @@ describe('useConsultationSessionRunner', () => {
     await vi.advanceTimersByTimeAsync(3000);
 
     expect(state.runner.typedOutput.value).toContain('结论：短期内继续观察并复查。');
-    expect(state.runner.typedOutput.value).toContain('分诊：routine');
+    expect(state.runner.typedOutput.value).toContain('分诊：常规（L1）');
   });
 
   it('shows clarification and error state when stream reports required fields', async () => {

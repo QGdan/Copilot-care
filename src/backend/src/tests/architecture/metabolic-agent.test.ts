@@ -28,15 +28,16 @@ describe('Architecture Smoke - metabolic agent', () => {
         patientId: 'metabolic-001',
         age: 53,
         sex: 'male',
-        chronicDiseases: ['2型糖尿病', '高脂血症'],
+        chronicDiseases: ['\u4e8c\u578b\u7cd6\u5c3f\u75c5', '\u9ad8\u8102\u8840\u75c7'],
         medicationHistory: ['none'],
-        symptoms: ['乏力'],
+        symptoms: ['\u4e4f\u529b'],
       },
       'test-context',
     );
 
     expect(opinion.role).toBe('Metabolic');
     expect(opinion.riskLevel).toBe('L2');
+    expect(opinion.citations).toContain('SYSTEM_FALLBACK_OPINION');
   });
 
   it('returns L0 fallback opinion when no metabolic risk signal exists', async () => {
@@ -49,7 +50,7 @@ describe('Architecture Smoke - metabolic agent', () => {
         sex: 'female',
         chronicDiseases: [],
         medicationHistory: [],
-        symptoms: ['轻微头痛'],
+        symptoms: ['\u8f7b\u5fae\u5934\u75db'],
       },
       'test-context',
     );

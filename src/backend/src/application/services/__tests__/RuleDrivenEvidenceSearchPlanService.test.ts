@@ -51,6 +51,18 @@ describe('RuleDrivenEvidenceSearchPlanService', () => {
     );
     expect(plan.minEvidenceCount).toBe(2);
     expect(plan.limit).toBeGreaterThanOrEqual(5);
+    expect(plan.decomposedNeeds.length).toBeGreaterThanOrEqual(3);
+    expect(plan.professionalRestatement).toContain('临床检索任务重述');
+    expect(plan.queryVariants.length).toBeGreaterThan(1);
+    expect(plan.queryVariants[0]).toContain('hypertension guideline');
+    expect(plan.activatedSkills).toEqual(
+      expect.arrayContaining([
+        'need_decomposition',
+        'professional_restatement',
+        'query_rewrite',
+        'hybrid_retrieval_fusion',
+      ]),
+    );
   });
 
   it('requires NICE for severe hypertension risk', () => {
@@ -88,6 +100,37 @@ describe('RuleDrivenEvidenceSearchPlanService', () => {
       expect.arrayContaining(['WHO', 'CDC_US']),
     );
     expect(plan.strategyNotes.join(' ')).toContain('血糖');
+    expect(plan.decomposedNeeds.join(' ')).toContain('血糖');
+    expect(plan.queryVariants.some((item) => /diabetes|糖尿病/i.test(item))).toBe(true);
+  });
+
+  it('adds cardiac-focused variants and avoids blood-pressure threshold variants when vitals are normal', () => {
+    const service = new RuleDrivenEvidenceSearchPlanService();
+    const plan = service.build({
+      request: createRequest({
+        symptomText: '活动后心悸、气短2周',
+        profile: {
+          ...createRequest().profile,
+          chiefComplaint: '活动后心悸、气短2周',
+          symptoms: ['心悸', '气短'],
+          chronicDiseases: ['Heart Disease', '心力衰竭，未特指'],
+          vitals: {
+            systolicBP: 125,
+            diastolicBP: 80,
+          },
+        },
+      }),
+      risk: createRisk({
+        matchedRuleIds: [],
+        riskLevel: 'L1',
+        triageLevel: 'urgent',
+      }),
+    });
+
+    expect(plan.queryVariants.some((item) => /心悸|气短|heart failure|cardiac/i.test(item))).toBe(true);
+    expect(plan.queryVariants.some((item) => /blood pressure 125\/80/i.test(item))).toBe(false);
+    expect(plan.activatedSkills).toContain('cardiac_risk_focus');
+    expect(plan.decomposedNeeds.join(' ')).toContain('心悸/气短/胸痛');
   });
 
   it('does not enforce high evidence count for low-risk generic scenarios', () => {
@@ -115,5 +158,7 @@ describe('RuleDrivenEvidenceSearchPlanService', () => {
     expect(plan.minEvidenceCount).toBe(1);
     expect(plan.limit).toBe(3);
     expect(plan.requiredSources).toEqual(['WHO']);
+    expect(plan.queryVariants.length).toBeGreaterThanOrEqual(2);
+    expect(plan.professionalRestatement).toContain('随访');
   });
 });

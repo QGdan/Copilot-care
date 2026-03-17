@@ -137,7 +137,7 @@ describe('GovernanceDashboard queue navigation behavior', () => {
     });
     await flushPromises();
 
-    expect(wrapper.text()).toContain('Catalog 2026.03-r1');
+    expect(wrapper.text()).toContain('目录 2026.03-r1');
     expect(wrapper.find('[data-testid="rule-layer-grid"]').text()).toContain(
       'FLOW_CONTROL',
     );

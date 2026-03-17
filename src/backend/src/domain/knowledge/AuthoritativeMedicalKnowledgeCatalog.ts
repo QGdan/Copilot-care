@@ -40,6 +40,7 @@ export interface AuthoritativeMedicalEvidence {
 
 export interface AuthoritativeMedicalSearchQuery {
   query: string;
+  queryVariants?: string[];
   limit: number;
   sourceFilter?: string[];
   requiredSources?: string[];
@@ -66,6 +67,7 @@ export interface AuthoritativeMedicalSearchTraceEntry {
   traceId: string;
   generatedAt: string;
   query: string;
+  queryVariants?: string[];
   limit: number;
   sourceFilter: string[];
   requiredSources: string[];
@@ -193,6 +195,14 @@ export const AUTHORITATIVE_MEDICAL_DOCUMENT_SEEDS: readonly MedicalKnowledgeDocu
       'WHO心血管专题提示：血压控制、戒烟、合理饮食和早期风险评估是降低卒中与心血管事件风险的关键措施。',
   },
   {
+    sourceId: 'WHO',
+    title: 'WHO diabetes fact sheet',
+    url: 'https://www.who.int/news-room/fact-sheets/detail/diabetes',
+    keywords: ['diabetes', 'glucose', 'hyperglycemia', '糖尿病', '血糖'],
+    evidenceSummaryZh:
+      'WHO指出糖尿病管理应基于血糖阈值、并发症风险和长期随访，需同步开展生活方式干预与药物管理。',
+  },
+  {
     sourceId: 'CDC_US',
     title: 'CDC high blood pressure basics',
     url: 'https://www.cdc.gov/high-blood-pressure/about/index.html',
@@ -207,6 +217,38 @@ export const AUTHORITATIVE_MEDICAL_DOCUMENT_SEEDS: readonly MedicalKnowledgeDocu
     keywords: ['stroke', 'warning signs', 'FAST', '卒中', '中风'],
     evidenceSummaryZh:
       'CDC卒中页面强调FAST预警信号（面口歪斜、上肢无力、言语异常），出现突发神经系统症状应立即急诊评估。',
+  },
+  {
+    sourceId: 'CDC_US',
+    title: 'CDC diabetes basics',
+    url: 'https://www.cdc.gov/diabetes/about/index.html',
+    keywords: ['diabetes', 'blood glucose', 'hyperglycemia', '糖尿病', '血糖'],
+    evidenceSummaryZh:
+      'CDC糖尿病资料强调血糖监测、并发症筛查与个体化随访，是慢病分层管理的重要依据。',
+  },
+  {
+    sourceId: 'CDC_US',
+    title: 'CDC heart disease basics',
+    url: 'https://www.cdc.gov/heart-disease/about/index.html',
+    keywords: ['heart disease', 'chest pain', 'palpitation', '心脏病', '心悸', '胸痛'],
+    evidenceSummaryZh:
+      'CDC心脏病资料强调识别胸痛、呼吸困难等危险信号，并结合危险因素管理与专科随访降低事件风险。',
+  },
+  {
+    sourceId: 'NICE',
+    title: 'Type 2 diabetes in adults: management (NG28)',
+    url: 'https://www.nice.org.uk/guidance/ng28/chapter/Recommendations',
+    keywords: ['type 2 diabetes', 'glucose', 'hba1c', '2型糖尿病', '血糖'],
+    evidenceSummaryZh:
+      'NICE NG28提出2型糖尿病应结合血糖控制目标、并发症风险和用药依从性制定分层管理与复评计划。',
+  },
+  {
+    sourceId: 'NICE',
+    title: 'Chronic heart failure in adults: diagnosis and management (NG106)',
+    url: 'https://www.nice.org.uk/guidance/ng106/chapter/Recommendations',
+    keywords: ['heart failure', 'cardiology', 'dyspnea', '心衰', '心力衰竭', '气短'],
+    evidenceSummaryZh:
+      'NICE NG106强调心衰评估需结合症状负担、体征变化和急性失代偿警示信号，明确转诊与复评时点。',
   },
   {
     sourceId: 'NHC_CN',
@@ -231,6 +273,22 @@ export const AUTHORITATIVE_MEDICAL_DOCUMENT_SEEDS: readonly MedicalKnowledgeDocu
     keywords: ['pubmed', 'hypertension', 'guideline', '文献', '高血压'],
     evidenceSummaryZh:
       'PubMed可用于补充最新循证文献，重点关注指南、系统综述与高质量临床研究的证据一致性。',
+  },
+  {
+    sourceId: 'PUBMED',
+    title: 'PubMed diabetes literature index',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/?term=diabetes+guideline',
+    keywords: ['pubmed', 'diabetes', 'guideline', '文献', '糖尿病'],
+    evidenceSummaryZh:
+      'PubMed糖尿病文献索引可用于补充血糖阈值、并发症管理和随访策略的高质量循证证据。',
+  },
+  {
+    sourceId: 'PUBMED',
+    title: 'PubMed heart failure literature index',
+    url: 'https://pubmed.ncbi.nlm.nih.gov/?term=heart+failure+guideline',
+    keywords: ['pubmed', 'heart failure', 'guideline', '文献', '心衰'],
+    evidenceSummaryZh:
+      'PubMed心衰文献索引可用于补充心功能恶化预警、处置优先级和专科转诊证据。',
   },
   {
     sourceId: 'NMPA',

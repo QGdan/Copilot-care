@@ -1,0 +1,457 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "慢性病智能诊断测试数据集 Schema",
+  "description": "慢性病智能诊断测试数据集的结构化数据定义",
+  "version": "1.0.0",
+
+  "definitions": {
+    "patient": {
+      "type": "object",
+      "required": ["patient_id", "demographics", "anthropometrics", "risk_factors"],
+      "properties": {
+        "patient_id": {
+          "type": "string",
+          "description": "患者伪标识符，SHA-256哈希生成"
+        },
+        "demographics": {
+          "type": "object",
+          "properties": {
+            "birth_year_month": {
+              "type": "string",
+              "pattern": "^\d{4}-\d{2}$",
+              "description": "出生年月，格式YYYY-MM"
+            },
+            "gender": {
+              "type": "integer",
+              "enum": [1, 2, 9],
+              "description": "性别: 1=男, 2=女, 9=未说明"
+            },
+            "ethnicity": {
+              "type": "string",
+              "description": "民族编码，GB/T 3304"
+            },
+            "occupation": {
+              "type": "string",
+              "description": "职业编码，GB/T 6565"
+            },
+            "education": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5,
+              "description": "教育程度: 1=文盲, 5=大专及以上"
+            },
+            "insurance_type": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6,
+              "description": "医保类型"
+            }
+          }
+        },
+        "anthropometrics": {
+          "type": "object",
+          "properties": {
+            "height_cm": {
+              "type": "number",
+              "minimum": 100,
+              "maximum": 220
+            },
+            "weight_kg": {
+              "type": "number",
+              "minimum": 30,
+              "maximum": 200
+            },
+            "BMI": {
+              "type": "number",
+              "minimum": 10,
+              "maximum": 60
+            },
+            "waist_cm": {
+              "type": "number",
+              "minimum": 50,
+              "maximum": 150
+            },
+            "hip_cm": {
+              "type": "number",
+              "minimum": 60,
+              "maximum": 160
+            }
+          }
+        },
+        "risk_factors": {
+          "type": "object",
+          "properties": {
+            "smoking_status": {
+              "type": "integer",
+              "enum": [1, 2, 3],
+              "description": "吸烟状态: 1=从不, 2=已戒, 3=吸烟"
+            },
+            "alcohol_status": {
+              "type": "integer",
+              "enum": [1, 2, 3],
+              "description": "饮酒状态: 1=从不, 2=已戒, 3=饮酒"
+            },
+            "physical_activity": {
+              "type": "object"
+            },
+            "family_history": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "disease_profile": {
+          "type": "object",
+          "properties": {
+            "has_hypertension": {
+              "type": "boolean"
+            },
+            "has_diabetes": {
+              "type": "boolean"
+            },
+            "has_heart_disease": {
+              "type": "boolean"
+            },
+            "disease_type": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+
+    "visit": {
+      "type": "object",
+      "required": ["visit_id", "patient_id", "visit_datetime", "visit_type"],
+      "properties": {
+        "visit_id": {
+          "type": "string"
+        },
+        "patient_id": {
+          "type": "string"
+        },
+        "visit_datetime": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "visit_type": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 6,
+          "description": "就诊类型: 1=普通门诊, 2=专家门诊, 3=急诊, 4=急诊留观, 5=普通住院, 6=重症监护"
+        },
+        "department": {
+          "type": "string"
+        },
+        "chief_complaint": {
+          "type": "string"
+        },
+        "vital_signs": {
+          "type": "object",
+          "properties": {
+            "blood_pressure": {
+              "type": "object",
+              "properties": {
+                "systolic": {
+                  "type": "integer",
+                  "minimum": 70,
+                  "maximum": 250
+                },
+                "diastolic": {
+                  "type": "integer",
+                  "minimum": 40,
+                  "maximum": 150
+                }
+              }
+            },
+            "heart_rate": {
+              "type": "integer",
+              "minimum": 40,
+              "maximum": 150
+            },
+            "respiratory_rate": {
+              "type": "integer",
+              "minimum": 10,
+              "maximum": 40
+            },
+            "temperature": {
+              "type": "number",
+              "minimum": 35,
+              "maximum": 42
+            }
+          }
+        }
+      }
+    },
+
+    "lab_result": {
+      "type": "object",
+      "required": ["lab_id", "patient_id", "visit_id", "test_date"],
+      "properties": {
+        "lab_id": {
+          "type": "string"
+        },
+        "patient_id": {
+          "type": "string"
+        },
+        "visit_id": {
+          "type": "string"
+        },
+        "test_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "glucose": {
+          "type": "object",
+          "properties": {
+            "fasting_glucose_mmol_L": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 30
+            },
+            "postprandial_glucose_mmol_L": {
+              "type": ["number", "null"]
+            },
+            "hba1c_percent": {
+              "type": "number",
+              "minimum": 3,
+              "maximum": 20
+            }
+          }
+        },
+        "lipids": {
+          "type": "object",
+          "properties": {
+            "total_cholesterol_mmol_L": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 15
+            },
+            "ldl_cholesterol_mmol_L": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 10
+            },
+            "hdl_cholesterol_mmol_L": {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 5
+            },
+            "triglycerides_mmol_L": {
+              "type": "number",
+              "minimum": 0.3,
+              "maximum": 20
+            }
+          }
+        },
+        "renal_function": {
+          "type": "object",
+          "properties": {
+            "serum_creatinine_umol_L": {
+              "type": "number",
+              "minimum": 20,
+              "maximum": 500
+            },
+            "egfr_ml_min_1_73m2": {
+              "type": "number",
+              "minimum": 5,
+              "maximum": 150
+            },
+            "uacr_mg_g": {
+              "type": "number",
+              "minimum": 1,
+              "maximum": 5000
+            }
+          }
+        },
+        "electrolytes": {
+          "type": "object",
+          "properties": {
+            "potassium_mmol_L": {
+              "type": "number",
+              "minimum": 2,
+              "maximum": 8
+            },
+            "sodium_mmol_L": {
+              "type": "number",
+              "minimum": 120,
+              "maximum": 160
+            }
+          }
+        }
+      }
+    },
+
+    "diagnosis": {
+      "type": "object",
+      "required": ["diagnosis_id", "patient_id", "visit_id"],
+      "properties": {
+        "diagnosis_id": {
+          "type": "string"
+        },
+        "patient_id": {
+          "type": "string"
+        },
+        "visit_id": {
+          "type": "string"
+        },
+        "diagnosis_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "primary_diagnosis": {
+          "type": "object",
+          "properties": {
+            "icd10_code": {
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          }
+        },
+        "secondary_diagnoses": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+
+    "medication": {
+      "type": "object",
+      "required": ["medication_id", "patient_id", "visit_id", "drug_name"],
+      "properties": {
+        "medication_id": {
+          "type": "string"
+        },
+        "patient_id": {
+          "type": "string"
+        },
+        "visit_id": {
+          "type": "string"
+        },
+        "drug_name": {
+          "type": "string"
+        },
+        "drug_category": {
+          "type": "string"
+        },
+        "dosage": {
+          "type": ["number", "string"]
+        },
+        "unit": {
+          "type": "string"
+        },
+        "frequency": {
+          "type": "string"
+        },
+        "route": {
+          "type": "string"
+        },
+        "start_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "indication": {
+          "type": "string"
+        },
+        "adherence": {
+          "type": "integer",
+          "enum": [1, 2, 3]
+        }
+      }
+    },
+
+    "followup": {
+      "type": "object",
+      "required": ["followup_id", "patient_id", "visit_id", "followup_date"],
+      "properties": {
+        "followup_id": {
+          "type": "string"
+        },
+        "patient_id": {
+          "type": "string"
+        },
+        "visit_id": {
+          "type": "string"
+        },
+        "followup_date": {
+          "type": "string",
+          "format": "date"
+        },
+        "followup_mode": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "symptom_assessment": {
+          "type": "object"
+        },
+        "indicator_measurements": {
+          "type": "object"
+        },
+        "medication_review": {
+          "type": "object"
+        },
+        "lifestyle_counseling": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "next_followup_plan": {
+          "type": "object"
+        },
+        "followup_classification": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4
+        }
+      }
+    }
+  },
+
+  "type": "object",
+  "properties": {
+    "patients": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/patient"
+      }
+    },
+    "visits": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/visit"
+      }
+    },
+    "lab_results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/lab_result"
+      }
+    },
+    "diagnoses": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/diagnosis"
+      }
+    },
+    "medications": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/medication"
+      }
+    },
+    "followups": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/followup"
+      }
+    }
+  }
+}

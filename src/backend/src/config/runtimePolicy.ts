@@ -3,6 +3,8 @@ export const DEMO_CONSENT_TOKEN = 'consent_local_demo';
 export interface BackendExposurePolicy {
   isProduction: boolean;
   corsAllowedOrigins: string[];
+  triageAuthRequired: boolean;
+  triageApiKey?: string;
   interopEnabled: boolean;
   mcpEnabled: boolean;
   allowDemoConsentToken: boolean;
@@ -59,6 +61,11 @@ export function resolveBackendExposurePolicy(
     corsAllowedOrigins: parseStringList(
       env.COPILOT_CARE_CORS_ALLOWED_ORIGINS,
     ).map(normalizeOrigin),
+    triageAuthRequired: parseBooleanFlag(
+      env.COPILOT_CARE_REQUIRE_TRIAGE_AUTH,
+      isProduction,
+    ),
+    triageApiKey: (env.COPILOT_CARE_TRIAGE_API_KEY ?? '').trim() || undefined,
     interopEnabled: parseBooleanFlag(
       env.COPILOT_CARE_ENABLE_INTEROP,
       !isProduction,

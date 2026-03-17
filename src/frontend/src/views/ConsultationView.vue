@@ -232,6 +232,7 @@ const {
   requiredFields,
   nextAction,
   systemError,
+  blockingReason,
   stageRuntime,
   reasoningItems,
   rounds,
@@ -241,6 +242,7 @@ const {
   routeInfo,
   routingPreview,
   explainableReport,
+  authoritativeSearch,
   resultNotes,
   orchestrationSnapshot,
   captureRoutingFromText,
@@ -286,6 +288,7 @@ const {
     requiredFields,
     nextAction,
     systemError,
+    blockingReason,
     stageRuntime,
     reasoningItems,
     rounds,
@@ -295,6 +298,7 @@ const {
     routeInfo,
     routingPreview,
     explainableReport,
+    authoritativeSearch,
     resultNotes,
     orchestrationSnapshot,
     captureRoutingFromText,
@@ -390,6 +394,7 @@ const {
   routeInfo,
   routingPreview,
   resultNotes,
+  blockingReason,
   orchestrationSnapshot,
 });
 
@@ -435,6 +440,8 @@ const hasResultPanel = computed<boolean>(() => {
     !!routeInfo.value
     || !!triageResult.value
     || !!finalConsensus.value
+    || !!blockingReason.value
+    || resultNotes.value.length > 0
   );
 });
 
@@ -866,6 +873,7 @@ watch(isDragging, (dragging) => {
         <ReasoningTraceTimeline
           :items="reasoningItems"
           :current-stage="currentStageInfo.stage"
+          :authoritative-search="authoritativeSearch"
           :max-items="100"
         />
         <p v-if="systemError" class="status-line">错误码：{{ systemError }}</p>
@@ -885,6 +893,7 @@ watch(isDragging, (dragging) => {
           :explainable-report="explainableReport"
           :final-consensus="finalConsensus"
           :result-notes="resultNotes"
+          :blocking-reason="blockingReason"
           :is-safety-blocked="isSafetyBlocked"
           :safety-block-note="safetyBlockNote"
           :can-export-report="canExportReport"

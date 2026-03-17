@@ -1,0 +1,56 @@
+{
+  "version": "v10.00",
+  "createdAt": "2026-03-10T05:24:01.668Z",
+  "updatedAt": "2026-03-10T14:56:43.815Z",
+  "tasks": {
+    "GAP-P0-001": {
+      "state": "done",
+      "updatedAt": "2026-03-10T05:44:44.556Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/tests/architecture/access-hardening.test.ts"
+      ]
+    },
+    "GAP-P0-002": {
+      "state": "done",
+      "updatedAt": "2026-03-10T05:39:27.504Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/tests/architecture/http-integration.test.ts"
+      ]
+    },
+    "GAP-P0-003": {
+      "state": "done",
+      "updatedAt": "2026-03-10T06:16:58.573Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/tests/architecture/governance-review-queue.http.test.ts"
+      ]
+    },
+    "GAP-P1-001": {
+      "state": "done",
+      "updatedAt": "2026-03-10T09:26:37.664Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/tests/architecture/patient-cases.http.test.ts"
+      ]
+    },
+    "GAP-P1-002": {
+      "state": "done",
+      "updatedAt": "2026-03-10T09:52:02.323Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/tests/architecture/interop-submit-job.http.test.ts"
+      ]
+    },
+    "GAP-P2-001": {
+      "state": "done",
+      "updatedAt": "2026-03-10T14:56:43.815Z",
+      "notes": "all verification commands passed",
+      "evidence": [
+        "src/backend/src/tests/architecture/multi-site-policy.http.test.ts"
+      ]
+    }
+  },
+  "lastManifest": "docs\\process\\gap-remediation-workflow.v10_00.json"
+}

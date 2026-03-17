@@ -4,6 +4,7 @@
   DebateRound,
   DissentComputation,
   PatientProfile,
+  TriageBlockingReason,
   TriageDepartment,
   TriageRequest,
   TriageRouteMode,
@@ -63,6 +64,8 @@ const COLLABORATION_MODE_LABELS: Record<
   OFFLINE_ESCALATION: '线下上转',
 };
 
+const FALLBACK_CITATION_MARKER = 'SYSTEM_FALLBACK_OPINION';
+
 export interface ComplexityRoutedOrchestratorOptions {
   fastDepartmentEngines: DepartmentEngines;
   lightDepartmentEngines: DepartmentEngines;
@@ -71,6 +74,7 @@ export interface ComplexityRoutedOrchestratorOptions {
   patientContextEnricher?: PatientContextEnricher;
   authoritativeMedicalSearch?: AuthoritativeMedicalSearchPort;
   safetyOutputGuardService?: SafetyOutputGuardService;
+  strictDiagnosisMode?: boolean;
 }
 
 function formatRoundReasoning(round: DebateRound): string {
@@ -205,10 +209,144 @@ function createWorkflowStage(
   };
 }
 
+function normalizeBlockingActions(actions: string[]): string[] {
+  return [...new Set(actions.map((item) => item.trim()).filter((item) => item.length > 0))];
+}
+
+function parseBooleanFlag(value: string | undefined, fallback: boolean): boolean {
+  if (!value) {
+    return fallback;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) {
+    return true;
+  }
+  if (['0', 'false', 'no', 'off'].includes(normalized)) {
+    return false;
+  }
+  return fallback;
+}
+
+function hasFallbackCitation(citations: string[] | undefined): boolean {
+  return (citations ?? []).some((citation) =>
+    citation.toUpperCase().includes(FALLBACK_CITATION_MARKER),
+  );
+}
+
+interface FallbackOpinionDiagnostics {
+  totalOpinions: number;
+  fallbackOpinions: number;
+  fallbackRatio: number;
+  fallbackAgents: string[];
+  consensusFallback: boolean;
+}
+
+function inspectFallbackDiagnostics(result: DebateResult): FallbackOpinionDiagnostics {
+  const latestRound = result.rounds[result.rounds.length - 1];
+  const opinions = latestRound?.opinions ?? [];
+  const fallbackOpinions = opinions.filter((opinion) =>
+    hasFallbackCitation(opinion.citations),
+  );
+  const totalOpinions = opinions.length;
+  return {
+    totalOpinions,
+    fallbackOpinions: fallbackOpinions.length,
+    fallbackRatio:
+      totalOpinions > 0 ? fallbackOpinions.length / totalOpinions : 0,
+    fallbackAgents: fallbackOpinions.map((opinion) => opinion.agentName),
+    consensusFallback: hasFallbackCitation(result.finalConsensus?.citations),
+  };
+}
+
+function shouldBlockPresetDiagnosis(
+  result: DebateResult,
+  diagnostics: FallbackOpinionDiagnostics,
+): boolean {
+  if (result.status !== 'OUTPUT') {
+    return false;
+  }
+  return diagnostics.consensusFallback || diagnostics.fallbackRatio >= 0.5;
+}
+
+function buildFallbackBlockingReason(detail: string): TriageBlockingReason {
+  return {
+    code: 'RUNTIME_FAILURE_BLOCKED',
+    title: '可信诊断门禁触发',
+    summary: detail,
+    triggerStage: 'REVIEW',
+    severity: 'high',
+    actions: normalizeBlockingActions([
+      resolveNextAction({ errorCode: 'ERR_LOW_CONFIDENCE_ABSTAIN' }),
+      '请确认临床模型与权威证据链可用后再发起线上会诊。',
+    ]),
+    detail: 'preset_fallback_guard_blocked_output',
+  };
+}
+
+function buildValidationBlockingReason(
+  errorCode: DebateResult['errorCode'],
+  detail: string,
+  requiredFields: string[] = [],
+): TriageBlockingReason {
+  const nextAction = resolveNextAction({
+    errorCode: errorCode ?? 'ERR_MISSING_REQUIRED_DATA',
+    requiredFields,
+  });
+  return {
+    code: 'VALIDATION_BLOCKED',
+    title: '输入校验未通过',
+    summary: detail,
+    triggerStage: 'INFO_GATHER',
+    severity: 'warning',
+    actions: normalizeBlockingActions([
+      requiredFields.length > 0
+        ? `补充必要字段：${requiredFields.join('、')}`
+        : '补充必要字段后重新提交会诊。',
+      nextAction,
+    ]),
+    detail: errorCode ? `errorCode=${errorCode}` : undefined,
+  };
+}
+
+function buildEvidenceGateBlockingReason(detail: string): TriageBlockingReason {
+  return {
+    code: 'EVIDENCE_INTEGRITY_GATE_BLOCKED',
+    title: '证据完整性门禁阻断自动输出',
+    summary: detail,
+    triggerStage: 'REVIEW',
+    severity: 'high',
+    actions: normalizeBlockingActions([
+      '进入人工复核队列并补齐权威证据来源（例如 WHO/NICE）。',
+      resolveNextAction({
+        errorCode: 'ERR_GUIDELINE_EVIDENCE_MISSING',
+      }),
+    ]),
+    detail: 'authoritative_evidence_completeness_gate_failed',
+  };
+}
+
+function buildEscalationBlockingReason(detail: string): TriageBlockingReason {
+  return {
+    code: 'RED_FLAG_SHORT_CIRCUIT',
+    title: '触发红旗短路并执行线下上转',
+    summary: detail,
+    triggerStage: 'ESCALATION',
+    severity: 'critical',
+    actions: normalizeBlockingActions([
+      resolveNextAction({
+        errorCode: 'ERR_ESCALATE_TO_OFFLINE',
+      }),
+      '保留审计记录并通知线下接诊团队。',
+    ]),
+    detail: 'red_flag_or_offline_escalation_path',
+  };
+}
+
 export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
   private readonly fastDepartmentEngines: DepartmentEngines;
   private readonly lightDepartmentEngines: DepartmentEngines;
   private readonly deepDebateEngine: DebateEngine;
+  private readonly strictDiagnosisMode: boolean;
   private readonly intakeService: MinimumInfoSetService;
   private readonly consentService: ConsentValidationService;
   private readonly riskService: RuleFirstRiskAssessmentService;
@@ -223,6 +361,10 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
     this.fastDepartmentEngines = options.fastDepartmentEngines;
     this.lightDepartmentEngines = options.lightDepartmentEngines;
     this.deepDebateEngine = options.deepDebateEngine;
+    this.strictDiagnosisMode = options.strictDiagnosisMode ?? parseBooleanFlag(
+      options.env?.COPILOT_CARE_STRICT_DIAGNOSIS_MODE,
+      options.env?.NODE_ENV !== 'test',
+    );
     this.intakeService = new MinimumInfoSetService();
     this.consentService = new ConsentValidationService(options.env);
     this.riskService = new RuleFirstRiskAssessmentService();
@@ -314,6 +456,11 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         dissentIndexHistory: [],
         errorCode,
         requiredFields,
+        blockingReason: buildValidationBlockingReason(
+          errorCode,
+          notes[0],
+          requiredFields,
+        ),
         nextAction: resolveNextAction({ errorCode, requiredFields }),
         ruleGovernance: buildValidationErrorGovernanceSnapshot({
           sessionId,
@@ -374,6 +521,11 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         dissentIndexHistory: [],
         errorCode,
         requiredFields,
+        blockingReason: buildValidationBlockingReason(
+          errorCode,
+          intake.notes[0] ?? '最小信息集校验失败。',
+          requiredFields,
+        ),
         nextAction: resolveNextAction({ errorCode, requiredFields }),
         ruleGovernance: buildValidationErrorGovernanceSnapshot({
           sessionId,
@@ -414,6 +566,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       });
     const authoritativeEvidence = authoritativeEvidencePacket.reportLines;
     const authoritativeEvidenceCards = authoritativeEvidencePacket.cards;
+    const authoritativeSearch = authoritativeEvidencePacket.diagnostics;
 
     const decision = decideRouting(intake.normalizedProfile);
     pushWorkflowStage(
@@ -446,8 +599,10 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         status: 'ERROR',
         rounds: [],
         routing: decision,
+        authoritativeSearch,
         dissentIndexHistory: [],
         errorCode: 'ERR_GUIDELINE_EVIDENCE_MISSING',
+        blockingReason: buildEvidenceGateBlockingReason(detail),
         nextAction: resolveNextAction({
           errorCode: 'ERR_GUIDELINE_EVIDENCE_MISSING',
         }),
@@ -485,6 +640,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         riskLevel: 'L3',
         triageLevel: 'emergency',
         department: 'multiDisciplinary',
+        profile: intake.normalizedProfile,
       });
       const explainableReport = this.reportService.build({
         triageResult,
@@ -504,11 +660,17 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         status: 'ESCALATE_TO_OFFLINE',
         rounds: [],
         routing: decision,
+        authoritativeSearch,
         triageResult,
         explainableReport,
         workflowTrace: [...workflowTrace],
         dissentIndexHistory: [],
         errorCode: 'ERR_ESCALATE_TO_OFFLINE',
+        blockingReason: buildEscalationBlockingReason(
+          risk.redFlagTriggered
+            ? '触发红旗规则，已短路线下上转。'
+            : '复杂度分流判定需线下上转。',
+        ),
         nextAction: resolveNextAction({
           errorCode: 'ERR_ESCALATE_TO_OFFLINE',
         }),
@@ -548,8 +710,34 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       risk,
       options,
     );
-    const finalResult = governanceOutcome.debateResult;
+    let finalResult = governanceOutcome.debateResult;
     const governanceNotes = governanceOutcome.notes;
+    const fallbackDiagnostics = inspectFallbackDiagnostics(finalResult);
+
+    if (
+      this.strictDiagnosisMode &&
+      shouldBlockPresetDiagnosis(finalResult, fallbackDiagnostics)
+    ) {
+      const detail =
+        `检测到预设回退意见占比 ${fallbackDiagnostics.fallbackOpinions}/${fallbackDiagnostics.totalOpinions}` +
+        `（${(fallbackDiagnostics.fallbackRatio * 100).toFixed(0)}%），已阻断自动结论并转人工复核。`;
+      options?.onReasoningStep?.(`可信诊断门禁：${detail}`);
+      finalResult = {
+        ...finalResult,
+        status: 'ABSTAIN',
+        errorCode: 'ERR_LOW_CONFIDENCE_ABSTAIN',
+        finalConsensus: undefined,
+        blockingReason: buildFallbackBlockingReason(detail),
+        notes: [
+          ...finalResult.notes,
+          '可信诊断门禁触发：检测到预设回退意见，避免输出伪确定性诊断。',
+          detail,
+          fallbackDiagnostics.fallbackAgents.length > 0
+            ? `回退专家：${fallbackDiagnostics.fallbackAgents.join('、')}`
+            : '',
+        ].filter((item) => item.length > 0),
+      };
+    }
 
     const finalRiskLevel = finalResult.finalConsensus?.riskLevel ?? risk.riskLevel;
     const triageLevel =
@@ -563,6 +751,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       riskLevel: finalRiskLevel,
       triageLevel,
       department: resultDepartment,
+      profile: intake.normalizedProfile,
     });
     const dissent = mapDissent(finalResult);
     if (dissent) {
@@ -618,6 +807,27 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       `协同模式=${COLLABORATION_MODE_LABELS[decision.collaborationMode]}; ` +
       `ComplexityScore=${decision.complexityScore}`;
 
+    const blockingReason: TriageBlockingReason | undefined =
+      safetyOutcome.blockingReason
+      ?? (safetyOutcome.blocked
+        ? {
+          code: 'SAFETY_GUARD_BLOCKED',
+          title: '安全审校阻断线上建议',
+          summary: reviewDetail,
+          triggerStage: 'REVIEW',
+          severity: 'critical',
+          actions: normalizeBlockingActions([
+            safetyOutcome.errorCode
+              ? resolveNextAction({ errorCode: safetyOutcome.errorCode })
+              : '',
+            '请安排线下医生复核并完成交接。',
+          ]),
+          detail: 'safety_output_guard_blocked',
+        }
+        : safetyOutcome.status === 'ESCALATE_TO_OFFLINE'
+          ? finalResult.blockingReason ?? buildEscalationBlockingReason(reviewDetail)
+          : finalResult.blockingReason);
+
     return {
       ...finalResult,
       sessionId,
@@ -625,6 +835,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
       auditRef,
       status: safetyOutcome.status,
       errorCode: safetyOutcome.errorCode,
+      blockingReason,
       nextAction: safetyOutcome.errorCode
         ? resolveNextAction({
           errorCode: safetyOutcome.errorCode,
@@ -632,6 +843,7 @@ export class ComplexityRoutedOrchestrator implements TriageOrchestratorPort {
         : undefined,
       finalConsensus: safetyOutcome.finalConsensus,
       routing: decision,
+      authoritativeSearch,
       triageResult: safetyOutcome.triageResult,
       explainableReport: safetyOutcome.explainableReport,
       ruleGovernance: buildRuleGovernanceSnapshot({

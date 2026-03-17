@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-03-14T18:42:21.873Z",
+  "manifestPath": "docs\\process\\rag-hybrid-workflow.v1_00.json",
+  "mode": "accept",
+  "taskId": "RAG-HY-P3-003",
+  "options": {
+    "retries": 1,
+    "rollbackOnFailure": false
+  },
+  "result": {
+    "id": "RAG-HY-P3-003",
+    "title": "发布前审效门禁（自动阻断）",
+    "success": true,
+    "checks": [
+      {
+        "command": "npm run rag:hybrid:audit:offline",
+        "success": true,
+        "status": 0,
+        "durationMs": 11733,
+        "error": null,
+        "attempt": 1
+      },
+      {
+        "command": "npm run rag:hybrid:audit:online",
+        "success": true,
+        "status": 0,
+        "durationMs": 1620451,
+        "error": null,
+        "attempt": 1
+      },
+      {
+        "command": "npm run rag:hybrid:audit -- --enforce=true",
+        "success": true,
+        "status": 0,
+        "durationMs": 2695,
+        "error": null,
+        "attempt": 1
+      }
+    ],
+    "rollback": null
+  }
+}

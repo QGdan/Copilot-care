@@ -8,6 +8,9 @@ export interface RuntimeStateConfig {
   directoryPath: string;
   idempotencyFilePath: string;
   governanceTelemetryFilePath: string;
+  governanceReviewQueueFilePath: string;
+  siteGovernancePoliciesFilePath: string;
+  interopJobsFilePath: string;
 }
 
 function normalizeBackend(value: string | undefined): RuntimeStateBackend {
@@ -34,6 +37,15 @@ export function resolveRuntimeStateConfig(
       directoryPath,
       'governance-telemetry.json',
     ),
+    governanceReviewQueueFilePath: path.join(
+      directoryPath,
+      'governance-review-queue.json',
+    ),
+    siteGovernancePoliciesFilePath: path.join(
+      directoryPath,
+      'site-governance-policies.json',
+    ),
+    interopJobsFilePath: path.join(directoryPath, 'interop-jobs.json'),
   };
 }
 

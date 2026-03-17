@@ -99,6 +99,48 @@ describe('Architecture Smoke - routed orchestration flow', () => {
     expect(reviewStage?.status).toBe('skipped');
   });
 
+  it(
+    'blocks preset fallback output when strict diagnosis mode is enabled',
+    async () => {
+      const runtime = createRuntime({
+        ...process.env,
+        NODE_ENV: 'development',
+        COPILOT_CARE_STRICT_DIAGNOSIS_MODE: 'true',
+        COPILOT_CARE_MED_SEARCH_ENABLED: 'false',
+        COPILOT_CARE_MED_SEARCH_IN_TRIAGE: 'false',
+        COPILOT_CARE_CARDIO_PROVIDER: 'none',
+        COPILOT_CARE_GP_PROVIDER: 'none',
+        COPILOT_CARE_METABOLIC_PROVIDER: 'none',
+        COPILOT_CARE_SAFETY_PROVIDER: 'none',
+      });
+      const result = await runtime.triageUseCase.execute({
+        profile: {
+          patientId: 'routed-flow-strict-001',
+          age: 52,
+          sex: 'male',
+          chiefComplaint: 'mild dizziness',
+          symptoms: ['dizziness'],
+          chronicDiseases: ['Hypertension'],
+          medicationHistory: ['amlodipine'],
+          vitals: {
+            systolicBP: 146,
+            diastolicBP: 92,
+          },
+        },
+        symptomText: 'mild dizziness',
+        consentToken: 'consent_local_demo',
+      });
+
+      expect(result.status).toBe('ABSTAIN');
+      expect(result.errorCode).toBe('ERR_LOW_CONFIDENCE_ABSTAIN');
+      expect(result.blockingReason?.code).toBe('RUNTIME_FAILURE_BLOCKED');
+      expect(
+        result.notes.some((note) => note.includes('可信诊断门禁触发')),
+      ).toBe(true);
+    },
+    15000,
+  );
+
   it('emits authoritative medical search reasoning in triage stream hooks', async () => {
     const originalInTriage = process.env.COPILOT_CARE_MED_SEARCH_IN_TRIAGE;
     const originalEnabled = process.env.COPILOT_CARE_MED_SEARCH_ENABLED;
@@ -134,13 +176,17 @@ describe('Architecture Smoke - routed orchestration flow', () => {
       );
 
       expect(
-        reasoningSteps.some((item) => item.includes('权威医学联网检索启动')),
+        reasoningSteps.some((item) =>
+          item.includes('已启动权威医学联网检索'),
+        ),
       ).toBe(true);
       expect(
-        reasoningSteps.some((item) => item.includes('权威医学联网检索命中')),
+        reasoningSteps.some((item) => item.includes('权威检索命中')),
       ).toBe(true);
       expect(
-        reasoningSteps.some((item) => item.includes('权威医学证据1')),
+        reasoningSteps.some((item) =>
+          item.includes('权威证据1'),
+        ),
       ).toBe(true);
     } finally {
       if (originalInTriage === undefined) {
@@ -191,10 +237,14 @@ describe('Architecture Smoke - routed orchestration flow', () => {
       );
 
       expect(
-        reasoningSteps.some((item) => item.includes('权威医学联网检索启动')),
+        reasoningSteps.some((item) =>
+          item.includes('已启动权威医学联网检索'),
+        ),
       ).toBe(true);
       expect(
-        reasoningSteps.some((item) => item.includes('权威医学联网检索未启用')),
+        reasoningSteps.some((item) =>
+          item.includes('权威医学联网检索未启用'),
+        ),
       ).toBe(false);
     } finally {
       if (originalInTriage === undefined) {

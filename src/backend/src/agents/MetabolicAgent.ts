@@ -2,6 +2,8 @@ import { AgentBase } from './AgentBase';
 import { AgentOpinion, PatientProfile } from '@copilot-care/shared/types';
 import { ClinicalLLMClient } from '../llm/types';
 
+const FALLBACK_CITATION_MARKER = 'SYSTEM_FALLBACK_OPINION';
+
 function normalizeDiseases(profile: PatientProfile): string[] {
   return profile.chronicDiseases.map((item) => item.toLowerCase());
 }
@@ -23,25 +25,34 @@ function detectMetabolicSignals(profile: PatientProfile): {
   const symptoms = profile.symptoms ?? [];
 
   const hasDiabetes = diseases.some((disease) =>
-    hasAnyKeyword(disease, ['diabetes', '2型糖尿病', '糖尿病']),
+    hasAnyKeyword(disease, [
+      'diabetes',
+      '\u4e8c\u578b\u7cd6\u5c3f\u75c5',
+      '\u7cd6\u5c3f\u75c5',
+    ]),
   );
   const hasPrediabetes = diseases.some((disease) =>
-    hasAnyKeyword(disease, ['prediabetes', '糖耐量异常', '糖调节受损']),
+    hasAnyKeyword(disease, ['prediabetes', '\u7cd6\u8010\u91cf\u5f02\u5e38']),
   );
   const hasDyslipidemia = diseases.some((disease) =>
-    hasAnyKeyword(disease, ['dyslipidemia', 'hyperlipidemia', '血脂异常', '高脂血症']),
+    hasAnyKeyword(disease, [
+      'dyslipidemia',
+      'hyperlipidemia',
+      '\u8840\u8102\u5f02\u5e38',
+      '\u9ad8\u8102\u8840\u75c7',
+    ]),
   );
   const hasObesity = diseases.some((disease) =>
-    hasAnyKeyword(disease, ['obesity', 'overweight', '肥胖', '超重']),
+    hasAnyKeyword(disease, ['obesity', 'overweight', '\u80a5\u80d6', '\u8d85\u91cd']),
   );
 
   const symptomSignal = symptoms.some((symptom) =>
     hasAnyKeyword(symptom, [
-      '口渴',
-      '多饮',
-      '多尿',
-      '乏力',
-      '体重下降',
+      '\u53e3\u6e34',
+      '\u591a\u996e',
+      '\u591a\u5c3f',
+      '\u4e4f\u529b',
+      '\u4f53\u91cd\u4e0b\u964d',
       'polydipsia',
       'polyuria',
       'weight loss',
@@ -67,7 +78,7 @@ export class MetabolicAgent extends AgentBase {
   private readonly llmClient: ClinicalLLMClient | null;
 
   constructor(llmClient?: ClinicalLLMClient | null) {
-    super('metabolic_01', '代谢专科代理', 'Metabolic');
+    super('metabolic_01', 'Metabolic Agent', 'Metabolic');
     this.llmClient = llmClient ?? null;
   }
 
@@ -83,14 +94,18 @@ export class MetabolicAgent extends AgentBase {
     ].filter(Boolean).length;
 
     const riskLevel: AgentOpinion['riskLevel'] =
-      signals.hasDiabetes || riskFactorCount >= 3 ? 'L2' : riskFactorCount >= 1 ? 'L1' : 'L0';
+      signals.hasDiabetes || riskFactorCount >= 3
+        ? 'L2'
+        : riskFactorCount >= 1
+          ? 'L1'
+          : 'L0';
 
     const reasoning =
       riskLevel === 'L2'
-        ? '代谢危险因素较集中，建议尽快进行线下复评并完善血糖血脂等指标检查。'
+        ? 'Fallback metabolic heuristic indicates clustered risk factors; prioritize early in-person re-evaluation and laboratory workup.'
         : riskLevel === 'L1'
-          ? '存在早期代谢风险信号，建议加强随访并尽快完成代谢相关基础筛查。'
-          : '暂未见明确代谢高风险信号，可继续常规健康管理并动态观察。';
+          ? 'Fallback metabolic heuristic indicates early risk signals; reinforce follow-up and complete baseline metabolic screening.'
+          : 'Fallback metabolic heuristic does not identify high-risk metabolic signals at this time; continue routine monitoring.';
 
     return {
       agentId: this.id,
@@ -99,11 +114,11 @@ export class MetabolicAgent extends AgentBase {
       riskLevel,
       confidence: 0.86,
       reasoning,
-      citations: ['代谢综合征与慢病管理实践建议'],
+      citations: ['FALLBACK_METABOLIC_RULESET', FALLBACK_CITATION_MARKER],
       actions: [
-        '建议近期完善空腹血糖、糖化血红蛋白、血脂与肾功能检查',
-        '建议记录体重、腰围、饮食与运动情况，形成随访基线',
-        '若出现明显口渴多尿、持续乏力或体重快速变化，建议尽快线下就医',
+        'Complete fasting glucose, HbA1c, lipid panel, and renal function tests.',
+        'Track weight, waist circumference, diet, and activity as follow-up baseline.',
+        'Escalate to offline care quickly if severe thirst, polyuria, persistent fatigue, or rapid weight change appears.',
       ],
     };
   }
@@ -121,7 +136,8 @@ export class MetabolicAgent extends AgentBase {
       const llmOpinion = await this.llmClient.generateOpinion({
         role: this.role,
         agentName: this.name,
-        focus: '代谢风险分层、慢病随访节奏与生活方式干预建议',
+        focus:
+          'Metabolic risk stratification, chronic follow-up rhythm, and lifestyle intervention recommendations',
         profile,
         context,
       });

@@ -2,6 +2,7 @@ import { computed, type Ref } from 'vue';
 import type {
   OrchestrationSnapshot,
   OrchestrationTask,
+  TriageBlockingReason,
   TriageRoutingInfo,
   TriageStreamStageStatus,
   WorkflowStage,
@@ -57,10 +58,16 @@ interface UseConsultationViewModelOptions {
   routeInfo: Ref<TriageRoutingInfo | null>;
   routingPreview: Ref<RoutingPreviewState>;
   resultNotes: Ref<string[]>;
+  blockingReason: Ref<TriageBlockingReason | null>;
   orchestrationSnapshot: Ref<OrchestrationSnapshot | null>;
 }
 
 const SAFETY_BLOCK_NOTE_PATTERN = /安全审校触发|阻断/i;
+const SAFETY_BLOCKING_CODES: ReadonlySet<TriageBlockingReason['code']> = new Set([
+  'SAFETY_GUARD_BLOCKED',
+  'RED_FLAG_SHORT_CIRCUIT',
+  'EVIDENCE_INTEGRITY_GATE_BLOCKED',
+]);
 
 export function useConsultationViewModel(
   options: UseConsultationViewModelOptions,
@@ -70,6 +77,10 @@ export function useConsultationViewModel(
   });
 
   const safetyBlockNote = computed<string>(() => {
+    const structuredReason = options.blockingReason.value;
+    if (structuredReason?.summary) {
+      return structuredReason.summary;
+    }
     return (
       options.resultNotes.value.find((note) => SAFETY_BLOCK_NOTE_PATTERN.test(note))
       ?? ''
@@ -77,6 +88,10 @@ export function useConsultationViewModel(
   });
 
   const isSafetyBlocked = computed<boolean>(() => {
+    const structuredReason = options.blockingReason.value;
+    if (structuredReason && SAFETY_BLOCKING_CODES.has(structuredReason.code)) {
+      return true;
+    }
     return (
       options.status.value === 'ESCALATE_TO_OFFLINE'
       && safetyBlockNote.value.length > 0

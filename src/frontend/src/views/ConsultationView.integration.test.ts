@@ -85,6 +85,7 @@ const StubConsultationResultPanel = defineComponent({
     exportingReport: { type: Boolean, required: true },
     reportExportError: { type: String, required: true },
     reportExportSuccess: { type: String, required: true },
+    blockingReason: { type: Object, required: false, default: null },
     isSafetyBlocked: { type: Boolean, required: true },
     safetyBlockNote: { type: String, required: true },
   },
@@ -422,6 +423,47 @@ describe('ConsultationView integration smoke', () => {
     expect(payload.profile?.sex).toBe('female');
     expect(payload.profile?.chiefComplaint).toBe('headache and dizziness');
     expect(payload.symptomText).toBe('headache and dizziness');
+  });
+
+  it('normalizes selected patient age from string payload before triage submit', async () => {
+    orchestrateTriageStreamMock.mockImplementationOnce(async (_payload, options) => {
+      options.onEvent({
+        type: 'final_result',
+        timestamp: new Date().toISOString(),
+        result: createOutputFinalResult(),
+      });
+    });
+
+    const wrapper = mountConsultationView();
+    const selector = wrapper.getComponent(StubPatientDataSelector);
+    selector.vm.$emit('patient-selected', 'patient-5566');
+    selector.vm.$emit('patient-loaded', {
+      patientId: 'patient-5566',
+      patientData: {
+        patientId: 'patient-5566',
+        age: '56',
+        sex: 'male',
+        chiefComplaint: 'dizziness and fatigue',
+      },
+    });
+    await flushPromises();
+
+    await getSubmitButton(wrapper).trigger('click');
+    await flushPromises();
+
+    expect(orchestrateTriageStreamMock).toHaveBeenCalledTimes(1);
+    const payload = orchestrateTriageStreamMock.mock.calls[0]?.[0] as {
+      profile?: {
+        patientId?: string;
+        age?: number;
+        sex?: string;
+        chiefComplaint?: string;
+      };
+    };
+    expect(payload.profile?.patientId).toBe('patient-5566');
+    expect(payload.profile?.age).toBe(56);
+    expect(payload.profile?.sex).toBe('male');
+    expect(payload.profile?.chiefComplaint).toBe('dizziness and fatigue');
   });
 
   it('exports consultation report as pdf when exporter succeeds', async () => {

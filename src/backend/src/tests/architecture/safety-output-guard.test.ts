@@ -148,4 +148,65 @@ describe('Architecture Smoke - safety output guard', () => {
     expect(outcome.blocked).toBe(true);
     expect(outcome.errorCode).toBe('ERR_ADVERSARIAL_PROMPT_DETECTED');
   });
+
+  it('does not block prohibition-style medication safety reminders', () => {
+    const guard = new SafetyOutputGuardService();
+
+    const outcome = guard.review({
+      request: createBaseRequest(),
+      debateResult: createBaseDebateResult(),
+      triageResult: createBaseTriageResult(),
+      explainableReport: createBaseReport({
+        actions: ['禁止自行加减药或停药，请在线下医生指导下调整方案。'],
+      }),
+    });
+
+    expect(outcome.blocked).toBe(false);
+    expect(outcome.status).toBe('OUTPUT');
+    expect(outcome.errorCode).toBeUndefined();
+  });
+
+  it('does not block clinician-supervised dose guidance in English', () => {
+    const guard = new SafetyOutputGuardService();
+
+    const outcome = guard.review({
+      request: createBaseRequest(),
+      debateResult: createBaseDebateResult(),
+      triageResult: createBaseTriageResult(),
+      explainableReport: createBaseReport({
+        actions: [
+          'Do not stop medication on your own; adjust dose only under doctor supervision.',
+        ],
+      }),
+    });
+
+    expect(outcome.blocked).toBe(false);
+    expect(outcome.status).toBe('OUTPUT');
+    expect(outcome.errorCode).toBeUndefined();
+  });
+
+  it('blocks output when patient identity is inconsistent', () => {
+    const guard = new SafetyOutputGuardService();
+
+    const outcome = guard.review({
+      request: createBaseRequest({
+        profile: {
+          ...createBaseRequest().profile,
+          patientId: 'patient-a',
+        },
+      }),
+      debateResult: createBaseDebateResult(),
+      triageResult: createBaseTriageResult({
+        patientId: 'patient-b',
+      }),
+      explainableReport: createBaseReport(),
+    });
+
+    expect(outcome.blocked).toBe(true);
+    expect(outcome.status).toBe('ERROR');
+    expect(outcome.errorCode).toBe('ERR_CONFLICT_UNRESOLVED');
+    expect(outcome.blockingReason?.code).toBe('RUNTIME_FAILURE_BLOCKED');
+    expect(outcome.finalConsensus).toBeUndefined();
+    expect(outcome.explainableReport.conclusion).toContain('安全审校触发');
+  });
 });

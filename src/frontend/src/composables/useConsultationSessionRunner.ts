@@ -1,12 +1,14 @@
 ﻿import { ref, type Ref } from 'vue';
 import type {
   AgentOpinion,
+  AuthoritativeSearchDiagnostics,
   DebateRound,
   ExplainableReport,
   OrchestrationSnapshot,
   RuleGovernanceSnapshot,
   StructuredTriageResult,
   TriageApiResponse,
+  TriageBlockingReason,
   TriageErrorResponse,
   TriageRequest,
   TriageRoutingInfo,
@@ -18,6 +20,10 @@ import {
   orchestrateTriageStream,
   type StreamOptions,
 } from '../services/triageApi';
+import {
+  formatDestination,
+  formatTriageLevel,
+} from '../constants/triageLabels';
 import type { DemoStep } from './useDemoMode';
 
 export type ConsultationRunnerUiStatus =
@@ -84,6 +90,7 @@ interface StreamStateBindings {
   requiredFields: Ref<string[]>;
   nextAction: Ref<string>;
   systemError: Ref<string>;
+  blockingReason: Ref<TriageBlockingReason | null>;
   stageRuntime: Ref<Record<WorkflowStage, StageRuntimeState>>;
   reasoningItems: Ref<
     Array<{
@@ -99,6 +106,7 @@ interface StreamStateBindings {
   routeInfo: Ref<TriageRoutingInfo | null>;
   routingPreview: Ref<RoutingPreviewState>;
   explainableReport: Ref<ExplainableReport | null>;
+  authoritativeSearch: Ref<AuthoritativeSearchDiagnostics | null>;
   resultNotes: Ref<string[]>;
   orchestrationSnapshot: Ref<OrchestrationSnapshot | null>;
   captureRoutingFromText: (text: string) => void;
@@ -182,6 +190,7 @@ function resolveRunningStage(
   return undefined;
 }
 
+const SUMMARY_SECTION_PATTERN = /(当前结论[:：]|结论[:：]|分诊[:：]|建议[:：])/g;
 
 function normalizeSummaryTextForCompare(value: string): string {
   return value
@@ -212,22 +221,132 @@ function dedupeSummaryLines(lines: string[]): string[] {
   return selected;
 }
 
+function splitSummaryLines(text: string): string[] {
+  const normalized = text
+    .replace(/\r/g, '')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/([\\/]\s*){3,}/g, ' ')
+    .trim();
+  if (!normalized) {
+    return [];
+  }
+
+  return normalized
+    .replace(SUMMARY_SECTION_PATTERN, '\n$1')
+    .replace(/\n+/g, '\n')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function resolveSummarySectionKey(line: string): 'conclusion' | 'triage' | 'advice' | null {
+  if (/^(?:当前)?结论[:：]/.test(line)) {
+    return 'conclusion';
+  }
+  if (/^分诊[:：]/.test(line)) {
+    return 'triage';
+  }
+  if (/^建议[:：]/.test(line)) {
+    return 'advice';
+  }
+  return null;
+}
+
 function collapseRepeatedSummaryBlocks(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) {
     return '';
   }
-  const lines = trimmed.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = splitSummaryLines(trimmed);
+  if (lines.length === 0) {
+    return '';
+  }
   if (lines.length >= 2 && lines.length % 2 === 0) {
     const half = lines.length / 2;
     const firstHalf = lines.slice(0, half);
     const secondHalf = lines.slice(half);
-    const same = firstHalf.every((line, index) => line === secondHalf[index]);
+    const same = firstHalf.every(
+      (line, index) =>
+        normalizeSummaryTextForCompare(line)
+        === normalizeSummaryTextForCompare(secondHalf[index] ?? ''),
+    );
     if (same) {
       return firstHalf.join('\n');
     }
   }
-  return dedupeSummaryLines(lines).join('\n');
+
+  const output: string[] = [];
+  const sectionLines = new Map<'conclusion' | 'triage' | 'advice', string>();
+  for (const line of dedupeSummaryLines(lines)) {
+    const sectionKey = resolveSummarySectionKey(line);
+    if (!sectionKey) {
+      output.push(line);
+      continue;
+    }
+
+    const existingLine = sectionLines.get(sectionKey);
+    if (!existingLine) {
+      sectionLines.set(sectionKey, line);
+      output.push(line);
+      continue;
+    }
+
+    const existingNormalized = normalizeSummaryTextForCompare(existingLine);
+    const currentNormalized = normalizeSummaryTextForCompare(line);
+    if (
+      existingNormalized === currentNormalized
+      || existingNormalized.includes(currentNormalized)
+    ) {
+      continue;
+    }
+    if (
+      currentNormalized.includes(existingNormalized)
+      || line.length > existingLine.length
+    ) {
+      const index = output.findIndex((entry) => entry === existingLine);
+      if (index >= 0) {
+        output[index] = line;
+      }
+      sectionLines.set(sectionKey, line);
+      continue;
+    }
+  }
+
+  return output.join('\n');
+}
+
+function countMatches(text: string, pattern: RegExp): number {
+  return text.match(pattern)?.length ?? 0;
+}
+
+function shouldPreferFallbackSummary(
+  streamSummary: string,
+  fallbackSummary: string,
+): boolean {
+  if (!fallbackSummary.trim()) {
+    return false;
+  }
+
+  const summary = streamSummary.trim();
+  if (!summary) {
+    return true;
+  }
+
+  const repeatedSections = [
+    /(?:当前)?结论[:：]/g,
+    /分诊[:：]/g,
+    /建议[:：]/g,
+  ].some((pattern) => countMatches(summary, pattern) > 1);
+  const slashNoise = /([\\/]\s*){3,}/.test(summary);
+  const normalizedSummary = normalizeSummaryTextForCompare(summary);
+  const normalizedFallback = normalizeSummaryTextForCompare(fallbackSummary);
+  const fallbackRepeated =
+    normalizedFallback.length > 0
+    && normalizedSummary.includes(normalizedFallback)
+    && normalizedSummary.indexOf(normalizedFallback)
+      !== normalizedSummary.lastIndexOf(normalizedFallback);
+
+  return repeatedSections || slashNoise || fallbackRepeated;
 }
 
 function buildFallbackTypedSummary(
@@ -236,7 +355,7 @@ function buildFallbackTypedSummary(
   const conclusion = payload.explainableReport?.conclusion ?? '';
   const normalizedConclusion = normalizeSummaryTextForCompare(conclusion);
   const triageLine = payload.triageResult
-    ? `分诊：${payload.triageResult.triageLevel} / 去向：${payload.triageResult.destination}`
+    ? `分诊：${formatTriageLevel(payload.triageResult.triageLevel)} / 去向：${formatDestination(payload.triageResult.destination)}`
     : '';
   const actions = dedupeSummaryLines(payload.explainableReport?.actions ?? []);
   const actionLine = actions.length > 0 ? `建议：${actions.join('；')}` : '';
@@ -269,6 +388,18 @@ export function useConsultationSessionRunner(
   let typewriterTimer: ReturnType<typeof setInterval> | null = null;
   let loadingTimer: ReturnType<typeof setInterval> | null = null;
   let activeController: AbortController | null = null;
+  let pendingFinalSummaryCleanup = false;
+  let finalFallbackSummary = '';
+
+  function finalizeTypedOutput(): void {
+    const cleanedStreamSummary = collapseRepeatedSummaryBlocks(typedOutput.value);
+    if (shouldPreferFallbackSummary(cleanedStreamSummary, finalFallbackSummary)) {
+      typedOutput.value = finalFallbackSummary;
+      return;
+    }
+
+    typedOutput.value = cleanedStreamSummary || finalFallbackSummary;
+  }
 
   function startTypewriter(): void {
     if (typewriterTimer) {
@@ -279,6 +410,10 @@ export function useConsultationSessionRunner(
       if (typeof token !== 'string') {
         clearInterval(typewriterTimer as ReturnType<typeof setInterval>);
         typewriterTimer = null;
+        if (pendingFinalSummaryCleanup) {
+          pendingFinalSummaryCleanup = false;
+          finalizeTypedOutput();
+        }
         return;
       }
       typedOutput.value += token;
@@ -295,6 +430,8 @@ export function useConsultationSessionRunner(
   function clearTypewriter(): void {
     typedOutput.value = '';
     tokenQueue.value = [];
+    pendingFinalSummaryCleanup = false;
+    finalFallbackSummary = '';
     if (typewriterTimer) {
       clearInterval(typewriterTimer);
       typewriterTimer = null;
@@ -314,7 +451,10 @@ export function useConsultationSessionRunner(
       options.streamState.nextAction.value = payload.nextAction ?? '';
       options.streamState.resultNotes.value = payload.notes;
       options.streamState.systemError.value = payload.errorCode;
+      options.streamState.blockingReason.value = payload.blockingReason ?? null;
       options.streamState.ruleGovernance.value = payload.ruleGovernance ?? null;
+      options.streamState.authoritativeSearch.value =
+        payload.authoritativeSearch ?? null;
       options.microStatus.value = `会诊未完成：${payload.notes.join('；')}`;
       options.streamState.pushReasoning('warning', options.microStatus.value);
       if (payload.requiredFields && payload.requiredFields.length > 0) {
@@ -346,20 +486,21 @@ export function useConsultationSessionRunner(
     }
     options.streamState.triageResult.value = payload.triageResult ?? null;
     options.streamState.nextAction.value = payload.nextAction ?? '';
+    options.streamState.blockingReason.value = payload.blockingReason ?? null;
     options.streamState.ruleGovernance.value = payload.ruleGovernance ?? null;
     options.streamState.explainableReport.value = payload.explainableReport ?? null;
+    options.streamState.authoritativeSearch.value =
+      payload.authoritativeSearch ?? null;
     options.streamState.finalConsensus.value = payload.finalConsensus ?? null;
     options.streamState.resultNotes.value = payload.notes;
     options.microStatus.value = `会诊完成：${options.statusLabels[options.status.value]}`;
     options.streamState.pushReasoning('decision', options.microStatus.value);
 
-    if (typedOutput.value.trim().length === 0) {
-      const fallback = buildFallbackTypedSummary(payload);
-      if (fallback) {
-        enqueueTokens(fallback);
-      }
-    } else {
-      typedOutput.value = collapseRepeatedSummaryBlocks(typedOutput.value);
+    finalFallbackSummary = buildFallbackTypedSummary(payload);
+    pendingFinalSummaryCleanup = true;
+    if (!typewriterTimer && tokenQueue.value.length === 0) {
+      pendingFinalSummaryCleanup = false;
+      finalizeTypedOutput();
     }
 
     options.messages.value.push({
@@ -459,6 +600,7 @@ export function useConsultationSessionRunner(
       options.status.value = 'ERROR';
       options.streamState.systemError.value = event.errorCode;
       options.streamState.nextAction.value = event.nextAction ?? '';
+      options.streamState.blockingReason.value = event.blockingReason ?? null;
       if (event.requiredFields && event.requiredFields.length > 0) {
         options.streamState.requiredFields.value = event.requiredFields;
         options.showAdvancedInputs.value = true;

@@ -223,6 +223,37 @@ describe('useConsultationInputForm', () => {
     expect(exportProfile.patientId).toBe('patient-777');
   });
 
+  it('parses string age from patient context and allows manual demographic overrides', () => {
+    const state = useConsultationInputForm({
+      validationMessages: VALIDATION_MESSAGES,
+      defaultForm: {
+        symptomText: 'manual symptom',
+        age: 49,
+        sex: 'male',
+      },
+    });
+
+    state.applyPatientDataContext(
+      {
+        patientId: 'patient-5566',
+        age: '56',
+        sex: 'female',
+        chiefComplaint: 'dizziness',
+      },
+      'patient-5566',
+    );
+
+    expect(state.form.value.age).toBe(56);
+    expect(state.form.value.sex).toBe('female');
+
+    state.form.value.age = 49;
+    state.form.value.sex = 'male';
+    const payload = state.buildRequestPayload();
+    expect(payload.profile.patientId).toBe('patient-5566');
+    expect(payload.profile.age).toBe(49);
+    expect(payload.profile.sex).toBe('male');
+  });
+
   it('uses selected patient id even when patient details are unavailable', () => {
     const state = useConsultationInputForm({
       validationMessages: VALIDATION_MESSAGES,

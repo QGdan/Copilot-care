@@ -126,6 +126,9 @@ describe('ComplexityRoutedOrchestrator evidence completeness gate', () => {
 
     expect(result.status).toBe('ERROR');
     expect(result.errorCode).toBe('ERR_GUIDELINE_EVIDENCE_MISSING');
+    expect(result.blockingReason?.code).toBe('EVIDENCE_INTEGRITY_GATE_BLOCKED');
+    expect(result.blockingReason?.triggerStage).toBe('REVIEW');
+    expect(result.authoritativeSearch?.strategyVersion).toBe('test-strategy');
     expect(
       result.notes.some((note) => note.includes('证据完整性门禁')),
     ).toBe(true);
@@ -151,6 +154,9 @@ describe('ComplexityRoutedOrchestrator evidence completeness gate', () => {
 
     expect(result.errorCode).not.toBe('ERR_GUIDELINE_EVIDENCE_MISSING');
     expect(result.status).not.toBe('ERROR');
+    expect(result.authoritativeSearch?.usedSources).toEqual(
+      expect.arrayContaining(['WHO', 'NICE']),
+    );
   });
 
   it('does not enforce evidence gate for low-risk path', async () => {
@@ -180,5 +186,28 @@ describe('ComplexityRoutedOrchestrator evidence completeness gate', () => {
     );
 
     expect(result.errorCode).not.toBe('ERR_GUIDELINE_EVIDENCE_MISSING');
+  });
+
+  it('returns structured short-circuit reason when red flag escalation is triggered', async () => {
+    const orchestrator = createOrchestrator(createMockSearchPort([]));
+
+    const result = await orchestrator.runSession(
+      createRequest({
+        symptomText: 'chest pain with dyspnea',
+        profile: {
+          ...createRequest().profile,
+          symptoms: ['chest pain', 'dyspnea'],
+          vitals: {
+            systolicBP: 188,
+            diastolicBP: 118,
+          },
+        },
+      }),
+    );
+
+    expect(result.status).toBe('ESCALATE_TO_OFFLINE');
+    expect(result.errorCode).toBe('ERR_ESCALATE_TO_OFFLINE');
+    expect(result.blockingReason?.code).toBe('RED_FLAG_SHORT_CIRCUIT');
+    expect(result.blockingReason?.triggerStage).toBe('ESCALATION');
   });
 });
